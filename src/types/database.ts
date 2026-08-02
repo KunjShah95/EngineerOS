@@ -118,3 +118,35 @@ export interface TagWithUsage extends Tag {
   notes: { count: number }[];
   tasks: { count: number }[];
 }
+
+export type ResourceKind = "code" | "bookmark" | "reading" | "architecture" | "meeting";
+export type ReadingStatus = "want" | "reading" | "done";
+
+export interface ResourceMetadata {
+  url?: string;
+  language?: string;
+  read_status?: ReadingStatus;
+  meeting_date?: string | null;
+  attendees?: string[];
+}
+
+/** Resource row mapping to public.resources. */
+export interface Resource {
+  id: string;
+  workspace_id: string;
+  project_id: string | null;
+  kind: ResourceKind;
+  title: string;
+  body_markdown: string;
+  status: NoteStatus;
+  metadata: ResourceMetadata;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+/** Resource with project + tags resolved for card rendering. */
+export interface ResourceWithRelations extends Resource {
+  project: { id: string; name: string; color: string | null } | null;
+  resource_tags: { tag: Tag }[];
+}
