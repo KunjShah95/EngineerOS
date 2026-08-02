@@ -52,6 +52,8 @@ export interface Task {
   updated_at: string;
   completed_at: string | null;
   deleted_at: string | null;
+  /** URL of the GitHub issue this task was imported from, if any. */
+  source_url: string | null;
 }
 
 export interface Note {
@@ -119,6 +121,59 @@ export interface TagWithUsage extends Tag {
   tasks: { count: number }[];
 }
 
+// ---------------------------------------------------------------------------
+// Group B — integrations, voice notes, AI summaries, PDF documents
+// ---------------------------------------------------------------------------
+
+export type IntegrationProvider = "github";
+
+export interface Integration {
+  id: string;
+  workspace_id: string;
+  provider: IntegrationProvider;
+  provider_user_id: string;
+  username: string | null;
+  avatar_url: string | null;
+  /** Server-side only — never sent to the client. */
+  access_token: string;
+  scopes: string[] | null;
+  connected_at: string;
+  updated_at: string;
+}
+
+export interface VoiceNote {
+  id: string;
+  workspace_id: string;
+  note_id: string | null;
+  storage_path: string;
+  duration_ms: number;
+  transcript: string | null;
+  status: "recorded" | "transcribing" | "transcribed" | "failed";
+  created_at: string;
+}
+
+export type SummaryEntityType = "note" | "task" | "daily_note";
+
+export interface AiSummary {
+  id: string;
+  workspace_id: string;
+  entity_type: SummaryEntityType;
+  entity_id: string;
+  summary: string;
+  model: string;
+  created_at: string;
+}
+
+export interface PdfDocument {
+  id: string;
+  workspace_id: string;
+  title: string;
+  storage_path: string | null;
+  text_content: string;
+  char_count: number;
+  created_at: string;
+}
+
 export type ResourceKind = "code" | "bookmark" | "reading" | "architecture" | "meeting";
 export type ReadingStatus = "want" | "reading" | "done";
 
@@ -139,6 +194,7 @@ export interface Resource {
   title: string;
   body_markdown: string;
   status: NoteStatus;
+  pinned: boolean;
   metadata: ResourceMetadata;
   created_at: string;
   updated_at: string;
