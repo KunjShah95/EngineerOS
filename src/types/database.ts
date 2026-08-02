@@ -208,12 +208,21 @@ export interface ResourceWithRelations extends Resource {
   resource_tags: { tag: Tag }[];
 }
 
+// ---------------------------------------------------------------------------
+// Phase 8a — semantic search (embeddings table + semantic_search RPC)
+// ---------------------------------------------------------------------------
+
 export type EmbeddingEntity = "note" | "task" | "resource" | "daily_note" | "pdf";
 
+/** One ranked hit from the semantic_search RPC (or the local keyword scorer). */
 export interface SemanticMatch {
   entity_type: EmbeddingEntity;
   entity_id: string;
   chunk_index: number;
   content: string;
   score: number;
+  /** Resource kind (code/bookmark/reading/architecture/meeting) — for routing. */
+  kind?: string | null;
+  /** ISO date for daily_note hits — for routing to /daily/:date. */
+  date?: string | null;
 }
