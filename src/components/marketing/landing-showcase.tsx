@@ -50,12 +50,12 @@ const COLUMNS = [
 
 export function LandingShowcase() {
   return (
-    <section id="product" className="relative overflow-hidden py-28">
+    <section id="product" className="relative overflow-hidden py-16 md:py-28">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-1/2 -z-10 mx-auto h-[360px] w-[800px] -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(79,70,229,0.16),rgba(30,64,175,0.10)_55%,transparent_75%)] blur-3xl"
       />
-      <div className="mx-auto w-full max-w-6xl px-6">
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <Reveal className="mx-auto max-w-2xl text-center">
           <p className="font-mono text-[11px] tracking-widest text-accent uppercase">
             The board
@@ -70,7 +70,7 @@ export function LandingShowcase() {
           </p>
         </Reveal>
 
-        <Reveal delay={0.12} className="mt-14">
+        <Reveal delay={0.12} className="mt-10 md:mt-14">
           <div className="overflow-hidden rounded-xl border border-default bg-elevated shadow-[0_24px_80px_-24px_rgba(0,0,0,0.6)]">
             <div className="flex items-center gap-2 border-b border-border-subtle bg-surface/60 px-4 py-2.5">
               <span className="flex gap-1.5">
@@ -84,7 +84,7 @@ export function LandingShowcase() {
               <span className="w-10" />
             </div>
 
-            <div className="grid grid-cols-[148px_1fr]">
+            <div className="grid grid-cols-1 sm:grid-cols-[148px_1fr]">
               <div className="hidden flex-col border-r border-border-subtle bg-surface/40 p-3 sm:flex">
                 <div className="mb-4 flex items-center gap-1.5 px-1">
                   <span className="flex size-4 items-center justify-center rounded bg-gradient-to-br from-[#4f46e5] to-[#1e40af]">

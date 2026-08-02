@@ -8,7 +8,7 @@ import { Reveal } from "@/components/marketing/reveal";
 
 export function LandingCta() {
   return (
-    <section id="cta" className="relative overflow-hidden py-28">
+    <section id="cta" className="relative overflow-hidden py-16 md:py-28">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,var(--border-subtle)_1px,transparent_1px),linear-gradient(to_bottom,var(--border-subtle)_1px,transparent_1px)] bg-[size:56px_56px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,black,transparent)]"
@@ -18,11 +18,11 @@ export function LandingCta() {
         className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[320px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(79,70,229,0.18),rgba(30,64,175,0.12)_55%,transparent_75%)] blur-3xl"
       />
 
-      <Reveal className="mx-auto w-full max-w-3xl px-6 text-center">
+      <Reveal className="mx-auto w-full max-w-3xl px-4 text-center sm:px-6">
         <p className="font-mono text-[11px] tracking-widest text-accent uppercase">
           No setup debt
         </p>
-        <h2 className="mt-4 text-3xl font-semibold tracking-tight text-foreground md:text-5xl">
+        <h2 className="mt-4 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl md:text-5xl">
           Start capturing everything today.
         </h2>
         <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-secondary">

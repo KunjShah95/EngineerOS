@@ -15,7 +15,7 @@ const METRICS = [
 export function LandingMetrics() {
   return (
     <section className="border-y border-border-subtle bg-surface/40">
-      <div className="mx-auto w-full max-w-6xl px-6 py-12">
+      <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
         <Reveal>
           <p className="mb-8 text-center font-mono text-[11px] tracking-widest text-faint uppercase">
             A week of real use, comfortably

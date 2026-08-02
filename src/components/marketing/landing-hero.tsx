@@ -40,7 +40,7 @@ export function LandingHero() {
   };
 
   return (
-    <section className="relative overflow-hidden pt-36 pb-24">
+    <section className="relative overflow-hidden pt-24 pb-16 md:pt-36 md:pb-24">
       {/* Grid backdrop with a radial mask that fades it out. */}
       <div
         aria-hidden
@@ -52,7 +52,7 @@ export function LandingHero() {
         className="pointer-events-none absolute left-1/2 top-[55%] -z-10 h-[420px] w-[720px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(79,70,229,0.18),rgba(30,64,175,0.12)_55%,transparent_75%)] blur-3xl"
       />
 
-      <div className="mx-auto w-full max-w-6xl px-6">
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <motion.div
           initial={animate ? "hidden" : false}
           animate={animate ? "show" : undefined}
@@ -117,7 +117,7 @@ export function LandingHero() {
               transition: { duration: 0.7, delay: 0.22, ease: EASE },
             },
           }}
-          className="relative mx-auto mt-16 max-w-4xl"
+          className="relative mx-auto mt-10 max-w-4xl md:mt-16"
         >
           <div
             ref={frameRef}

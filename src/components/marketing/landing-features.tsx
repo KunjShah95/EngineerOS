@@ -20,8 +20,8 @@ import { cn } from "@/lib/utils";
 
 export function LandingFeatures() {
   return (
-    <section id="features" className="relative py-28">
-      <div className="mx-auto w-full max-w-6xl px-6">
+    <section id="features" className="relative py-16 md:py-28">
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <Reveal className="text-center">
           <p className="font-mono text-[11px] tracking-widest text-accent uppercase">
             The model
@@ -36,7 +36,7 @@ export function LandingFeatures() {
           </p>
         </Reveal>
 
-        <div className="mt-14 grid grid-cols-1 gap-4 md:grid-cols-6">
+        <div className="mt-10 grid grid-cols-1 gap-4 md:mt-14 md:grid-cols-6">
           <Reveal className="md:col-span-4" delay={0}>
             <FeatureCard
               icon={FileText}
@@ -109,7 +109,7 @@ export function LandingFeatures() {
         </div>
 
         {/* AI Layer */}
-        <Reveal className="mt-20 text-center">
+        <Reveal className="mt-12 text-center md:mt-20">
           <div className="flex items-center gap-4">
             <div className="h-px flex-1 bg-border-subtle" />
             <span className="font-mono text-[11px] tracking-widest text-accent uppercase">
@@ -124,7 +124,7 @@ export function LandingFeatures() {
           </p>
         </Reveal>
 
-        <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-6">
+        <div className="mt-8 grid grid-cols-1 gap-4 md:mt-10 md:grid-cols-6">
           <Reveal className="md:col-span-3" delay={0}>
             <FeatureCard
               icon={Search}
