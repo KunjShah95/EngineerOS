@@ -2,10 +2,11 @@
 // deterministic local fingerprint vector so the pipeline still runs and the
 // app is testable without a provider. When present we use text-embedding-3-small.
 
-const OPENAI_BASE = "https://api.openai.com/v1";
+import { OPENAI_BASE } from "../ai";
+
 const EMBED_DIM = 1536;
 
-export function isEmbeddbConfigured(): boolean {
+export function isEmbeddingConfigured(): boolean {
   return Boolean(process.env.OPENAI_API_KEY);
 }
 
@@ -35,7 +36,7 @@ function hash32(str: string): number {
 }
 
 export async function embedText(text: string): Promise<number[]> {
-  if (!isEmbeddbConfigured()) return localFingerprint(text);
+  if (!isEmbeddingConfigured()) return localFingerprint(text);
   const res = await fetch(`${OPENAI_BASE}/embeddings`, {
     method: "POST",
     headers: {
@@ -46,7 +47,9 @@ export async function embedText(text: string): Promise<number[]> {
   });
   if (!res.ok) throw new Error(`Embedding request failed (${res.status})`);
   const json = (await res.json()) as { data?: { embedding?: number[] }[] };
-  return json.data?.[0]?.embedding ?? localFingerprint(text);
+  const embedding = json.data?.[0]?.embedding;
+  if (!embedding) throw new Error("Embedding request returned no data");
+  return embedding;
 }
 
 // Queries are embedded with the same provider so both sides live in the same
