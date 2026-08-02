@@ -8,7 +8,7 @@ export const PROJECT_COLORS = [
   "#f97316", // orange
   "#ef4444", // red
   "#ec4899", // pink
-  "#8b5cf6", // violet
+  "#1e3a8a", // navy
   "#64748b", // slate
 ] as const;
 

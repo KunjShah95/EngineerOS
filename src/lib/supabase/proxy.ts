@@ -9,6 +9,9 @@ const PROTECTED_PREFIXES = [
   "/notes",
   "/tasks",
   "/daily",
+  "/mindmap",
+  "/pdf-chat",
+  "/voice",
   "/settings",
 ];
 

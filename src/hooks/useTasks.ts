@@ -77,6 +77,8 @@ export interface CreateTaskInput {
   due_date?: string | null;
   estimate?: number | null;
   position?: number;
+  /** GitHub issue URL this task was imported from. */
+  source_url?: string | null;
 }
 
 export function useCreateTask(workspaceId: string | null, filters?: TaskFilters | null) {
@@ -106,6 +108,7 @@ export function useCreateTask(workspaceId: string | null, filters?: TaskFilters 
           due_date: input.due_date ?? null,
           estimate: input.estimate ?? null,
           position: count ?? 0,
+          source_url: input.source_url ?? null,
         })
         .select()
         .single();
