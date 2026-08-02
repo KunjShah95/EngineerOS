@@ -1,0 +1,10 @@
+
+> engineeros@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.12 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.4:3000
+✓ Ready in 556ms
+
+ GET / 200 in 1850ms (next.js: 1674ms, application-code: 176ms)
