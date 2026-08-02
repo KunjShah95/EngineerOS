@@ -17,6 +17,7 @@ import {
   Settings,
   Users,
   MessageSquareText,
+  Mic,
 } from "lucide-react";
 
 import { useUiStore } from "@/lib/store/ui";
@@ -36,6 +37,7 @@ const navItems = [
   { href: "/meetings", label: "Meetings", icon: Users },
   { href: "/mindmap", label: "Mind map", icon: Network },
   { href: "/pdf-chat", label: "PDF chat", icon: MessageSquareText },
+  { href: "/voice", label: "Voice", icon: Mic },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

@@ -68,9 +68,9 @@
   --text-secondary: #9a9ba5;
   --text-tertiary: #66676f;
 
-  --accent: #6366f1;
-  --accent-hover: #7678f5;
-  --accent-muted: #23233f;
+  --accent: #4f46e5;
+  --accent-hover: #6366f1;
+  --accent-muted: #1c2340;
 
   --success: #22c55e;
   --warning: #eab308;
@@ -98,9 +98,9 @@
   --text-secondary: #5c5d66;
   --text-tertiary: #8a8b93;
 
-  --accent: #6366f1;
-  --accent-hover: #4f52e0;
-  --accent-muted: #eeeeff;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-muted: #e8ecff;
 }
 
 @layer base {
