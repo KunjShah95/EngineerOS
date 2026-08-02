@@ -171,13 +171,13 @@ supabase db push
 
 ### Types
 
-`src/types/database.ts` is the app's **hand-written** interface layer (it mirrors the migrations). The **generated** baseline lives at `supabase/types/database.ts` and is what CI diffs against the live schema:
+`src/types/database.ts` is the app's **hand-written** interface layer (it mirrors the migrations). The **generated** baseline lives at `supabase/types/database.ts` and is what CI diffs against the schema. Generate it from the **local stack** (matches CI exactly — needs `supabase start` running):
 
 ```bash
-npm run types:gen         # supabase gen types typescript --linked > supabase/types/database.ts
+npm run types:gen         # supabase gen types typescript --local > supabase/types/database.ts
 ```
 
-(No credentials yet? Generate from the local stack instead: `supabase gen types typescript --local > supabase/types/database.ts`.)
+Already linked to a remote project? `supabase gen types typescript --linked > supabase/types/database.ts` works too — just note CI checks against `--local`, so prefer the local command for the committed baseline.
 
 ### CI
 
