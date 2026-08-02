@@ -98,3 +98,22 @@ export function useUpdateDailyNote(workspaceId: string | null, date: string) {
     },
   });
 }
+
+export function useDailyNotesInRange(workspaceId: string | null, from: string, to: string) {
+  return useQuery({
+    queryKey: ["daily_notes_range", workspaceId ?? "", from, to] as const,
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("daily_notes")
+        .select("date")
+        .eq("workspace_id", workspaceId)
+        .gte("date", from)
+        .lte("date", to);
+
+      if (error) throw error;
+      return (data ?? []).map((r) => r.date as string);
+    },
+    enabled: Boolean(workspaceId) && Boolean(from) && Boolean(to),
+  });
+}

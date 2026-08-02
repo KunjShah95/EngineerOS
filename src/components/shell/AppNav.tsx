@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Calendar,
   CalendarDays,
   CheckSquare,
   FileText,
@@ -19,6 +20,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/tasks", label: "Tasks", icon: CheckSquare },
+  { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/notes", label: "Notes", icon: FileText },
   { href: "/daily", label: "Daily", icon: CalendarDays },
   { href: "/settings", label: "Settings", icon: Settings },
