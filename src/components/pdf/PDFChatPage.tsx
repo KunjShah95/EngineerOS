@@ -23,6 +23,12 @@ import {
 } from "@/hooks/usePdfChat";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useAiConfig } from "@/hooks/useAiConfig";
+import { useProjects } from "@/hooks/useProjects";
+import {
+  ProjectFilter,
+  PROJECT_FILTER_ALL,
+  type ProjectFilterValue,
+} from "@/components/shell/ProjectFilter";
 import { cn } from "@/lib/utils";
 
 interface Message {
@@ -36,9 +42,11 @@ export function PDFChatPage() {
   const workspaceId = workspace?.id ?? null;
 
   const { data: aiConfig } = useAiConfig();
-  const { data: documents, isLoading: docsLoading } = usePdfDocuments(workspaceId);
-  const uploadPdf = useUploadPdf(workspaceId);
-  const deletePdf = useDeletePdf(workspaceId);
+  const { data: projects } = useProjects(workspaceId);
+  const [projectFilter, setProjectFilter] = useState<ProjectFilterValue>(PROJECT_FILTER_ALL);
+  const { data: documents, isLoading: docsLoading } = usePdfDocuments(workspaceId, projectFilter);
+  const uploadPdf = useUploadPdf(workspaceId, projectFilter);
+  const deletePdf = useDeletePdf();
   const chat = usePdfChat(null);
 
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -50,6 +58,14 @@ export function PDFChatPage() {
 
   const selectDocument = (id: string) => {
     setActiveId(id);
+    setMessages([]);
+    chat.reset();
+  };
+
+  const changeProject = (value: ProjectFilterValue) => {
+    setProjectFilter(value);
+    // The selected document may not belong to the newly scoped list.
+    setActiveId(null);
     setMessages([]);
     chat.reset();
   };
@@ -90,14 +106,21 @@ export function PDFChatPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-6">
-      <div className="mb-4">
-        <h1 className="text-lg font-semibold">PDF chat</h1>
-        <p className="text-sm text-faint">
-          Upload a paper and ask questions about it.{" "}
-          {aiConfig?.configured
-            ? "GPT-4o answers from the document."
-            : "Local mode — no OPENAI_API_KEY set, so answers quote the closest passage."}
-        </p>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-lg font-semibold">PDF chat</h1>
+          <p className="text-sm text-faint">
+            Upload a paper and ask questions about it.{" "}
+            {aiConfig?.configured
+              ? "GPT-4o answers from the document."
+              : "Local mode — no OPENAI_API_KEY set, so answers quote the closest passage."}
+          </p>
+        </div>
+        <ProjectFilter
+          value={projectFilter}
+          onChange={changeProject}
+          projects={projects ?? []}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_1fr]">

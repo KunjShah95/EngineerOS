@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { CheckSquare, FileText, Inbox, Mic, Zap } from "lucide-react";
 
@@ -49,8 +50,6 @@ export function QuickCaptureModal({ workspaceId }: { workspaceId: string }) {
   const createCapture = useCreateCapture(workspaceId);
   const createNote = useCreateNote(workspaceId);
   const createVoiceNote = useCreateVoiceNote();
-
-
 
   const submit = async () => {
     if (!text.trim()) return;
@@ -130,15 +129,17 @@ export function QuickCaptureModal({ workspaceId }: { workspaceId: string }) {
             }}
           />
 
-          <div>
-            <Label className="mb-1.5 block">Save as</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-secondary">Save as</Label>
             <div className="grid grid-cols-3 gap-2">
               {destinations.map((d) => {
                 const Icon = d.icon;
                 const active = destination === d.value;
                 return (
-                  <button
+                  <motion.button
                     key={d.value}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     type="button"
                     onClick={() => setDestination(d.value)}
                     title={d.hint}
@@ -149,14 +150,14 @@ export function QuickCaptureModal({ workspaceId }: { workspaceId: string }) {
                   >
                     <Icon className="size-4" strokeWidth={1.75} />
                     {d.label}
-                  </button>
+                  </motion.button>
                 );
               })}
             </div>
           </div>
 
-          <div>
-            <Label className="mb-1.5 block">Project (optional)</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-secondary">Project (optional)</Label>
             <Select value={projectId} onValueChange={setProjectId}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="No project" />
@@ -174,14 +175,16 @@ export function QuickCaptureModal({ workspaceId }: { workspaceId: string }) {
         </div>
 
         <DialogFooter>
-          <Button
-            onClick={submit}
-            disabled={!text.trim() || createCapture.isPending}
-            className="w-full"
-          >
-            {createCapture.isPending ? "Saving…" : "Capture"}
-            {!createCapture.isPending && <Zap className="size-4" strokeWidth={1.75} />}
-          </Button>
+          <motion.div className="w-full" whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+            <Button
+              onClick={submit}
+              disabled={!text.trim() || createCapture.isPending}
+              className="w-full"
+            >
+              {createCapture.isPending ? "Saving…" : "Capture"}
+              {!createCapture.isPending && <Zap className="size-4 ml-2" strokeWidth={1.75} />}
+            </Button>
+          </motion.div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

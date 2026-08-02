@@ -67,20 +67,21 @@ export function LandingHero() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60 motion-reduce:animate-none motion-reduce:opacity-40" />
               <span className="relative inline-flex size-1.5 rounded-full bg-success" />
             </span>
-            For engineers, researchers, and builders
+            AI-native · Semantic search · Knowledge graph
           </span>
 
           <h1 className="mt-7 text-[clamp(2.2rem,5.5vw,3.75rem)] font-semibold leading-[1.08] tracking-tight text-foreground">
-            Notes, tasks, projects, and daily notes.{" "}
+            Notes, tasks, projects and an AI
+            that understands all of it.{" "}
             <span className="bg-gradient-to-r from-[#a5b4fc] via-accent to-[#1e40af] bg-clip-text text-transparent">
               One system.
             </span>
           </h1>
 
           <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-secondary">
-            EngineerOS captures everything, finds everything, and organizes
-            everything across a single connected workspace. No more context
-            living in ten places at once.
+            EngineerOS captures everything, finds it semantically, and lets you
+            ask questions across your entire knowledge base. Notes, tasks,
+            code, PDFs and daily entries, all in one place.
           </p>
 
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">

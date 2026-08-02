@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, FileText, FolderKanban, Hash, CheckSquare, Loader2 } from "lucide-react";
+import { CalendarDays, FileText, FolderKanban, Hash, CheckSquare, Loader2, Sparkles } from "lucide-react";
 
 import {
   CommandDialog,
@@ -12,7 +12,9 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { SemanticSearchGroup } from "@/components/search/SemanticSearchGroup";
 import { useSearch } from "@/hooks/useSearch";
+import { useSemanticSearch, type KeywordCorpusItem } from "@/hooks/useSemanticSearch";
 import { useUiStore } from "@/lib/store/ui";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +23,7 @@ export function CommandPalette({ workspaceId }: { workspaceId: string }) {
   const open = useUiStore((s) => s.commandPaletteOpen);
   const setOpen = useUiStore((s) => s.setCommandPaletteOpen);
   const [query, setQuery] = useState("");
+  const [semantic, setSemantic] = useState(false);
 
   // Debounce the query at 200ms so the "within 300ms perceived latency"
   // budget from UI_DEVELOPMENT_PLAN.md holds while typing.
@@ -30,17 +33,34 @@ export function CommandPalette({ workspaceId }: { workspaceId: string }) {
     return () => clearTimeout(t);
   }, [query]);
 
-  // Reset the query each time the palette opens, using the React-recommended
-  // "adjust state during render" pattern (no effect, no ref access).
+  // Reset the query + semantic toggle each time the palette opens, using the
+  // React-recommended "adjust state during render" pattern (no effect, no ref).
   const [wasOpen, setWasOpen] = useState(open);
   if (open && !wasOpen) {
     setWasOpen(true);
     setQuery("");
+    setSemantic(false);
   } else if (!open && wasOpen) {
     setWasOpen(false);
   }
 
   const { data, isFetching } = useSearch(workspaceId, debouncedQuery);
+
+  // Local corpus for the keyword fallback — reuse the same cached substring
+  // results so Semantic stays functional without a live Supabase or API key.
+  const corpus = useMemo<KeywordCorpusItem[]>(() => {
+    if (!data) return [];
+    const items: KeywordCorpusItem[] = [];
+    for (const n of data.notes) {
+      items.push({ entity_type: "note", entity_id: n.id, text: `${n.title}\n${n.body_markdown}` });
+    }
+    for (const t of data.tasks) {
+      items.push({ entity_type: "task", entity_id: t.id, text: `${t.title}\n${t.description ?? ""}` });
+    }
+    return items;
+  }, [data]);
+
+  const semanticSearch = useSemanticSearch(semantic && debouncedQuery ? debouncedQuery : "", corpus);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -67,8 +87,36 @@ export function CommandPalette({ workspaceId }: { workspaceId: string }) {
     [data]
   );
 
+  const semanticCount = semantic ? semanticSearch.chunks.length : 0;
+  const hasAnyResults = groupCount > 0 || semanticCount > 0;
+
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
+      <div className="flex items-center gap-2 border-b border-default px-4 py-1.5">
+        <button
+          type="button"
+          aria-pressed={semantic}
+          onClick={() => setSemantic((v) => !v)}
+          className={cn(
+            "flex items-center gap-1.5 text-xs font-medium transition-colors",
+            semantic ? "text-accent" : "text-faint hover:text-secondary"
+          )}
+        >
+          <Sparkles className="size-3.5" strokeWidth={1.75} />
+          Semantic
+        </button>
+        {semantic && semanticSearch.isPending && debouncedQuery.trim() !== "" && (
+          <Loader2 className="size-3 animate-spin text-faint" strokeWidth={1.75} />
+        )}
+        {semantic && !semanticSearch.isPending && semanticSearch.chunks.length > 0 && (
+          <span className="text-[10px] text-faint">
+            {semanticSearch.mode === "embeddings" ? "vector" : "local"} · {semanticSearch.chunks.length}
+          </span>
+        )}
+        {semantic && !semanticSearch.isPending && debouncedQuery.trim() !== "" && semanticSearch.chunks.length === 0 && (
+          <span className="text-[10px] text-faint">no semantic matches</span>
+        )}
+      </div>
       <CommandInput
         placeholder="Search notes, tasks, projects, tags…"
         value={query}
@@ -78,15 +126,23 @@ export function CommandPalette({ workspaceId }: { workspaceId: string }) {
       <CommandList>
         {debouncedQuery.trim() === "" ? (
           <CommandEmpty>Type to search across your workspace.</CommandEmpty>
-        ) : isFetching && groupCount === 0 ? (
+        ) : isFetching && !hasAnyResults ? (
           <div className="flex items-center justify-center gap-2 py-6 text-sm text-secondary">
             <Loader2 className="size-4 animate-spin" strokeWidth={1.75} />
             Searching…
           </div>
-        ) : groupCount === 0 ? (
+        ) : !hasAnyResults ? (
           <CommandEmpty>No results for “{debouncedQuery}”.</CommandEmpty>
         ) : (
           <>
+            {semantic && semanticSearch.chunks.length > 0 && (
+              <SemanticSearchGroup
+                chunks={semanticSearch.chunks}
+                mode={semanticSearch.mode}
+                onSelect={goto}
+              />
+            )}
+
             {data && data.notes.length > 0 && (
               <CommandGroup heading="Notes">
                 {data.notes.map((note) => (

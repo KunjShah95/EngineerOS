@@ -1,13 +1,13 @@
 // Server-only AI helpers. When OPENAI_API_KEY is absent every feature falls
 // back to a local, dependency-free implementation so the app still works.
 
-const OPENAI_BASE = "https://api.openai.com/v1";
+export const OPENAI_BASE = "https://api.openai.com/v1";
 
 export function isAiConfigured(): boolean {
   return Boolean(process.env.OPENAI_API_KEY);
 }
 
-async function openaiChat(messages: { role: string; content: string }[], maxTokens = 400) {
+export async function openaiChat(messages: { role: string; content: string }[], maxTokens = 400) {
   const res = await fetch(`${OPENAI_BASE}/chat/completions`, {
     method: "POST",
     headers: {

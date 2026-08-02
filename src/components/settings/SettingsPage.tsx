@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { LogOut, Moon, ShieldAlert, Sun, Upload } from "lucide-react";
+import { Bell, LogOut, Mail, Moon, ShieldAlert, Sun, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -40,7 +41,9 @@ export function SettingsPage() {
 
   const [displayName, setDisplayName] = useSyncedState(profile?.display_name ?? "");
   const [workspaceName, setWorkspaceName] = useSyncedState(workspace?.name ?? "");
+  const [notifEmail, setNotifEmail] = useSyncedState(workspace?.email ?? "");
   const [savingName, setSavingName] = useState(false);
+  const [savingNotif, setSavingNotif] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   const saveDisplayName = async () => {
@@ -73,6 +76,40 @@ export function SettingsPage() {
     } finally {
       setSavingName(false);
     }
+  };
+
+  const saveNotifications = async () => {
+    if (!workspace) return;
+    setSavingNotif(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("workspaces")
+        .update({ email: notifEmail.trim() || null })
+        .eq("id", workspace.id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["workspace"] });
+      toast.success("Notification email saved");
+    } catch {
+      toast.error("Failed to save notification email");
+    } finally {
+      setSavingNotif(false);
+    }
+  };
+
+  const toggleWeeklyDigest = async (enabled: boolean) => {
+    if (!workspace) return;
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("workspaces")
+      .update({ weekly_digest: enabled })
+      .eq("id", workspace.id);
+    if (error) {
+      toast.error("Failed to update digest setting");
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ["workspace"] });
+    toast.success(enabled ? "Weekly digest enabled" : "Weekly digest disabled");
   };
 
   const uploadAvatar = async (file: File) => {
@@ -207,6 +244,48 @@ export function SettingsPage() {
             </Button>
           </div>
           <p className="text-xs text-faint">One workspace per account in this version.</p>
+        </div>
+      </section>
+
+      {/* Notifications */}
+      <section className="rounded-lg border border-default bg-surface p-5">
+        <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold">
+          <Bell className="size-4 text-accent" strokeWidth={1.75} />
+          Notifications
+        </h2>
+        <div className="space-y-1.5">
+          <Label htmlFor="notif-email">Notification email</Label>
+          <div className="flex gap-2">
+            <Input
+              id="notif-email"
+              type="email"
+              value={notifEmail}
+              onChange={(e) => setNotifEmail(e.target.value)}
+              placeholder="you@example.com"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void saveNotifications();
+              }}
+            />
+            <Button onClick={() => void saveNotifications()} disabled={savingNotif}>
+              {savingNotif ? "Saving…" : "Save"}
+            </Button>
+          </div>
+          <p className="flex items-center gap-1.5 text-xs text-faint">
+            <Mail className="size-3" strokeWidth={1.75} />
+            Task reminders from recurring rules are mirrored here when set.
+          </p>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between border-t border-border-subtle pt-4">
+          <div>
+            <p className="text-sm font-medium">Weekly digest</p>
+            <p className="text-xs text-faint">A Sunday summary of completed tasks and new notes.</p>
+          </div>
+          <Switch
+            checked={workspace.weekly_digest}
+            onCheckedChange={(v) => void toggleWeeklyDigest(v)}
+            aria-label="Weekly digest"
+          />
         </div>
       </section>
 

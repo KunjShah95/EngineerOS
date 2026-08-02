@@ -77,8 +77,8 @@ export async function getOrCreateTagIds(
     .in("name", trimmed);
   if (selError) throw selError;
 
-  const existingByName = new Map(
-    (existing ?? []).map((t: { id: string; name: string }) => [t.name, t.id])
+  const existingByName = new Map<string, string>(
+    (existing ?? []).map((t: { id: string; name: string }) => [t.name, t.id] as [string, string])
   );
   const ids: string[] = [];
   const toCreate: { workspace_id: string; name: string }[] = [];

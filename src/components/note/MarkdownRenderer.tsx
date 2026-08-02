@@ -3,6 +3,20 @@ import remarkGfm from "remark-gfm";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * Convert [[Some Title]] wikilink tokens into markdown links. Passed a
+ * resolver (title → href) so the renderer stays presentational — the caller
+ * supplies the title index built from the knowledge graph. Unresolved
+ * wikilinks stay literal so nothing silently disappears.
+ */
+function renderWikilinks(content: string, resolve: (title: string) => string | null): string {
+  return content.replace(/\[\[([^\[\]]+)\]\]/g, (match, title: string) => {
+    const href = resolve(title.trim());
+    if (!href) return match;
+    return `[${title.trim()}](${href})`;
+  });
+}
+
 const components: Parameters<typeof ReactMarkdown>[0]["components"] = {
   h1: ({ children }) => (
     <h1 className="mt-6 mb-2 text-2xl font-semibold text-foreground">{children}</h1>
@@ -99,11 +113,19 @@ const components: Parameters<typeof ReactMarkdown>[0]["components"] = {
     ) : null,
 };
 
-export function MarkdownRenderer({ content }: { content: string }) {
+export function MarkdownRenderer({
+  content,
+  resolveWikilink,
+}: {
+  content: string;
+  /** Optional title→href resolver for [[wikilinks]] (knowledge graph). */
+  resolveWikilink?: (title: string) => string | null;
+}) {
+  const body = resolveWikilink ? renderWikilinks(content, resolveWikilink) : content;
   return (
     <div className="markdown text-sm">
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
-        {content}
+        {body}
       </ReactMarkdown>
     </div>
   );

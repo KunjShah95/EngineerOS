@@ -22,12 +22,12 @@ export function TopBar() {
     .join("");
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-default bg-surface px-4">
+    <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center justify-between border-b border-default bg-surface/80 backdrop-blur-md px-4">
       <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={() => setCommandPaletteOpen(true)}
-          className="group flex w-64 items-center gap-2 rounded-md border border-default bg-base px-3 py-1.5 text-sm text-secondary transition-colors duration-150 hover:border-border-subtle hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+          className="group flex w-64 items-center gap-2 rounded-lg border border-default bg-base/50 px-3 py-1.5 text-sm text-secondary transition-all duration-200 hover:border-accent-muted hover:bg-base hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
         >
           <Search className="size-4 shrink-0" strokeWidth={1.75} />
           <span className="flex-1 text-left">Search…</span>
