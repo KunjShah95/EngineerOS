@@ -167,6 +167,7 @@ export interface AiSummary {
 export interface PdfDocument {
   id: string;
   workspace_id: string;
+  project_id: string | null;
   title: string;
   storage_path: string | null;
   text_content: string;
@@ -205,4 +206,14 @@ export interface Resource {
 export interface ResourceWithRelations extends Resource {
   project: { id: string; name: string; color: string | null } | null;
   resource_tags: { tag: Tag }[];
+}
+
+export type EmbeddingEntity = "note" | "task" | "resource" | "daily_note" | "pdf";
+
+export interface SemanticMatch {
+  entity_type: EmbeddingEntity;
+  entity_id: string;
+  chunk_index: number;
+  content: string;
+  score: number;
 }
