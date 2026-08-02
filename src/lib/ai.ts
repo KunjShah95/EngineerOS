@@ -7,7 +7,7 @@ export function isAiConfigured(): boolean {
   return Boolean(process.env.OPENAI_API_KEY);
 }
 
-async function openaiChat(messages: { role: string; content: string }[], maxTokens = 400) {
+export async function openaiChat(messages: { role: string; content: string }[], maxTokens = 400) {
   const res = await fetch(`${OPENAI_BASE}/chat/completions`, {
     method: "POST",
     headers: {

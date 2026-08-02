@@ -1,0 +1,34 @@
+# EngineerOS — Supabase CLI configuration.
+# Committed so `supabase start` / `supabase db lint` work identically in local
+# dev and CI (GitHub Actions db-verify job). Defaults only; adjust ports if
+# they collide locally.
+#
+# Reference: https://supabase.com/docs/guides/local-development/cli/config
+
+project_id = "engineeros"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+enabled = true
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+
+[auth]
+enabled = true

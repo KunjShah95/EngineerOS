@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Lint · Typecheck · Test · Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      # Production build without secrets — the app degrades gracefully when
+      # Supabase/AI/email env vars are unset, so this exercises real routing,
+      # RSC serialization, and the Sentry wrapper. Sentry source-map upload is
+      # skipped unless SENTRY_ORG/PROJECT/AUTH_TOKEN are present.
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_APP_URL: https://example.invalid
+
+  # Applies every migration to a real local Postgres, lints the schema, and
+  # verifies committed generated types haven't drifted from the database.
+  # Requires Docker (present on GitHub-hosted runners). The types-drift step
+  # activates automatically once supabase/types/database.ts is committed — see
+  # `npm run types:gen`.
+  db-verify:
+    name: Supabase migrations · lint · types
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Boots the local stack and applies supabase/migrations/ in order — a
+      # migration that doesn't apply cleanly fails this job.
+      - name: Start local stack
+        run: supabase start
+        timeout-minutes: 15
+
+      # Fail on lint ERRORS (not perf/suggestion noise).
+      - name: Lint migrations
+        run: supabase db lint --fail-on error
+
+      - name: Regenerate types
+        run: supabase gen types typescript --local > /tmp/database.types.ts
+
+      # Once a baseline is committed, drift between the schema and the
+      # committed generated types fails the build.
+      - name: Verify committed types match schema
+        if: hashFiles('supabase/types/database.ts') != ''
+        run: |
+          if ! diff -q supabase/types/database.ts /tmp/database.types.ts >/dev/null; then
+            echo "::error::Generated types are out of sync with the database schema."
+            echo "Fix: npm run types:gen && git add supabase/types/database.ts"
+            diff supabase/types/database.ts /tmp/database.types.ts | head -40
+            exit 1
+          fi
+          echo "Types are in sync with the schema."
+
+      - name: Missing types baseline (informational)
+        if: hashFiles('supabase/types/database.ts') == ''
+        run: |
+          echo "No committed types baseline yet (supabase/types/database.ts)."
+          echo "Commit one to enable the drift guard: npm run types:gen"
+          echo "(or supabase gen types typescript --local > supabase/types/database.ts)"
+
+      - name: Stop local stack
+        if: always()
+        run: supabase stop --no-backup

@@ -1,28 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { createClient } from "@/lib/supabase/server";
+import { requireWorkspace } from "@/lib/supabase/auth";
 import { fetchGitHubIssues } from "@/lib/github";
 
 export async function GET(request: NextRequest) {
   const repo = request.nextUrl.searchParams.get("repo");
   if (!repo) return NextResponse.json({ error: "missing repo" }, { status: 400 });
 
-  const supabase = await createClient();
-  if (!supabase) return NextResponse.json({ error: "not-configured" }, { status: 501 });
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-
-  const { data: workspace } = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("owner_id", user.id)
-    .is("deleted_at", null)
-    .limit(1)
-    .maybeSingle();
-  if (!workspace) return NextResponse.json({ error: "no-workspace" }, { status: 400 });
+  const auth = await requireWorkspace();
+  if (auth.error) return auth.error;
+  const { supabase, workspace } = auth;
 
   const { data: integration } = await supabase
     .from("integrations")

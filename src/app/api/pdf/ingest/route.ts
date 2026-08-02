@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { PDFParse } from "pdf-parse";
 
-import { createClient } from "@/lib/supabase/server";
+import { requireWorkspace } from "@/lib/supabase/auth";
 
 export const runtime = "nodejs";
 
@@ -19,22 +19,28 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "PDF too large (max 25MB)" }, { status: 413 });
   }
 
-  const supabase = await createClient();
-  if (!supabase) return NextResponse.json({ error: "not-configured" }, { status: 501 });
+  const auth = await requireWorkspace();
+  if (auth.error) return auth.error;
+  const { supabase, workspace } = auth;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-
-  const { data: workspace } = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("owner_id", user.id)
-    .is("deleted_at", null)
-    .limit(1)
-    .maybeSingle();
-  if (!workspace) return NextResponse.json({ error: "no-workspace" }, { status: 400 });
+  // Optional project assignment — must be a real uuid that belongs to this workspace.
+  let projectId: string | null = null;
+  const rawProjectId = form?.get("project_id");
+  if (typeof rawProjectId === "string" && rawProjectId.trim()) {
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_RE.test(rawProjectId)) {
+      return NextResponse.json({ error: "invalid project_id" }, { status: 400 });
+    }
+    const { data: project } = await supabase
+      .from("projects")
+      .select("id")
+      .eq("id", rawProjectId)
+      .eq("workspace_id", workspace.id)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (!project) return NextResponse.json({ error: "project not found" }, { status: 400 });
+    projectId = rawProjectId;
+  }
 
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -58,6 +64,7 @@ export async function POST(request: NextRequest) {
       .from("pdf_documents")
       .insert({
         workspace_id: workspace.id,
+        project_id: projectId,
         title: file.name.replace(/\.pdf$/i, ""),
         storage_path: storagePath,
         text_content: text,

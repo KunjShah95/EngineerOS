@@ -12,6 +12,9 @@ export interface Workspace {
   id: string;
   owner_id: string;
   name: string;
+  /** Where reminder + digest emails go (null = none — in-app feed only). */
+  email: string | null;
+  weekly_digest: boolean;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -226,3 +229,155 @@ export interface SemanticMatch {
   /** ISO date for daily_note hits — for routing to /daily/:date. */
   date?: string | null;
 }
+
+// ---------------------------------------------------------------------------
+// Phase 8b — workspace Q&A / RAG assistant (chat_threads + chat_messages)
+// ---------------------------------------------------------------------------
+
+export type ChatRole = "user" | "assistant";
+
+/** A cited source attached to an assistant chat message. */
+export interface ChatSource {
+  entity_type: EmbeddingEntity;
+  entity_id: string;
+  title: string;
+  href: string;
+  score: number;
+}
+
+export interface ChatThread {
+  id: string;
+  workspace_id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface ChatMessage {
+  id: string;
+  thread_id: string;
+  role: ChatRole;
+  content: string;
+  sources: ChatSource[];
+  model: string | null;
+  created_at: string;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 9 — Knowledge Graph (note_links + graph shapes)
+// ---------------------------------------------------------------------------
+
+/** Directed note→note link (note_id links TO linked_note_id). */
+export interface NoteLink {
+  note_id: string;
+  linked_note_id: string;
+  created_at: string;
+}
+
+/** Entity kinds the knowledge graph visualizes. */
+export type GraphEntityKind = "note" | "task" | "resource";
+
+/** One node in the graph. */
+export interface GraphNode {
+  id: string;
+  kind: GraphEntityKind;
+  label: string;
+  href: string;
+  /** Resource kind (code/bookmark/...) or task status or "note". */
+  meta: string | null;
+  /** Optional project color for node tinting. */
+  color: string | null;
+  /** Owning project (null = unfiled) — powers the project filter. */
+  project_id: string | null;
+}
+
+/** Edge provenance — the graph legend explains each type. */
+export type GraphEdgeKind = "task_note" | "note_link" | "wikilink";
+
+export interface GraphEdge {
+  source: string;
+  target: string;
+  kind: GraphEdgeKind;
+}
+
+export interface KnowledgeGraph {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
+// ---------------------------------------------------------------------------
+// Phase 10 — Automation (rules + background job queue)
+// ---------------------------------------------------------------------------
+
+export type AutomationRuleKind = "recurring_task" | "auto_triage" | "daily_rollover";
+
+/** Recurring-task cadence. */
+export type RecurringCadence =
+  | { type: "daily" }
+  | { type: "weekly"; weekday: number } // 0 = Sunday … 6 = Saturday
+  | { type: "monthly"; day_of_month: number }; // 1–28 (28+ clamps to month end)
+
+export interface RecurringTaskConfig {
+  title: string;
+  cadence: RecurringCadence;
+  project_id?: string | null;
+  priority?: TaskPriority;
+  description?: string;
+  /** Days after creation to set the due date (0 = due today). */
+  due_offset_days?: number;
+  /** Minutes after task creation to enqueue an in-app reminder job (0/omitted = none). */
+  remind_after_minutes?: number;
+}
+
+/** Keyword match → entity type for auto-triage. */
+export interface AutoTriageRule {
+  match: string;
+  action: "note" | "task";
+  project_id?: string | null;
+}
+
+export interface AutomationRule {
+  id: string;
+  workspace_id: string;
+  kind: AutomationRuleKind;
+  name: string;
+  config: RecurringTaskConfig | AutoTriageRule | Record<string, never>;
+  enabled: boolean;
+  last_run_at: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export type AutomationJobKind = "auto_triage" | "reminder" | "digest";
+
+export interface AutomationJob {
+  id: string;
+  workspace_id: string;
+  kind: AutomationJobKind;
+  status: "pending" | "running" | "done" | "failed";
+  attempts: number;
+  max_attempts: number;
+  error: string | null;
+  payload: Record<string, unknown>;
+  run_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/** In-app reminder materialized by the drain from a due reminder job. */
+export interface ReminderRow {
+  id: string;
+  workspace_id: string;
+  /** Source job — unique, so drain processing is idempotent. */
+  job_id: string;
+  rule_id: string | null;
+  task_id: string | null;
+  title: string;
+  fire_at: string;
+  read_at: string | null;
+  created_at: string;
+}
+
+

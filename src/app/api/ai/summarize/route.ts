@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { createClient } from "@/lib/supabase/server";
+import { requireWorkspace } from "@/lib/supabase/auth";
 import { summarizeText } from "@/lib/ai";
 import type { SummaryEntityType } from "@/types/database";
 
@@ -14,25 +14,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "missing fields" }, { status: 400 });
   }
 
-  const supabase = await createClient();
-  if (!supabase) return NextResponse.json({ error: "not-configured" }, { status: 501 });
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const auth = await requireWorkspace();
+  if (auth.error) return auth.error;
+  const { supabase, workspace } = auth;
 
   // Verify the entity belongs to this user's workspace before storing.
   const workspaceTable =
     body.entity_type === "task" ? "tasks" : body.entity_type === "daily_note" ? "daily_notes" : "notes";
-  const { data: workspace } = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("owner_id", user.id)
-    .is("deleted_at", null)
-    .limit(1)
-    .maybeSingle();
-  if (!workspace) return NextResponse.json({ error: "no-workspace" }, { status: 400 });
 
   // Fetch the entity's own text server-side so the summary can't be gamed
   // into mismatching the note (ownership is already checked above).

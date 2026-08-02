@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -42,6 +42,8 @@ import { cn } from "@/lib/utils";
 import { useAiSummary, useGenerateSummary } from "@/hooks/useAiSummary";
 import { VoiceRecorder } from "@/components/voice/VoiceRecorder";
 import { VoiceNotesList } from "@/components/voice/VoiceNotesList";
+import { BacklinksPanel } from "@/components/graph/BacklinksPanel";
+import { useKnowledgeGraph } from "@/hooks/useKnowledgeGraph";
 
 type EditorMode = "edit" | "preview";
 
@@ -51,6 +53,19 @@ export function NoteDetail({ noteId }: { noteId: string }) {
   const workspaceId = workspace?.id ?? null;
 
   const { data: note, isLoading } = useNote(noteId);
+  // Title index for [[wikilinks]] in the rendered preview.
+  const { data: graph } = useKnowledgeGraph(workspaceId);
+
+  // Case-insensitive title → href lookup for wikilink rendering. Notes win
+  // collisions (build order matches the knowledge graph's own index).
+  const resolveWikilink = useMemo(() => {
+    const byTitle = new Map<string, string>();
+    for (const n of graph?.nodes ?? []) {
+      const key = n.label.trim().toLowerCase();
+      if (key && !byTitle.has(key)) byTitle.set(key, n.href);
+    }
+    return (title: string) => byTitle.get(title.trim().toLowerCase()) ?? null;
+  }, [graph]);
   const { data: projects } = useProjects(workspaceId);
   const { data: tags } = useTags(workspaceId);
   const updateNote = useUpdateNote(noteId, workspaceId);
@@ -272,6 +287,11 @@ export function NoteDetail({ noteId }: { noteId: string }) {
         <VoiceNotesList workspaceId={workspace.id} noteId={noteId} />
       </div>
 
+      {/* Phase 9 — backlinks + wikilink graph panel */}
+      <div className="mb-6">
+        <BacklinksPanel noteId={noteId} />
+      </div>
+
       {mode === "edit" ? (
         <textarea
           value={body}
@@ -291,7 +311,7 @@ export function NoteDetail({ noteId }: { noteId: string }) {
         />
       ) : body.trim() ? (
         <div className="rounded-lg border border-border-subtle bg-surface px-6 py-4">
-          <MarkdownRenderer content={body} />
+          <MarkdownRenderer content={body} resolveWikilink={resolveWikilink} />
         </div>
       ) : (
         <EmptyState

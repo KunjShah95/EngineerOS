@@ -1,6 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { createClient } from "@/lib/supabase/client";
+import {
+  PROJECT_FILTER_ALL,
+  PROJECT_FILTER_UNFILED,
+  type ProjectFilterValue,
+} from "@/components/shell/ProjectFilter";
 
 export interface MindMapNode {
   id: string;
@@ -20,25 +25,47 @@ export interface MindMapData {
   edges: MindMapEdge[];
 }
 
-export async function fetchMindMapData(workspaceId: string): Promise<MindMapData> {
+export async function fetchMindMapData(
+  workspaceId: string,
+  filter: ProjectFilterValue = PROJECT_FILTER_ALL
+): Promise<MindMapData> {
   const supabase = createClient();
 
+  const unfiled = filter === PROJECT_FILTER_UNFILED;
+  const projectId = !unfiled && filter !== PROJECT_FILTER_ALL ? filter : null;
+
+  const projectsPromise = unfiled
+    ? Promise.resolve({ data: [], error: null })
+    : (() => {
+        let query = supabase
+          .from("projects")
+          .select("id, name, color")
+          .eq("workspace_id", workspaceId)
+          .is("deleted_at", null);
+        if (projectId) query = query.eq("id", projectId);
+        return query;
+      })();
+
+  let tasksQuery = supabase
+    .from("tasks")
+    .select("id, title, project_id, status")
+    .eq("workspace_id", workspaceId)
+    .is("deleted_at", null);
+  if (unfiled) tasksQuery = tasksQuery.is("project_id", null);
+  else if (projectId) tasksQuery = tasksQuery.eq("project_id", projectId);
+
+  let notesQuery = supabase
+    .from("notes")
+    .select("id, title, project_id, pinned")
+    .eq("workspace_id", workspaceId)
+    .is("deleted_at", null);
+  if (unfiled) notesQuery = notesQuery.is("project_id", null);
+  else if (projectId) notesQuery = notesQuery.eq("project_id", projectId);
+
   const [projectsRes, tasksRes, notesRes] = await Promise.all([
-    supabase
-      .from("projects")
-      .select("id, name, color")
-      .eq("workspace_id", workspaceId)
-      .is("deleted_at", null),
-    supabase
-      .from("tasks")
-      .select("id, title, project_id, status")
-      .eq("workspace_id", workspaceId)
-      .is("deleted_at", null),
-    supabase
-      .from("notes")
-      .select("id, title, project_id, pinned")
-      .eq("workspace_id", workspaceId)
-      .is("deleted_at", null),
+    projectsPromise,
+    tasksQuery,
+    notesQuery,
   ]);
 
   // task_notes isn't workspace-scoped, so fetch them after we have task ids.
@@ -104,10 +131,10 @@ export async function fetchMindMapData(workspaceId: string): Promise<MindMapData
   return { nodes, edges };
 }
 
-export function useMindMap(workspaceId: string | null) {
+export function useMindMap(workspaceId: string | null, filter: ProjectFilterValue = PROJECT_FILTER_ALL) {
   return useQuery({
-    queryKey: ["mindmap", workspaceId ?? ""],
-    queryFn: () => fetchMindMapData(workspaceId!),
+    queryKey: ["mindmap", workspaceId ?? "", filter],
+    queryFn: () => fetchMindMapData(workspaceId!, filter),
     enabled: Boolean(workspaceId),
   });
 }

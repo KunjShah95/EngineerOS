@@ -1,31 +1,19 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { createClient } from "@/lib/supabase/server";
+import { requireWorkspace } from "@/lib/supabase/auth";
 import { transcribeAudio } from "@/lib/ai";
 
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => null)) as { storage_path?: string } | null;
   if (!body?.storage_path) return NextResponse.json({ error: "missing storage_path" }, { status: 400 });
 
-  const supabase = await createClient();
-  if (!supabase) return NextResponse.json({ error: "not-configured" }, { status: 501 });
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const auth = await requireWorkspace();
+  if (auth.error) return auth.error;
+  const { supabase, workspace } = auth;
 
   // Storage paths are namespaced as <workspace_id>/<file>. Reject anything
   // that doesn't match the user's own workspace (defense in depth on top of
   // the bucket policy, which already scopes reads to auth.uid()).
-  const { data: workspace } = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("owner_id", user.id)
-    .is("deleted_at", null)
-    .limit(1)
-    .maybeSingle();
-  if (!workspace) return NextResponse.json({ error: "no-workspace" }, { status: 400 });
 
   if (!body.storage_path.startsWith(`${workspace.id}/`)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });

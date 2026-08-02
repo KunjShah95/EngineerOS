@@ -6,18 +6,15 @@ import { ExternalLink, Network, ZoomIn, ZoomOut } from "lucide-react";
 
 import { PageLoader } from "@/components/shell/PageLoader";
 import { EmptyState } from "@/components/shell/EmptyState";
+import {
+  ProjectFilter,
+  PROJECT_FILTER_ALL,
+  type ProjectFilterValue,
+} from "@/components/shell/ProjectFilter";
 import { useMindMap, type MindMapNode } from "@/hooks/useMindMap";
+import { useProjects } from "@/hooks/useProjects";
 import { useWorkspace } from "@/hooks/useWorkspace";
-
-interface LayoutNode extends MindMapNode {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-}
-
-const W = 1200;
-const H = 760;
+import { forceLayout, GRAPH_H, GRAPH_W } from "@/lib/graph-layout";
 
 function kindColor(kind: MindMapNode["kind"]): string {
   return kind === "project" ? "#4f46e5" : kind === "task" ? "#60a5fa" : "#818cf8";
@@ -26,7 +23,9 @@ function kindColor(kind: MindMapNode["kind"]): string {
 export function MindMapPage() {
   const { data: workspace, isLoading } = useWorkspace();
   const workspaceId = workspace?.id ?? null;
-  const { data: graph, isLoading: graphLoading } = useMindMap(workspaceId);
+  const { data: projects } = useProjects(workspaceId);
+  const [projectFilter, setProjectFilter] = useState<ProjectFilterValue>(PROJECT_FILTER_ALL);
+  const { data: graph, isLoading: graphLoading } = useMindMap(workspaceId, projectFilter);
 
   const [selected, setSelected] = useState<MindMapNode | null>(null);
   const [view, setView] = useState({ x: 0, y: 0, k: 1 });
@@ -35,64 +34,11 @@ export function MindMapPage() {
   const svgRef = useRef<SVGSVGElement>(null);
 
   // Force-directed layout: repulsion + springs + centering, 350 iterations.
-  const layout = useMemo<LayoutNode[]>(() => {
-    if (!graph) return [];
-    const nodes: LayoutNode[] = graph.nodes.map((n, i) => ({
-      ...n,
-      x: W / 2 + Math.cos((i / Math.max(1, graph.nodes.length)) * Math.PI * 2) * 220,
-      y: H / 2 + Math.sin((i / Math.max(1, graph.nodes.length)) * Math.PI * 2) * 160,
-      vx: 0,
-      vy: 0,
-    }));
-    const index = new Map(nodes.map((n) => [n.id, n]));
-
-    for (let iter = 0; iter < 350; iter++) {
-      const cooling = 1 - iter / 350;
-      // Repulsion (O(n²) but graphs are small).
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const a = nodes[i];
-          const b = nodes[j];
-          const dx = a.x - b.x;
-          const dy = a.y - b.y;
-          const dist = Math.max(24, Math.hypot(dx, dy));
-          const force = (3000 / dist) * cooling;
-          const fx = (dx / dist) * force;
-          const fy = (dy / dist) * force;
-          a.vx += fx;
-          a.vy += fy;
-          b.vx -= fx;
-          b.vy -= fy;
-        }
-      }
-      // Springs along edges.
-      for (const e of graph.edges) {
-        const a = index.get(e.source);
-        const b = index.get(e.target);
-        if (!a || !b) continue;
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
-        const dist = Math.max(1, Math.hypot(dx, dy));
-        const force = (dist - 140) * 0.02 * cooling;
-        const fx = (dx / dist) * force;
-        const fy = (dy / dist) * force;
-        a.vx += fx;
-        a.vy += fy;
-        b.vx -= fx;
-        b.vy -= fy;
-      }
-      // Centering + damping.
-      for (const n of nodes) {
-        n.vx += (W / 2 - n.x) * 0.005 * cooling;
-        n.vy += (H / 2 - n.y) * 0.005 * cooling;
-        n.vx *= 0.85;
-        n.vy *= 0.85;
-        n.x += n.vx;
-        n.y += n.vy;
-      }
-    }
-    return nodes;
-  }, [graph]);
+  // Shared with the knowledge graph via src/lib/graph-layout.ts.
+  const layout = useMemo(
+    () => (graph ? forceLayout(graph.nodes, graph.edges) : []),
+    [graph]
+  );
 
   // Auto-fit once the layout settles — adjust state during render (the
   // React-recommended pattern, no effect cascade). Only runs on the first
@@ -104,10 +50,10 @@ export function MindMapPage() {
     const maxX = Math.max(...xs) + 120;
     const minY = Math.min(...ys) - 120;
     const maxY = Math.max(...ys) + 120;
-    const k = Math.min(1.4, Math.max(0.35, Math.min(760 / (maxY - minY), 1200 / (maxX - minX))));
+    const k = Math.min(1.4, Math.max(0.35, Math.min(GRAPH_H / (maxY - minY), GRAPH_W / (maxX - minX))));
     const cx = (minX + maxX) / 2;
     const cy = (minY + maxY) / 2;
-    setView({ k, x: 600 - cx * k, y: 380 - cy * k });
+    setView({ k, x: GRAPH_W / 2 - cx * k, y: GRAPH_H / 2 - cy * k });
   }
 
   const nodeById = useMemo(() => new Map(layout.map((n) => [n.id, n])), [layout]);
@@ -125,6 +71,13 @@ export function MindMapPage() {
   const zoom = (factor: number) =>
     setView((v) => ({ ...v, k: Math.min(2.5, Math.max(0.2, v.k * factor)) }));
 
+  const changeProject = (value: ProjectFilterValue) => {
+    setProjectFilter(value);
+    setSelected(null);
+    // Back to identity so the auto-fit block re-fits the new subgraph.
+    setView({ x: 0, y: 0, k: 1 });
+  };
+
   const screenToWorld = (clientX: number, clientY: number) => {
     const rect = svgRef.current?.getBoundingClientRect();
     if (!rect) return { x: 0, y: 0 };
@@ -140,22 +93,32 @@ export function MindMapPage() {
     return (
       <EmptyState
         icon={Network}
-        title="Nothing to map yet"
-        description="Create a project, task, or note and it will show up here as a node."
+        title={projectFilter === PROJECT_FILTER_ALL ? "Nothing to map yet" : "No nodes in this view"}
+        description={
+          projectFilter === PROJECT_FILTER_ALL
+            ? "Create a project, task, or note and it will show up here as a node."
+            : "This project (or unfiled items) has no nodes yet. Switch the filter to see more."
+        }
       />
     );
   }
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between gap-3 px-6 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
         <div>
           <h1 className="text-lg font-semibold">Mind map</h1>
           <p className="text-sm text-faint">
             {graph.nodes.length} nodes · {graph.edges.length} connections — projects, tasks, notes, and links
           </p>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-3">
+          <ProjectFilter
+            value={projectFilter}
+            onChange={changeProject}
+            projects={projects ?? []}
+          />
+          <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={() => zoom(1.2)}
@@ -172,9 +135,10 @@ export function MindMapPage() {
           >
             <ZoomOut className="size-4" strokeWidth={1.75} />
           </button>
-          <span className="ml-2 font-mono text-xs text-faint">
-            {selected ? selected.label.slice(0, 28) : "drag to pan · scroll to zoom"}
-          </span>
+            <span className="ml-2 font-mono text-xs text-faint">
+              {selected ? selected.label.slice(0, 28) : "drag to pan · scroll to zoom"}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -182,7 +146,7 @@ export function MindMapPage() {
         <svg
           ref={svgRef}
           className="h-full w-full cursor-grab touch-none select-none active:cursor-grabbing"
-          viewBox={`0 0 ${W} ${H}`}
+          viewBox={`0 0 ${GRAPH_W} ${GRAPH_H}`}
           onWheel={(e) => {
             e.preventDefault();
             const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;

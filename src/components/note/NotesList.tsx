@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FileText, Hash, Pin, Plus } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { motion } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -155,55 +156,61 @@ function NoteRow({ note }: { note: NoteWithRelations }) {
   const tagsList = note.note_tags.map((nt) => nt.tag);
 
   return (
-    <Link
-      href={`/notes/${note.id}`}
-      className={cn(
-        "group flex items-start justify-between gap-4 rounded-lg border border-default bg-surface p-4 transition-colors duration-150",
-        "hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-      )}
+    <motion.div
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+      transition={{ type: "spring", stiffness: 400, damping: 17 }}
     >
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          {note.pinned ? (
-            <Pin className="size-3.5 shrink-0 text-accent" strokeWidth={1.75} />
-          ) : null}
-          <h3 className="truncate text-sm font-medium text-foreground">{note.title}</h3>
+      <Link
+        href={`/notes/${note.id}`}
+        className={cn(
+          "group flex items-start justify-between gap-4 rounded-lg border border-default bg-surface p-4 transition-colors duration-150",
+          "hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+        )}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            {note.pinned ? (
+              <Pin className="size-3.5 shrink-0 text-accent" strokeWidth={1.75} />
+            ) : null}
+            <h3 className="truncate text-sm font-medium text-foreground">{note.title}</h3>
+          </div>
+
+          {snippet(note.body_markdown) ? (
+            <p className="mt-1 line-clamp-2 text-sm text-secondary">{snippet(note.body_markdown)}</p>
+          ) : (
+            <p className="mt-1 text-sm text-faint">No content yet.</p>
+          )}
+
+          {(note.project || tagsList.length > 0) && (
+            <div className="mt-2.5 flex flex-wrap items-center gap-2">
+              {note.project ? (
+                <span className="inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 text-[11px] font-medium text-secondary">
+                  <span
+                    className="size-2 rounded-full"
+                    style={projectColorStyle(note.project.color)}
+                    aria-hidden
+                  />
+                  {note.project.name}
+                </span>
+              ) : null}
+              {tagsList.map((tag) => (
+                <span
+                  key={tag.id}
+                  className="rounded px-1.5 py-0.5 text-[11px] font-medium text-accent"
+                  style={tag.color ? { backgroundColor: tag.color, color: "#fff" } : undefined}
+                >
+                  #{tag.name}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
-        {snippet(note.body_markdown) ? (
-          <p className="mt-1 line-clamp-2 text-sm text-secondary">{snippet(note.body_markdown)}</p>
-        ) : (
-          <p className="mt-1 text-sm text-faint">No content yet.</p>
-        )}
-
-        {(note.project || tagsList.length > 0) && (
-          <div className="mt-2.5 flex flex-wrap items-center gap-2">
-            {note.project ? (
-              <span className="inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 text-[11px] font-medium text-secondary">
-                <span
-                  className="size-2 rounded-full"
-                  style={projectColorStyle(note.project.color)}
-                  aria-hidden
-                />
-                {note.project.name}
-              </span>
-            ) : null}
-            {tagsList.map((tag) => (
-              <span
-                key={tag.id}
-                className="rounded px-1.5 py-0.5 text-[11px] font-medium text-accent"
-                style={tag.color ? { backgroundColor: tag.color, color: "#fff" } : undefined}
-              >
-                #{tag.name}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <span className="shrink-0 text-xs text-faint">
-        {formatDistanceToNow(new Date(note.updated_at), { addSuffix: true })}
-      </span>
-    </Link>
+        <span className="shrink-0 text-xs text-faint">
+          {formatDistanceToNow(new Date(note.updated_at), { addSuffix: true })}
+        </span>
+      </Link>
+    </motion.div>
   );
 }

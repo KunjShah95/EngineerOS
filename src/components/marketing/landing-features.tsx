@@ -4,10 +4,14 @@ import {
   CalendarDays,
   CheckSquare,
   FileText,
+  GitFork,
   Hash,
   Link2,
+  MessageSquareText,
   Pin,
   Search,
+  Sparkles,
+  Workflow,
   Zap,
 } from "lucide-react";
 
@@ -18,14 +22,14 @@ export function LandingFeatures() {
   return (
     <section id="features" className="relative py-28">
       <div className="mx-auto w-full max-w-6xl px-6">
-        <Reveal>
+        <Reveal className="text-center">
           <p className="font-mono text-[11px] tracking-widest text-accent uppercase">
             The model
           </p>
-          <h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+          <h2 className="mx-auto mt-4 max-w-2xl text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
             Six objects. Every artifact.
           </h2>
-          <p className="mt-4 max-w-xl text-base leading-relaxed text-secondary">
+          <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-secondary">
             EngineerOS is built on six core objects: User, Workspace, Project,
             Task, Note, and Daily Note. Everything else is derived from them,
             so nothing ever lives in a dead end.
@@ -100,6 +104,64 @@ export function LandingFeatures() {
               title="Everything is linkable"
               body="Link a note to a task. File a note under a project. The graph is already there waiting for you."
               visual={<LinkVisual />}
+            />
+          </Reveal>
+        </div>
+
+        {/* AI Layer */}
+        <Reveal className="mt-20 text-center">
+          <div className="flex items-center gap-4">
+            <div className="h-px flex-1 bg-border-subtle" />
+            <span className="font-mono text-[11px] tracking-widest text-accent uppercase">
+              AI Layer
+            </span>
+            <div className="h-px flex-1 bg-border-subtle" />
+          </div>
+          <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-secondary">
+            Every note and task is indexed automatically. Ask questions in plain
+            English, follow citations back to the source, and watch your
+            knowledge graph grow as you write.
+          </p>
+        </Reveal>
+
+        <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-6">
+          <Reveal className="md:col-span-3" delay={0}>
+            <FeatureCard
+              icon={Search}
+              iconClass="text-accent bg-accent-muted"
+              title="Semantic search, not just keywords"
+              body="Ask in plain English. The index finds the right note even when you don't remember the exact words."
+              visual={<SemanticVisual />}
+            />
+          </Reveal>
+
+          <Reveal className="md:col-span-3" delay={0.06}>
+            <FeatureCard
+              icon={MessageSquareText}
+              iconClass="text-[#818cf8] bg-[#818cf8]/10"
+              title="AI assistant with citations"
+              body="Ask questions about your workspace and get grounded answers with links back to the exact notes they came from."
+              visual={<AssistantVisual />}
+            />
+          </Reveal>
+
+          <Reveal className="md:col-span-3" delay={0}>
+            <FeatureCard
+              icon={GitFork}
+              iconClass="text-info bg-info/10"
+              title="Knowledge graph"
+              body="See how your notes connect via wikilinks and task links. Filter by project, drag nodes, and discover hidden relationships."
+              visual={<GraphVisual />}
+            />
+          </Reveal>
+
+          <Reveal className="md:col-span-3" delay={0.06}>
+            <FeatureCard
+              icon={Workflow}
+              iconClass="text-success bg-success/10"
+              title="Automation rules"
+              body="Recurring tasks create themselves. Quick captures auto-triage by keyword. Yesterday's unfinished work rolls over to today."
+              visual={<AutomationVisual />}
             />
           </Reveal>
         </div>
@@ -325,6 +387,112 @@ function LinkVisual() {
             {t}
           </span>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function SemanticVisual() {
+  return (
+    <div className="rounded-lg border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-accent/30">
+      <div className="flex items-center gap-1.5 rounded border border-border-subtle bg-elevated px-2 py-1.5">
+        <Sparkles className="size-2.5 text-accent" strokeWidth={1.75} />
+        <span className="text-[9px] text-faint">how does auth work?</span>
+        <span className="ml-auto h-2 w-px animate-pulse bg-accent" />
+      </div>
+      <div className="mt-2 space-y-1">
+        {[
+          { label: "Supabase auth setup notes", score: "0.94", kind: "note" },
+          { label: "Auth middleware task", score: "0.87", kind: "task" },
+          { label: "JWT refresh flow", score: "0.81", kind: "note" },
+        ].map(({ label, score, kind }) => (
+          <div key={label} className="flex items-center gap-1.5 rounded px-1.5 py-1 text-[9px] text-secondary transition-colors duration-150 group-hover:bg-surface-hover">
+            {kind === "note"
+              ? <FileText className="size-2.5 text-accent shrink-0" strokeWidth={1.75} />
+              : <CheckSquare className="size-2.5 text-success shrink-0" strokeWidth={1.75} />
+            }
+            <span className="flex-1 truncate">{label}</span>
+            <span className="font-mono text-[8px] text-faint">{score}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AssistantVisual() {
+  return (
+    <div className="space-y-2 rounded-lg border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-accent/30">
+      <div className="flex justify-end">
+        <span className="max-w-[80%] rounded-lg bg-accent-muted px-2 py-1.5 text-[9px] text-accent">
+          How do I structure a new feature?
+        </span>
+      </div>
+      <div className="flex items-start gap-1.5">
+        <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded bg-gradient-to-br from-[#4f46e5] to-[#1e40af]">
+          <Sparkles className="size-2.5 text-white" strokeWidth={2} />
+        </span>
+        <div className="rounded-lg border border-border-subtle bg-surface px-2 py-1.5 text-[9px] leading-relaxed text-foreground">
+          Start with the data model, then the API route, then the hook…
+          <div className="mt-1.5 flex items-center gap-1">
+            <FileText className="size-2.5 text-accent" strokeWidth={1.75} />
+            <span className="font-mono text-[8px] text-accent">Architecture notes</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GraphVisual() {
+  return (
+    <div className="rounded-lg border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-accent/30">
+      <svg viewBox="0 0 120 64" className="w-full" aria-hidden>
+        {/* edges */}
+        <line x1="60" y1="32" x2="22" y2="14" stroke="var(--border-default)" strokeWidth="1" />
+        <line x1="60" y1="32" x2="98" y2="14" stroke="var(--border-default)" strokeWidth="1" />
+        <line x1="60" y1="32" x2="22" y2="50" stroke="var(--border-default)" strokeWidth="1" />
+        <line x1="60" y1="32" x2="98" y2="50" stroke="var(--border-default)" strokeWidth="1" className="transition-all duration-300 group-hover:stroke-accent/50" />
+        <line x1="22" y1="14" x2="98" y2="14" stroke="var(--border-subtle)" strokeWidth="0.75" strokeDasharray="3 2" />
+        {/* center node */}
+        <circle cx="60" cy="32" r="6" fill="var(--accent)" opacity="0.9" />
+        {/* leaf nodes */}
+        <circle cx="22" cy="14" r="4" fill="var(--bg-elevated)" stroke="var(--border-default)" strokeWidth="1" />
+        <circle cx="98" cy="14" r="4" fill="var(--bg-elevated)" stroke="var(--border-default)" strokeWidth="1" />
+        <circle cx="22" cy="50" r="4" fill="var(--bg-elevated)" stroke="var(--border-default)" strokeWidth="1" />
+        <circle cx="98" cy="50" r="4" fill="var(--bg-elevated)" stroke="var(--accent)" strokeWidth="1" className="transition-all duration-300 group-hover:fill-accent/20" />
+        {/* labels */}
+        <text x="60" y="32" textAnchor="middle" dominantBaseline="central" fontSize="4" fill="white" fontWeight="600">OS</text>
+        <text x="22" y="14" textAnchor="middle" dominantBaseline="central" fontSize="3.5" fill="var(--text-secondary)">Auth</text>
+        <text x="98" y="14" textAnchor="middle" dominantBaseline="central" fontSize="3.5" fill="var(--text-secondary)">API</text>
+        <text x="22" y="50" textAnchor="middle" dominantBaseline="central" fontSize="3.5" fill="var(--text-secondary)">DB</text>
+        <text x="98" y="50" textAnchor="middle" dominantBaseline="central" fontSize="3.5" fill="var(--text-accent)">Tasks</text>
+      </svg>
+      <div className="mt-1 flex gap-2 text-[8px] text-faint">
+        <span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-accent inline-block" />note link</span>
+        <span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-info inline-block" />task link</span>
+        <span className="flex items-center gap-1"><span className="h-px w-3 border-t border-dashed border-border-default inline-block" />wikilink</span>
+      </div>
+    </div>
+  );
+}
+
+function AutomationVisual() {
+  return (
+    <div className="space-y-2 rounded-lg border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-accent/30">
+      {[
+        { label: "Daily standup", cadence: "Daily", color: "bg-accent" },
+        { label: "Weekly review", cadence: "Weekly", color: "bg-info" },
+      ].map((rule) => (
+        <div key={rule.label} className="flex items-center gap-2 rounded border border-border-subtle bg-surface px-2 py-1.5">
+          <span className={cn("size-1.5 shrink-0 rounded-full", rule.color)} />
+          <span className="flex-1 truncate text-[9px] text-foreground">{rule.label}</span>
+          <span className="rounded bg-surface-hover px-1.5 py-0.5 font-mono text-[7px] text-faint">{rule.cadence}</span>
+        </div>
+      ))}
+      <div className="flex items-center gap-1.5 rounded border border-dashed border-success/40 bg-success/5 px-2 py-1.5">
+        <Zap className="size-2.5 shrink-0 text-success" strokeWidth={1.75} />
+        <span className="text-[9px] text-success">2 tasks created · rollover done</span>
       </div>
     </div>
   );

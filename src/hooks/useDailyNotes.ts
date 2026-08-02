@@ -112,7 +112,7 @@ export function useDailyNotesInRange(workspaceId: string | null, from: string, t
         .lte("date", to);
 
       if (error) throw error;
-      return (data ?? []).map((r) => r.date as string);
+      return (data ?? []).map((r: { date: string }) => r.date);
     },
     enabled: Boolean(workspaceId) && Boolean(from) && Boolean(to),
   });
