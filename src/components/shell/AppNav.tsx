@@ -3,14 +3,20 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  BookOpenText,
+  Bookmark,
   Calendar,
   CalendarDays,
   CheckSquare,
+  Code2,
   FileText,
   FolderKanban,
   LayoutDashboard,
+  Network,
   Search,
   Settings,
+  Users,
+  MessageSquareText,
 } from "lucide-react";
 
 import { useUiStore } from "@/lib/store/ui";
@@ -23,6 +29,13 @@ const navItems = [
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/notes", label: "Notes", icon: FileText },
   { href: "/daily", label: "Daily", icon: CalendarDays },
+  { href: "/code", label: "Code", icon: Code2 },
+  { href: "/bookmarks", label: "Bookmarks", icon: Bookmark },
+  { href: "/reading", label: "Reading", icon: BookOpenText },
+  { href: "/architecture", label: "Architecture", icon: Network },
+  { href: "/meetings", label: "Meetings", icon: Users },
+  { href: "/mindmap", label: "Mind map", icon: Network },
+  { href: "/pdf-chat", label: "PDF chat", icon: MessageSquareText },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
