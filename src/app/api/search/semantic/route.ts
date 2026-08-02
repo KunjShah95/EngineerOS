@@ -37,17 +37,31 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ mode: "local-keyword", chunks: [] }, { status: 200 });
   }
 
+  const limit = Number.isFinite(body?.limit) ? Math.min(Math.max(Math.floor(body?.limit ?? 12), 1), 50) : 12;
+
   try {
     const { data, error } = await supabase.rpc("semantic_search", {
       q_workspace: workspace.id,
       q_embedding: embedding,
-      q_limit: body?.limit ?? 12,
+      q_limit: limit,
     });
     if (error) throw error;
     return NextResponse.json({ mode: "embeddings", chunks: (data as unknown[]) ?? [] });
-  } catch {
-    // No live Supabase / no RPC yet — signal local mode; the client-side
-    // keyword retriever (Task 5) fills results.
+  } catch (error) {
+    const message = (error as Error)?.message ?? "";
+    const code = (error as { code?: unknown })?.code;
+    const looksMissing = message.includes("does not exist") || message.includes("function") || code === "PGRST202" || code === "42883";
+
+    if (!looksMissing) {
+      console.error("[semantic-search]", error);
+      return NextResponse.json(
+        { error: "semantic-search-failed", detail: message, mode: "error" },
+        { status: 500 },
+      );
+    }
+
+    // The RPC/migration isn't installed yet — signal local mode; the
+    // client-side keyword retriever (Task 5) fills results.
     return NextResponse.json({ mode: "local-keyword", chunks: [] }, { status: 200 });
   }
 }
