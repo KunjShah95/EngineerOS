@@ -157,7 +157,7 @@ export function useUpdateResource(resourceId: string, workspaceId: string | null
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["resource", resourceId] });
-      queryClient.invalidateQueries({ queryKey: ["resources"] });
+      queryClient.invalidateQueries({ queryKey: ["resources", workspaceId ?? ""] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
     },
   });
@@ -178,7 +178,7 @@ export function useDeleteResource(resourceId: string, workspaceId: string | null
       if (error) throw error;
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["resources"] });
+      queryClient.invalidateQueries({ queryKey: ["resources", workspaceId ?? ""] });
       queryClient.invalidateQueries({ queryKey: ["resource", resourceId] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
     },
@@ -211,7 +211,7 @@ export function useSetResourceTags(resourceId: string, workspaceId: string | nul
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["resource", resourceId] });
-      queryClient.invalidateQueries({ queryKey: ["resources"] });
+      queryClient.invalidateQueries({ queryKey: ["resources", workspaceId ?? ""] });
       queryClient.invalidateQueries({ queryKey: ["tags"] });
     },
   });
