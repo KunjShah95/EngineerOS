@@ -34,16 +34,15 @@ function snippet(body: string): string {
 
 export function ResourceList({
   kind,
-  icon,
   title,
   emptyDescription,
 }: {
   kind: ResourceKind;
-  icon: typeof Pin;
   title: string;
   emptyDescription: string;
 }) {
   const meta = getResourceKindMeta(kind);
+  const icon = meta.icon;
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: workspace } = useWorkspace();
