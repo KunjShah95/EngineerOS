@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, CalendarRange } from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarRange, Download } from "lucide-react";
 
 import type { DayCellData } from "@/components/calendar/DayCell";
 import { UnscheduledStrip } from "@/components/calendar/UnscheduledStrip";
@@ -69,6 +69,18 @@ export function CalendarPage() {
           <p className="text-sm text-faint">{formatWeekRange(weekStart)}</p>
         </div>
         <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label="Export calendar (iCal)"
+            title="Export due tasks as .ics"
+            onClick={() => {
+              window.location.href = "/api/calendar/export";
+            }}
+          >
+            <Download className="size-4" strokeWidth={1.75} />
+            iCal
+          </Button>
           <Button
             variant="ghost"
             size="icon"

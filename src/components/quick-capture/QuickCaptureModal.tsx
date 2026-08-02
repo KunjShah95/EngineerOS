@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { CheckSquare, FileText, Inbox, Zap } from "lucide-react";
+import { CheckSquare, FileText, Inbox, Mic, Zap } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -23,8 +23,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCreateCapture } from "@/hooks/useCaptures";
+import { useCreateNote } from "@/hooks/useNotes";
+import { useCreateVoiceNote } from "@/hooks/useVoiceNotes";
 import { useProjects } from "@/hooks/useProjects";
 import { useUiStore } from "@/lib/store/ui";
+import { VoiceRecorder } from "@/components/voice/VoiceRecorder";
 import { cn } from "@/lib/utils";
 
 type Destination = "note" | "task" | "inbox";
@@ -44,6 +47,10 @@ export function QuickCaptureModal({ workspaceId }: { workspaceId: string }) {
 
   const { data: projects } = useProjects(workspaceId);
   const createCapture = useCreateCapture(workspaceId);
+  const createNote = useCreateNote(workspaceId);
+  const createVoiceNote = useCreateVoiceNote();
+
+
 
   const submit = async () => {
     if (!text.trim()) return;
@@ -77,6 +84,37 @@ export function QuickCaptureModal({ workspaceId }: { workspaceId: string }) {
         </DialogHeader>
 
         <div className="space-y-4">
+          <div className="flex items-center gap-2 rounded-lg border border-border-subtle bg-base px-3 py-2">
+            <Mic className="size-4 shrink-0 text-accent" strokeWidth={1.75} />
+            <div className="flex-1">
+              <VoiceRecorder
+                workspaceId={workspaceId}
+                compact
+                onSave={async (blob, durationMs) => {
+                  const note = await createNote.mutateAsync({
+                    title: `Voice note · ${new Date().toLocaleDateString()}`,
+                    body_markdown: "",
+                    project_id: projectId === "none" ? null : projectId,
+                  });
+                  await createVoiceNote.mutateAsync({
+                    workspaceId,
+                    noteId: note.id,
+                    audio: blob,
+                    durationMs,
+                  });
+                  toast.success("Voice note captured");
+                  setOpen(false);
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 text-xs text-faint">
+            <span className="h-px flex-1 bg-border-subtle" />
+            or type
+            <span className="h-px flex-1 bg-border-subtle" />
+          </div>
+
           <Textarea
             placeholder="What's on your mind?"
             value={text}

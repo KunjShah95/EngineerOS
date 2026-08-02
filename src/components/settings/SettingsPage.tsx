@@ -25,6 +25,7 @@ import { useThemeStore } from "@/lib/store/theme";
 import { createClient } from "@/lib/supabase/client";
 import { useSyncedState } from "@/lib/use-synced-state";
 import { useQueryClient } from "@tanstack/react-query";
+import { GitHubSection } from "@/components/integrations/GitHubSection";
 
 export function SettingsPage() {
   const router = useRouter();
@@ -207,6 +208,12 @@ export function SettingsPage() {
           </div>
           <p className="text-xs text-faint">One workspace per account in this version.</p>
         </div>
+      </section>
+
+      {/* Integrations */}
+      <section className="rounded-lg border border-default bg-surface p-5">
+        <h2 className="mb-4 text-sm font-semibold">Integrations</h2>
+        <GitHubSection workspaceId={workspace.id} />
       </section>
 
       {/* Appearance */}

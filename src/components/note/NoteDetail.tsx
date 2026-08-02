@@ -12,6 +12,8 @@ import {
   Pencil,
   Pin,
   PinOff,
+  RefreshCw,
+  Sparkles,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -37,6 +39,9 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { useDebouncedCallback } from "@/lib/use-debounced-callback";
 import { useSyncedState } from "@/lib/use-synced-state";
 import { cn } from "@/lib/utils";
+import { useAiSummary, useGenerateSummary } from "@/hooks/useAiSummary";
+import { VoiceRecorder } from "@/components/voice/VoiceRecorder";
+import { VoiceNotesList } from "@/components/voice/VoiceNotesList";
 
 type EditorMode = "edit" | "preview";
 
@@ -58,6 +63,7 @@ export function NoteDetail({ noteId }: { noteId: string }) {
   const [title, setTitle] = useSyncedState(note?.title ?? "");
   const [body, setBody] = useSyncedState(note?.body_markdown ?? "");
   const [justSaved, setJustSaved] = useState(false);
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
 
   useEffect(() => {
     if (justSaved) {
@@ -76,6 +82,9 @@ export function NoteDetail({ noteId }: { noteId: string }) {
       { onSuccess: () => setJustSaved(true), onError: () => toast.error("Failed to save note") }
     );
   }, 600);
+
+  const { data: aiSummary } = useAiSummary(workspaceId, "note", noteId);
+  const generateSummary = useGenerateSummary(workspaceId, "note", noteId);
 
   if (isLoading || !workspace) return <PageLoader label="Loading note…" />;
 
@@ -210,6 +219,57 @@ export function NoteDetail({ noteId }: { noteId: string }) {
         <span className="ml-auto">
           Updated {new Date(note.updated_at).toLocaleString()}
         </span>
+      </div>
+
+      {/* AI summary + voice notes live under the editor */}
+      <div className="mb-6 space-y-4">
+        {(aiSummary || summaryExpanded) && (
+          <div className="rounded-lg border border-border-subtle bg-surface p-4">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-accent uppercase">
+                <Sparkles className="size-3.5" strokeWidth={1.75} />
+                AI summary
+              </p>
+              <span className="font-mono text-[10px] text-faint">
+                {aiSummary?.model === "local-extractive" ? "local mode" : aiSummary?.model ?? ""}
+              </span>
+            </div>
+            {generateSummary.isPending && !aiSummary ? (
+              <p className="flex items-center gap-2 text-sm text-faint">
+                <Loader2 className="size-3.5 animate-spin" strokeWidth={1.75} />
+                Summarizing…
+              </p>
+            ) : (
+              <p className="text-sm leading-relaxed text-secondary">
+                {aiSummary?.summary ?? generateSummary.data?.summary ?? ""}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={() => generateSummary.mutate()}
+              disabled={generateSummary.isPending}
+              className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-accent transition-colors hover:text-accent-hover disabled:opacity-50"
+            >
+              <RefreshCw className="size-3" strokeWidth={1.75} />
+              {aiSummary ? "Regenerate" : "Generate"}
+            </button>
+          </div>
+        )}
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSummaryExpanded(true)}
+            disabled={summaryExpanded || Boolean(aiSummary)}
+          >
+            <Sparkles className="size-3.5" strokeWidth={1.75} />
+            Summarize with AI
+          </Button>
+          <VoiceRecorder workspaceId={workspace.id} noteId={noteId} compact />
+        </div>
+
+        <VoiceNotesList workspaceId={workspace.id} noteId={noteId} />
       </div>
 
       {mode === "edit" ? (
