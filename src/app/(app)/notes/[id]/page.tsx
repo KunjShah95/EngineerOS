@@ -1,5 +1,4 @@
-import { FileText } from "lucide-react";
-import { EmptyState } from "@/components/shell/EmptyState";
+import { NoteDetail } from "@/components/note/NoteDetail";
 
 export default async function SingleNotePage({
   params,
@@ -7,11 +6,7 @@ export default async function SingleNotePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return (
-    <EmptyState
-      icon={FileText}
-      title="Note"
-      description={`Markdown editor and preview for note ${id} will render here.`}
-    />
-  );
+
+  // Keyed by id so client state resets when navigating between notes.
+  return <NoteDetail key={id} noteId={id} />;
 }

@@ -11,6 +11,8 @@ import {
   Search,
   Settings,
 } from "lucide-react";
+
+import { useUiStore } from "@/lib/store/ui";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -24,6 +26,7 @@ const navItems = [
 
 export function AppNav() {
   const pathname = usePathname();
+  const setCommandPaletteOpen = useUiStore((s) => s.setCommandPaletteOpen);
 
   return (
     <nav className="flex flex-1 flex-col gap-1 p-3" aria-label="Primary">
@@ -44,13 +47,18 @@ export function AppNav() {
           </Link>
         );
       })}
+
       <button
         type="button"
-        aria-label="Search — coming soon"
+        onClick={() => setCommandPaletteOpen(true)}
+        aria-label="Search (⌘K)"
         className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-secondary transition-colors duration-150 hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
       >
         <Search className="size-4 shrink-0" strokeWidth={1.75} />
         Search
+        <kbd className="ml-auto rounded border border-border-subtle bg-elevated px-1.5 py-0.5 text-[10px] font-medium text-faint">
+          ⌘K
+        </kbd>
       </button>
     </nav>
   );
