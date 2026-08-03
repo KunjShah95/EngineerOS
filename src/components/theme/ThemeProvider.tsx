@@ -13,6 +13,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
+    // Keep the `.dark` class in sync so shadcn `dark:` variants and any
+    // library that checks for the class work alongside the data-theme attr.
+    document.documentElement.classList.toggle("dark", theme === "dark");
     try {
       window.localStorage.setItem(THEME_STORAGE_KEY, theme);
     } catch {

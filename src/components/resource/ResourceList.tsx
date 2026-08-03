@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Pin, Plus } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -70,8 +71,12 @@ export function ResourceList({
   };
 
   const newResource = async () => {
-    const resource = await createResource.mutateAsync({});
-    router.push(`/${kind}/${resource.id}`);
+    try {
+      const resource = await createResource.mutateAsync({});
+      router.push(`/${kind}/${resource.id}`);
+    } catch {
+      toast.error(`Failed to create ${meta.label.toLowerCase()}. Please try again.`);
+    }
   };
 
   const EmptyIcon = icon;
@@ -122,6 +127,7 @@ export function ResourceList({
               : emptyDescription
           }
           actionLabel={projectFilter !== "all" ? undefined : "New"}
+          onAction={projectFilter !== "all" ? undefined : () => void newResource()}
         />
       ) : (
         <div className="space-y-2">

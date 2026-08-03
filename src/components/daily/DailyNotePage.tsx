@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageLoader } from "@/components/shell/PageLoader";
 import { PageHeader } from "@/components/shell/PageHeader";
+import { EmptyState } from "@/components/shell/EmptyState";
 import { DAILY_SECTIONS, useDailyNote, useUpdateDailyNote } from "@/hooks/useDailyNotes";
 import { useTasks, useUpdateTask } from "@/hooks/useTasks";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -25,7 +26,7 @@ export function DailyNotePage({ date }: { date: string }) {
   const { data: workspace } = useWorkspace();
   const workspaceId = workspace?.id ?? null;
 
-  const { data: dailyNote, isLoading } = useDailyNote(workspaceId, date);
+  const { data: dailyNote, isLoading, isError } = useDailyNote(workspaceId, date);
   const updateDailyNote = useUpdateDailyNote(workspaceId, date);
   const { data: todaysTasks } = useTasks(workspaceId, { dueDate: date });
   const updateTask = useUpdateTask(workspaceId);
@@ -38,6 +39,18 @@ export function DailyNotePage({ date }: { date: string }) {
   const doneTasks = (todaysTasks ?? []).filter((t) => t.status === "done");
 
   if (isLoading || !workspace) return <PageLoader label="Opening today's note…" />;
+
+  if (isError) {
+    return (
+      <div className="p-6">
+        <EmptyState
+          icon={CalendarDays}
+          title="Couldn't open your daily note"
+          description="There was a problem loading this day's note. Try refreshing the page."
+        />
+      </div>
+    );
+  }
 
   if (!dailyNote) {
     return (

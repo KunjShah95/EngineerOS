@@ -9,9 +9,10 @@ interface EmptyStateProps {
   title: string;
   description?: string;
   actionLabel?: string;
+  onAction?: () => void;
 }
 
-export function EmptyState({ icon: Icon, title, description, actionLabel }: EmptyStateProps) {
+export function EmptyState({ icon: Icon, title, description, actionLabel, onAction }: EmptyStateProps) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
       <motion.div
@@ -33,7 +34,7 @@ export function EmptyState({ icon: Icon, title, description, actionLabel }: Empt
           <p className="max-w-sm text-sm text-faint">{description}</p>
         ) : null}
         {actionLabel ? (
-          <Button className="mt-2">
+          <Button className="mt-2" onClick={onAction}>
             {actionLabel}
           </Button>
         ) : null}

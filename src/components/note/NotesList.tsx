@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FileText, Hash, Pin, Plus } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -73,8 +74,12 @@ export function NotesList() {
   };
 
   const newNote = async () => {
-    const note = await createNote.mutateAsync({});
-    router.push(`/notes/${note.id}`);
+    try {
+      const note = await createNote.mutateAsync({});
+      router.push(`/notes/${note.id}`);
+    } catch {
+      toast.error("Failed to create note. Please try again.");
+    }
   };
 
   return (
@@ -123,6 +128,7 @@ export function NotesList() {
               : "Pinned notes surface here, filterable by project and tag. Write your first markdown note to get started."
           }
           actionLabel={tagFilter !== "all" || projectFilter !== "all" ? undefined : "New Note"}
+          onAction={tagFilter !== "all" || projectFilter !== "all" ? undefined : () => void newNote()}
         />
       ) : (
         <div className="space-y-2">

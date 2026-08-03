@@ -71,7 +71,7 @@ export default function RootLayout({
           id="theme-init"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=window.localStorage.getItem('engineeros-theme');if(t==='light'){document.documentElement.dataset.theme='light'}}catch(e){}})();`,
+            __html: `(function(){try{var t=window.localStorage.getItem('engineeros-theme');if(t==='light'){document.documentElement.dataset.theme='light';document.documentElement.classList.remove('dark')}else{document.documentElement.classList.add('dark')}}catch(e){}})();`,
           }}
         />
         {process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN ? (

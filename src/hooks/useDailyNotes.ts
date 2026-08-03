@@ -31,22 +31,45 @@ export type DailySectionKey =
   | "tomorrow";
 
 /**
- * Idempotent auto-create: upserts against the (workspace_id, date) unique
- * constraint, ignoring duplicates — safe to call on every visit/refresh.
+ * Idempotent auto-create: selects the existing note, or inserts it when
+ * missing. Implemented as select-then-insert (with a re-read to resolve
+ * concurrent-create races) instead of `.upsert({ ignoreDuplicates: true })
+ * .select().single()`, which is a known Supabase gotcha — on a re-visit the
+ * existing row is treated as an ignored duplicate, zero rows are returned,
+ * and `.single()` throws PGRST116, breaking the page on every refresh.
  */
 async function getOrCreateDailyNote(workspaceId: string, date: string): Promise<DailyNote> {
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from("daily_notes")
-    .upsert(
-      { workspace_id: workspaceId, date },
-      { onConflict: "workspace_id,date", ignoreDuplicates: true }
-    )
-    .select()
-    .single();
 
-  if (error) throw error;
-  return data as DailyNote;
+  // Already exists? Just return it.
+  const { data: existing, error: selectError } = await supabase
+    .from("daily_notes")
+    .select("*")
+    .eq("workspace_id", workspaceId)
+    .eq("date", date)
+    .maybeSingle();
+  if (selectError) throw selectError;
+  if (existing) return existing as DailyNote;
+
+  // Missing — create it. Use maybeSingle so a successful insert returns the row.
+  const { data: inserted, error: insertError } = await supabase
+    .from("daily_notes")
+    .insert({ workspace_id: workspaceId, date })
+    .select()
+    .maybeSingle();
+  if (!insertError && inserted) return inserted as DailyNote;
+
+  // The insert may have failed because another request created the row first.
+  const { data: raced, error: raceError } = await supabase
+    .from("daily_notes")
+    .select("*")
+    .eq("workspace_id", workspaceId)
+    .eq("date", date)
+    .maybeSingle();
+  if (raceError) throw raceError;
+  if (raced) return raced as DailyNote;
+
+  throw insertError ?? new Error("Failed to create daily note");
 }
 
 export function useDailyNote(workspaceId: string | null, date: string) {

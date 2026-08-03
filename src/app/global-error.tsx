@@ -15,7 +15,7 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <html lang="en" data-theme="dark">
+    <html lang="en" data-theme="dark" className="dark">
       <body className="min-h-full flex flex-col antialiased">
         <main className="flex min-h-screen flex-col items-center justify-center bg-base px-6 py-16 text-foreground">
           <div className="w-full max-w-sm text-center">

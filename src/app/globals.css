@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is([data-theme="dark"] *));
 
 @theme inline {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
@@ -119,6 +119,14 @@
 @layer base {
   * {
     border-color: var(--border-default);
+  }
+  /* Force form controls to inherit text color so the app theme (not the
+     browser's OS-level fieldtext) controls typed-text contrast. Without
+     this, inputs in dark mode can render invisible dark-on-dark text. */
+  input,
+  textarea,
+  select {
+    color: inherit;
   }
   body {
     background-color: var(--bg-base);
