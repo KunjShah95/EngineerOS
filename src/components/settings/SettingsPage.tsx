@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Bell, LogOut, Mail, Moon, ShieldAlert, Sun, Upload } from "lucide-react";
+import { Bell, LogOut, Mail, Moon, Settings, ShieldAlert, Sun, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/shell/PageHeader";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -162,10 +163,11 @@ export function SettingsPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6 p-6">
-      <div>
-        <h1 className="text-lg font-semibold">Settings</h1>
-        <p className="text-sm text-secondary">Manage your profile, workspace, and account.</p>
-      </div>
+      <PageHeader
+        icon={Settings}
+        title="Settings"
+        description="Manage your profile, workspace, and account."
+      />
 
       {/* Profile */}
       <section className="rounded-lg border border-default bg-surface p-5">

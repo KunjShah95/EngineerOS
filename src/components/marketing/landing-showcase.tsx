@@ -60,7 +60,7 @@ export function LandingShowcase() {
           <p className="font-mono text-[11px] tracking-widest text-accent uppercase">
             The board
           </p>
-          <h2 className="mt-4 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
             One workspace. Zero context switching.
           </h2>
           <p className="mt-4 text-base leading-relaxed text-secondary">

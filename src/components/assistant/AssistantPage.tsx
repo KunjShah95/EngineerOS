@@ -8,6 +8,7 @@ import { Bot, FileText, Loader2, MessageSquareText, Plus, RefreshCw, Send, Spark
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shell/EmptyState";
 import { PageLoader } from "@/components/shell/PageLoader";
+import { PageHeader } from "@/components/shell/PageHeader";
 import {
   useAskAssistant,
   useCreateThread,
@@ -142,20 +143,20 @@ export function AssistantPage() {
 
   return (
     <div className="mx-auto flex h-full w-full max-w-6xl flex-col px-6 py-5">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-2 text-lg font-semibold">
-            <Sparkles className="size-4 text-accent" strokeWidth={1.75} />
-            Assistant
-          </h1>
-          <p className="text-sm text-faint">
+      <PageHeader
+        icon={Sparkles}
+        title="Assistant"
+        className="mb-4"
+        description={
+          <>
             Ask questions across your notes, tasks, projects, and PDFs.
             {aiConfig?.configured
               ? " Answers cite the sources they came from."
               : " Local mode — no OPENAI_API_KEY set, so answers quote the closest passages."}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+          </>
+        }
+        actions={
+          <div className="flex items-center gap-2">
           {aiConfig?.configured && (
             <Button
               variant="ghost"
@@ -177,8 +178,9 @@ export function AssistantPage() {
             <Plus className="size-3.5" strokeWidth={1.75} />
             New chat
           </Button>
-        </div>
-      </div>
+          </div>
+        }
+      />
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[240px_1fr]">
         {/* Thread sidebar */}

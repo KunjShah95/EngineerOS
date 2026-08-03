@@ -6,10 +6,10 @@ import { useInView } from "motion/react";
 import { Reveal } from "@/components/marketing/reveal";
 
 const METRICS = [
-  { value: 30, suffix: "", label: "Notes" },
-  { value: 100, suffix: "", label: "Tasks" },
-  { value: 5, suffix: "", label: "Projects" },
-  { value: 7, suffix: "", label: "Daily notes" },
+  { value: 47, suffix: "", label: "Notes" },
+  { value: 128, suffix: "", label: "Tasks" },
+  { value: 12, suffix: "", label: "Projects" },
+  { value: 31, suffix: "", label: "Daily notes" },
 ];
 
 export function LandingMetrics() {
@@ -23,7 +23,7 @@ export function LandingMetrics() {
           <dl className="grid grid-cols-2 gap-8 md:grid-cols-4">
             {METRICS.map((metric) => (
               <div key={metric.label} className="text-center">
-                <dd className="font-mono text-4xl font-medium tracking-tight text-foreground tabular-nums md:text-5xl">
+                <dd className="font-display text-4xl font-semibold tracking-tight text-foreground tabular-nums md:text-5xl">
                   <CountUp to={metric.value} suffix={metric.suffix} />
                 </dd>
                 <dt className="mt-2 text-sm text-secondary">{metric.label}</dt>

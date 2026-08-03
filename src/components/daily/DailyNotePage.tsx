@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageLoader } from "@/components/shell/PageLoader";
+import { PageHeader } from "@/components/shell/PageHeader";
 import { DAILY_SECTIONS, useDailyNote, useUpdateDailyNote } from "@/hooks/useDailyNotes";
 import { useTasks, useUpdateTask } from "@/hooks/useTasks";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -59,23 +60,22 @@ export function DailyNotePage({ date }: { date: string }) {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-6">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <CalendarDays className="size-5 text-accent" strokeWidth={1.75} />
-          <div>
-            <h1 className="text-lg font-semibold">
-              {format(parsed, "EEEE, MMMM d")}
-              {isToday(parsed) ? (
-                <span className="ml-2 rounded bg-accent-muted px-1.5 py-0.5 text-[11px] font-medium text-accent">
-                  Today
-                </span>
-              ) : null}
-            </h1>
-            <p className="text-sm text-secondary">{format(parsed, "yyyy")}</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1.5">
+      <PageHeader
+        icon={CalendarDays}
+        className="mb-6"
+        title={
+          <>
+            {format(parsed, "EEEE, MMMM d")}
+            {isToday(parsed) ? (
+              <span className="ml-2 rounded-md bg-accent-muted px-1.5 py-0.5 text-[11px] font-medium text-accent">
+                Today
+              </span>
+            ) : null}
+          </>
+        }
+        description={format(parsed, "yyyy")}
+        actions={
+          <div className="flex items-center gap-1.5">
           <Button
             variant="ghost"
             size="icon"
@@ -104,8 +104,9 @@ export function DailyNotePage({ date }: { date: string }) {
               Today
             </Button>
           ) : null}
-        </div>
-      </div>
+          </div>
+        }
+      />
 
       <div className="space-y-4">
         {DAILY_SECTIONS.map((section) => {

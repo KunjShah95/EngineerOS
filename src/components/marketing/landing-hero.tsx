@@ -70,7 +70,7 @@ export function LandingHero() {
             AI-native · Semantic search · Knowledge graph
           </span>
 
-          <h1 className="mt-7 text-[clamp(2.2rem,5.5vw,3.75rem)] font-semibold leading-[1.08] tracking-tight text-foreground">
+          <h1 className="mt-7 font-display text-[clamp(2.2rem,5.5vw,3.75rem)] font-semibold leading-[1.08] tracking-tight text-foreground">
             Notes, tasks, projects and an AI
             that understands all of it.{" "}
             <span className="bg-gradient-to-r from-[#a5b4fc] via-accent to-[#1e40af] bg-clip-text text-transparent">

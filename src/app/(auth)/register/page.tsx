@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
-import { ArrowRight, MailCheck } from "lucide-react";
+import { ArrowRight, MailCheck, Terminal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,24 @@ const registerSchema = z.object({
 });
 
 type RegisterValues = z.infer<typeof registerSchema>;
+
+function AuthShell({ children }: { children: React.ReactNode }) {
+  return (
+    <main className="relative flex min-h-dvh items-center justify-center bg-base px-4 py-10 text-foreground">
+      {/* Grid backdrop */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,var(--border-subtle)_1px,transparent_1px),linear-gradient(to_bottom,var(--border-subtle)_1px,transparent_1px)] bg-[size:56px_56px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,black,transparent)]"
+      />
+      {/* Ambient glow */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-0 -z-10 h-72 w-[560px] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(79,70,229,0.16),transparent_70%)] blur-3xl"
+      />
+      {children}
+    </main>
+  );
+}
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -41,14 +59,17 @@ export default function RegisterPage() {
 
   if (confirmSent) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-base px-4 text-foreground">
+      <AuthShell>
         <div className="w-full max-w-sm text-center">
-          <div className="mx-auto mb-4 inline-flex rounded-md bg-accent-muted p-3">
-            <MailCheck className="size-6 text-accent" strokeWidth={1.75} />
+          <div className="mx-auto mb-5 flex size-11 items-center justify-center rounded-xl bg-accent-muted ring-1 ring-accent/20">
+            <MailCheck className="size-5 text-accent" strokeWidth={1.75} />
           </div>
-          <h1 className="text-lg font-semibold">Check your email</h1>
-          <p className="mt-2 text-sm text-secondary">
-            We sent a confirmation link to <span className="font-medium text-foreground">{confirmSent}</span>.
+          <h1 className="font-display text-2xl font-semibold tracking-tight">
+            Check your email
+          </h1>
+          <p className="mt-2 text-sm leading-relaxed text-secondary">
+            We sent a confirmation link to{" "}
+            <span className="font-medium text-foreground">{confirmSent}</span>.
             Click it to finish creating your account, then log in.
           </p>
           <div className="mt-6">
@@ -57,7 +78,7 @@ export default function RegisterPage() {
             </Link>
           </div>
         </div>
-      </main>
+      </AuthShell>
     );
   }
 
@@ -86,11 +107,19 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-base px-4 text-foreground">
+    <AuthShell>
       <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <p className="text-sm font-medium tracking-wide text-accent">EngineerOS</p>
-          <h1 className="mt-2 text-lg font-semibold">Create your account</h1>
+        <div className="mb-8 flex flex-col items-center text-center">
+          <Link
+            href="/"
+            aria-label="EngineerOS home"
+            className="flex size-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#6366f1] to-[#1e40af] shadow-[0_0_24px_-6px_var(--accent)]"
+          >
+            <Terminal className="size-5 text-white" strokeWidth={2} />
+          </Link>
+          <h1 className="mt-5 font-display text-2xl font-semibold tracking-tight">
+            Create your account
+          </h1>
           <p className="mt-1 text-sm text-secondary">
             Your workspace is created automatically.
           </p>
@@ -98,7 +127,7 @@ export default function RegisterPage() {
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="space-y-4 rounded-lg border border-default bg-surface p-6"
+          className="space-y-4 rounded-2xl border border-default bg-surface/80 p-6 shadow-elevated backdrop-blur-sm"
         >
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
@@ -142,13 +171,13 @@ export default function RegisterPage() {
           </Button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-secondary">
+        <p className="mt-5 text-center text-sm text-secondary">
           Already have an account?{" "}
           <Link href="/login" className="font-medium text-accent hover:text-accent-hover">
             Log in
           </Link>
         </p>
       </div>
-    </main>
+    </AuthShell>
   );
 }

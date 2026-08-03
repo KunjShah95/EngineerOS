@@ -22,7 +22,7 @@ export function LandingCta() {
         <p className="font-mono text-[11px] tracking-widest text-accent uppercase">
           No setup debt
         </p>
-        <h2 className="mt-4 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+        <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl md:text-5xl">
           Start capturing everything today.
         </h2>
         <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-secondary">

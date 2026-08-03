@@ -8,6 +8,7 @@ import { UnscheduledStrip } from "@/components/calendar/UnscheduledStrip";
 import { WeekGrid } from "@/components/calendar/WeekGrid";
 import { EmptyState } from "@/components/shell/EmptyState";
 import { PageLoader } from "@/components/shell/PageLoader";
+import { PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useDailyNotesInRange } from "@/hooks/useDailyNotes";
 import { useTasks } from "@/hooks/useTasks";
@@ -63,12 +64,13 @@ export function CalendarPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-6">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold text-foreground">Calendar</h1>
-          <p className="text-sm text-faint">{formatWeekRange(weekStart)}</p>
-        </div>
-        <div className="flex items-center gap-1">
+      <PageHeader
+        icon={CalendarRange}
+        title="Calendar"
+        description={formatWeekRange(weekStart)}
+        className="mb-4"
+        actions={
+          <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
@@ -106,8 +108,9 @@ export function CalendarPage() {
           >
             <ChevronRight className="size-4" strokeWidth={1.75} />
           </Button>
-        </div>
-      </div>
+          </div>
+        }
+      />
 
       {isEmpty ? (
         <EmptyState

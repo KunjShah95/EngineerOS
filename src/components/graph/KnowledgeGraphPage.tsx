@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ExternalLink, GitFork, ZoomIn, ZoomOut } from "lucide-react";
 
 import { PageLoader } from "@/components/shell/PageLoader";
+import { PageHeader } from "@/components/shell/PageHeader";
 import { EmptyState } from "@/components/shell/EmptyState";
 import {
   ProjectFilter,
@@ -157,16 +158,13 @@ export function KnowledgeGraphPage() {
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
-        <div>
-          <h1 className="flex items-center gap-2 text-lg font-semibold">
-            <GitFork className="size-4 text-accent" strokeWidth={1.75} />
-            Knowledge graph
-          </h1>
-          <p className="text-sm text-faint">
-            {filtered.nodes.length} entities · {filtered.edges.length} connections — notes, tasks, resources &amp; backlinks
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
+        <PageHeader
+          icon={GitFork}
+          title="Knowledge graph"
+          className="mb-0"
+          description={`${filtered.nodes.length} entities · ${filtered.edges.length} connections — notes, tasks, resources & backlinks`}
+          actions={
+            <div className="flex items-center gap-3">
           <ProjectFilter
             value={projectFilter}
             onChange={changeProject}
@@ -189,11 +187,13 @@ export function KnowledgeGraphPage() {
             >
               <ZoomOut className="size-4" strokeWidth={1.75} />
             </button>
-            <span className="ml-2 font-mono text-xs text-faint">
-              {selected ? "click node to clear" : "drag to pan · scroll to zoom"}
-            </span>
-          </div>
-        </div>
+              <span className="ml-2 font-mono text-xs text-faint">
+                {selected ? "click node to clear" : "drag to pan · scroll to zoom"}
+              </span>
+            </div>
+            </div>
+          }
+        />
       </div>
 
       <div className="relative min-h-0 flex-1 overflow-hidden rounded-xl border border-default bg-surface/40 m-4 mt-0">

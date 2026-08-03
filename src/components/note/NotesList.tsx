@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/shell/PageHeader";
 import {
   Select,
   SelectContent,
@@ -78,35 +79,33 @@ export function NotesList() {
 
   return (
     <div className="p-6">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-lg font-semibold">Notes</h1>
-          <p className="text-sm text-secondary">
-            {filtered.length} {filtered.length === 1 ? "note" : "notes"}
-          </p>
-        </div>
+      <PageHeader
+        icon={FileText}
+        title="Notes"
+        description={`${filtered.length} ${filtered.length === 1 ? "note" : "notes"}`}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={projectFilter} onValueChange={setProject}>
+              <SelectTrigger size="sm" aria-label="Filter by project" className="min-w-36">
+                <SelectValue placeholder="All projects" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All projects</SelectItem>
+                {(projects ?? []).map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-        <div className="flex items-center gap-2">
-          <Select value={projectFilter} onValueChange={setProject}>
-            <SelectTrigger size="sm" aria-label="Filter by project" className="min-w-36">
-              <SelectValue placeholder="All projects" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All projects</SelectItem>
-              {(projects ?? []).map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Button size="sm" onClick={() => void newNote()} disabled={createNote.isPending}>
-            <Plus className="size-4" strokeWidth={1.75} />
-            New Note
-          </Button>
-        </div>
-      </div>
+            <Button size="sm" onClick={() => void newNote()} disabled={createNote.isPending}>
+              <Plus className="size-4" strokeWidth={1.75} />
+              New Note
+            </Button>
+          </div>
+        }
+      />
 
       {isLoading ? (
         <div className="space-y-2">

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
@@ -10,6 +10,12 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "sw
 const jetBrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-jetbrains-mono",
+  display: "swap",
+  preload: false,
+});
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space-grotesk",
   display: "swap",
   preload: false,
 });
@@ -58,7 +64,7 @@ export default function RootLayout({
     <html
       lang="en"
       data-theme="dark"
-      className={`${inter.variable} ${jetBrainsMono.variable} antialiased`}
+      className={`${inter.variable} ${jetBrainsMono.variable} ${spaceGrotesk.variable} antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <Script

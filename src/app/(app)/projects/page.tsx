@@ -6,6 +6,7 @@ import { FolderKanban, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shell/EmptyState";
+import { PageHeader } from "@/components/shell/PageHeader";
 import { PageLoader } from "@/components/shell/PageLoader";
 import { ProjectCard } from "@/components/project/ProjectCard";
 import { ProjectForm } from "@/components/project/ProjectForm";
@@ -39,16 +40,22 @@ export default function ProjectsPage() {
     return (
       <div className="flex h-full flex-col">
         <div className="flex items-center justify-between border-b border-default px-6 py-4">
-          <h1 className="text-lg font-semibold">Projects</h1>
-          <ProjectForm
-            workspaceId={workspace.id}
-            trigger={
-              <Button size="sm">
-                <Plus className="size-4" strokeWidth={1.75} />
-                New Project
-              </Button>
+          <PageHeader
+            icon={FolderKanban}
+            title="Projects"
+            className="mb-0"
+            actions={
+              <ProjectForm
+                workspaceId={workspace.id}
+                trigger={
+                  <Button size="sm">
+                    <Plus className="size-4" strokeWidth={1.75} />
+                    New Project
+                  </Button>
+                }
+                onCreated={(id) => router.push(`/projects/${id}`)}
+              />
             }
-            onCreated={(id) => router.push(`/projects/${id}`)}
           />
         </div>
         <div className="flex-1">
@@ -64,24 +71,23 @@ export default function ProjectsPage() {
 
   return (
     <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">Projects</h1>
-          <p className="text-sm text-secondary">
-            {projects.length} {projects.length === 1 ? "project" : "projects"} in your workspace
-          </p>
-        </div>
-        <ProjectForm
-          workspaceId={workspace.id}
-          trigger={
-            <Button size="sm">
-              <Plus className="size-4" strokeWidth={1.75} />
-              New Project
-            </Button>
-          }
-          onCreated={(id) => router.push(`/projects/${id}`)}
-        />
-      </div>
+      <PageHeader
+        icon={FolderKanban}
+        title="Projects"
+        description={`${projects.length} ${projects.length === 1 ? "project" : "projects"} in your workspace`}
+        actions={
+          <ProjectForm
+            workspaceId={workspace.id}
+            trigger={
+              <Button size="sm">
+                <Plus className="size-4" strokeWidth={1.75} />
+                New Project
+              </Button>
+            }
+            onCreated={(id) => router.push(`/projects/${id}`)}
+          />
+        }
+      />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {projects.map((project) => (

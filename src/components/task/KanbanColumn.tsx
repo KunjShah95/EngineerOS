@@ -5,6 +5,7 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { Plus } from "lucide-react";
 
 import { TaskCard } from "@/components/task/TaskCard";
+import { TASK_STATUS_META } from "@/lib/task-meta";
 import { cn } from "@/lib/utils";
 import type { TaskStatus, TaskWithProject } from "@/types/database";
 
@@ -18,20 +19,27 @@ interface KanbanColumnProps {
 
 export function KanbanColumn({ status, label, tasks, onOpenTask, onAddTask }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: `column:${status}` });
+  const statusColor =
+    TASK_STATUS_META.find((s) => s.value === status)?.color ?? "var(--text-tertiary)";
 
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        "flex w-72 shrink-0 flex-col rounded-lg border border-border-subtle bg-base",
-        isOver && "border-accent/50"
+        "flex w-72 shrink-0 flex-col rounded-xl border border-border-subtle bg-base/60 transition-colors duration-150",
+        isOver && "border-accent/50 bg-accent-muted/20"
       )}
     >
-      <div className="flex items-center gap-2 px-3 py-2.5">
-        <span className="text-xs font-semibold tracking-wide text-secondary uppercase">
+      <div className="flex items-center gap-2 border-b border-border-subtle/70 px-3 py-2.5">
+        <span
+          className="size-2 rounded-full shadow-[0_0_8px_0_var(--border-default)]"
+          style={{ backgroundColor: statusColor }}
+          aria-hidden
+        />
+        <span className="text-xs font-semibold tracking-wide text-foreground">
           {label}
         </span>
-        <span className="rounded bg-surface-hover px-1.5 py-0.5 text-[11px] font-medium text-faint">
+        <span className="rounded-md bg-surface-hover px-1.5 py-0.5 font-mono text-[11px] font-medium text-secondary tabular-nums">
           {tasks.length}
         </span>
         <button

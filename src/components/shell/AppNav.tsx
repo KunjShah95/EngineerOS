@@ -73,14 +73,14 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.05,
+      staggerChildren: 0.04,
     },
   },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, x: -10 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.2 } },
+  hidden: { opacity: 0, x: -8 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.18 } },
 };
 
 export function AppNav() {
@@ -100,10 +100,10 @@ export function AppNav() {
       >
         {NAV_GROUPS.map((group) => (
           <div key={group.label} className="flex flex-col gap-1">
-            <span className="px-3 text-[10px] font-bold uppercase tracking-wider text-faint opacity-60">
+            <span className="px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-faint">
               {group.label}
             </span>
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-0.5">
               {group.items.map((item) => {
                 const Icon = item.icon;
                 const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -112,11 +112,27 @@ export function AppNav() {
                     <Link
                       href={item.href}
                       className={cn(
-                        "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-secondary transition-colors duration-150 hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
-                        active && "bg-surface-hover text-foreground"
+                        "group relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+                        active
+                          ? "bg-accent-muted/60 text-foreground"
+                          : "text-secondary hover:bg-surface-hover hover:text-foreground"
                       )}
                     >
-                      <Icon className="size-4 shrink-0" strokeWidth={1.75} />
+                      {/* Active indicator rail */}
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-accent transition-all duration-200",
+                          active ? "opacity-100" : "opacity-0 group-hover:opacity-40"
+                        )}
+                      />
+                      <Icon
+                        className={cn(
+                          "size-4 shrink-0 transition-colors duration-150",
+                          active ? "text-accent" : "text-secondary group-hover:text-foreground"
+                        )}
+                        strokeWidth={1.75}
+                      />
                       {item.label}
                     </Link>
                   </motion.div>
@@ -131,11 +147,11 @@ export function AppNav() {
         <motion.button
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0.4 }}
           type="button"
           onClick={() => setCommandPaletteOpen(true)}
           aria-label="Search (⌘K)"
-          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-secondary transition-colors duration-150 hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+          className="flex w-full items-center gap-2.5 rounded-lg border border-border-subtle bg-base/50 px-3 py-2 text-sm font-medium text-secondary transition-all duration-150 hover:border-accent/30 hover:bg-base hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
         >
           <Search className="size-4 shrink-0" strokeWidth={1.75} />
           Search

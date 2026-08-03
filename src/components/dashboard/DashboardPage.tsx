@@ -10,6 +10,8 @@ import {
   CheckCircle2,
   FileText,
   FolderKanban,
+  LayoutDashboard,
+  ListTodo,
   Pin,
   Plus,
   Zap,
@@ -17,6 +19,7 @@ import {
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageLoader } from "@/components/shell/PageLoader";
+import { PageHeader } from "@/components/shell/PageHeader";
 import { useTasks } from "@/hooks/useTasks";
 import { useMarkReminderRead, useReminders } from "@/hooks/useAutomation";
 import { useNotes } from "@/hooks/useNotes";
@@ -68,6 +71,14 @@ export function DashboardPage() {
   const recentNotes = (notes ?? []).slice(0, 5);
   const doneToday = (todayTasks ?? []).filter((t) => t.status === "done").length;
 
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 5) return "Good night";
+    if (h < 12) return "Good morning";
+    if (h < 18) return "Good afternoon";
+    return "Good evening";
+  })();
+
   const progressByProject = new Map<string, { total: number; done: number }>();
   for (const t of allTasks ?? []) {
     if (!t.project_id) continue;
@@ -104,30 +115,28 @@ export function DashboardPage() {
       animate={{ opacity: 1, y: 0 }}
       className="mx-auto w-full max-w-6xl space-y-8 p-6"
     >
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold">Dashboard</h1>
-          <p className="text-sm text-secondary">
-            {format(new Date(), "EEEE, MMMM d")} — here&apos;s what matters today.
-          </p>
-        </div>
-
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          type="button"
-          onClick={() => setQuickCaptureOpen(true)}
-          className="group flex w-full max-w-md items-center gap-2 rounded-lg border border-default bg-surface px-3 py-2 text-sm text-secondary transition-colors duration-150 hover:border-border-subtle hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-        >
-          <Zap className="size-4 shrink-0 text-accent" strokeWidth={1.75} />
-          <span className="flex-1 text-left">Quick capture something…</span>
-          <Plus className="size-4 opacity-0 transition-opacity group-hover:opacity-100" strokeWidth={1.75} />
-        </motion.button>
-      </div>
+      <PageHeader
+        icon={LayoutDashboard}
+        title={greeting}
+        description={`${format(new Date(), "EEEE, MMMM d")} — here's what matters today.`}
+        actions={
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            type="button"
+            onClick={() => setQuickCaptureOpen(true)}
+            className="group flex w-full max-w-md items-center gap-2 rounded-lg border border-default bg-surface px-3 py-2 text-sm text-secondary transition-colors duration-150 hover:border-border-subtle hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+          >
+            <Zap className="size-4 shrink-0 text-accent" strokeWidth={1.75} />
+            <span className="flex-1 text-left">Quick capture something…</span>
+            <Plus className="size-4 opacity-0 transition-opacity group-hover:opacity-100" strokeWidth={1.75} />
+          </motion.button>
+        }
+      />
 
       {isLoading ? (
         <div className="space-y-8">
-          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-24 w-full" />
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Skeleton className="h-64" />
             <Skeleton className="h-64" />
@@ -135,6 +144,34 @@ export function DashboardPage() {
         </div>
       ) : (
         <>
+          {/* Stat strip */}
+          <section aria-label="Overview" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <StatCard
+              icon={CheckCircle2}
+              label="Done today"
+              value={`${doneToday}/${todayTasks?.length ?? 0}`}
+              tone="text-success"
+            />
+            <StatCard
+              icon={ListTodo}
+              label="Due today"
+              value={openTasks.length}
+              tone="text-accent"
+            />
+            <StatCard
+              icon={Bell}
+              label="Reminders"
+              value={unreadReminders.length}
+              tone="text-warning"
+            />
+            <StatCard
+              icon={FolderKanban}
+              label="Projects"
+              value={projects?.length ?? 0}
+              tone="text-info"
+            />
+          </section>
+
           {overdue.length > 0 && (
             <section aria-label="Overdue">
               <SectionHeading title={`Overdue (${overdue.length})`} href="/tasks" />
@@ -366,7 +403,7 @@ export function DashboardPage() {
 function SectionHeading({ title, href }: { title: string; href?: string }) {
   return (
     <div className="mb-3 flex items-center justify-between">
-      <h2 className="text-sm font-semibold tracking-wide text-secondary uppercase">{title}</h2>
+      <h2 className="text-sm font-semibold tracking-tight text-foreground">{title}</h2>
       {href ? (
         <Link
           href={href}
@@ -376,6 +413,33 @@ function SectionHeading({ title, href }: { title: string; href?: string }) {
           <ArrowRight className="size-3" strokeWidth={1.75} />
         </Link>
       ) : null}
+    </div>
+  );
+}
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: typeof CheckCircle2;
+  label: string;
+  value: string | number;
+  tone: string;
+}) {
+  return (
+    <div className="group rounded-xl border border-default bg-surface p-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/30 hover:shadow-elevated">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-medium text-secondary">{label}</p>
+        <Icon
+          className={cn("size-4 shrink-0 transition-transform duration-200 group-hover:scale-110", tone)}
+          strokeWidth={1.75}
+        />
+      </div>
+      <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground tabular-nums">
+        {value}
+      </p>
     </div>
   );
 }

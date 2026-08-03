@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PageLoader } from "@/components/shell/PageLoader";
+import { PageHeader } from "@/components/shell/PageHeader";
 import {
   useAutomationDrain,
   useAutomationRules,
@@ -73,25 +74,21 @@ export function AutomationPage() {
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-8 p-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="flex items-center gap-2 text-lg font-semibold">
-            <Workflow className="size-4 text-accent" strokeWidth={1.75} />
-            Automation
-          </h1>
-          <p className="text-sm text-secondary">
-            Recurring tasks, quick-capture triage, and daily rollover — evaluated in the background.
-          </p>
-        </div>
-        <Button onClick={() => void runNow()} disabled={drain.isPending}>
-          {drain.isPending ? (
-            <RefreshCw className="size-3.5 animate-spin" strokeWidth={1.75} />
-          ) : (
-            <Play className="size-3.5" strokeWidth={1.75} />
-          )}
-          Run now
-        </Button>
-      </div>
+      <PageHeader
+        icon={Workflow}
+        title="Automation"
+        description="Recurring tasks, quick-capture triage, and daily rollover — evaluated in the background."
+        actions={
+          <Button onClick={() => void runNow()} disabled={drain.isPending}>
+            {drain.isPending ? (
+              <RefreshCw className="size-3.5 animate-spin" strokeWidth={1.75} />
+            ) : (
+              <Play className="size-3.5" strokeWidth={1.75} />
+            )}
+            Run now
+          </Button>
+        }
+      />
 
       {rulesLoading ? (
         <PageLoader label="Loading rules…" />

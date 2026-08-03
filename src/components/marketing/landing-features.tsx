@@ -26,7 +26,7 @@ export function LandingFeatures() {
           <p className="font-mono text-[11px] tracking-widest text-accent uppercase">
             The model
           </p>
-          <h2 className="mx-auto mt-4 max-w-2xl text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+          <h2 className="mx-auto mt-4 max-w-2xl font-display text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
             Six objects. Every artifact.
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-secondary">

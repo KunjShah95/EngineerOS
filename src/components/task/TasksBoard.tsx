@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Plus } from "lucide-react";
+import { CheckSquare, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/shell/PageHeader";
 import {
   Select,
   SelectContent,
@@ -59,45 +60,48 @@ export function TasksBoard() {
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-default px-6 py-4">
-        <div>
-          <h1 className="text-lg font-semibold">Tasks</h1>
-          <p className="text-sm text-secondary">Drag cards between columns to update status.</p>
-        </div>
+        <PageHeader
+          icon={CheckSquare}
+          title="Tasks"
+          description="Drag cards between columns to update status."
+          className="mb-0"
+          actions={
+            <div className="flex flex-wrap items-center gap-2">
+              <Select value={projectFilter} onValueChange={(v) => updateFilter("project", v)}>
+                <SelectTrigger size="sm" aria-label="Filter by project" className="min-w-36">
+                  <SelectValue placeholder="All projects" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All projects</SelectItem>
+                  {(projects ?? []).map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-        <div className="flex items-center gap-2">
-          <Select value={projectFilter} onValueChange={(v) => updateFilter("project", v)}>
-            <SelectTrigger size="sm" aria-label="Filter by project" className="min-w-36">
-              <SelectValue placeholder="All projects" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All projects</SelectItem>
-              {(projects ?? []).map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              <Select value={priorityFilter} onValueChange={(v) => updateFilter("priority", v)}>
+                <SelectTrigger size="sm" aria-label="Filter by priority" className="min-w-32">
+                  <SelectValue placeholder="All priorities" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All priorities</SelectItem>
+                  {PRIORITY_META.filter((p) => p.value !== "none").map((p) => (
+                    <SelectItem key={p.value} value={p.value}>
+                      <span className="capitalize">{p.label}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-          <Select value={priorityFilter} onValueChange={(v) => updateFilter("priority", v)}>
-            <SelectTrigger size="sm" aria-label="Filter by priority" className="min-w-32">
-              <SelectValue placeholder="All priorities" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All priorities</SelectItem>
-              {PRIORITY_META.filter((p) => p.value !== "none").map((p) => (
-                <SelectItem key={p.value} value={p.value}>
-                  <span className="capitalize">{p.label}</span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Button size="sm" onClick={() => setAddStatus("todo")}>
-            <Plus className="size-4" strokeWidth={1.75} />
-            New Task
-          </Button>
-        </div>
+              <Button size="sm" onClick={() => setAddStatus("todo")}>
+                <Plus className="size-4" strokeWidth={1.75} />
+                New Task
+              </Button>
+            </div>
+          }
+        />
       </div>
 
       <div className="flex-1 overflow-y-auto p-6">

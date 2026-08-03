@@ -36,8 +36,8 @@ export function TaskCard({ task, onOpen }: TaskCardProps) {
         if (e.key === "Enter") onOpen(task.id);
       }}
       className={cn(
-        "group cursor-grab touch-none rounded-lg border border-default bg-surface p-3 shadow-sm transition-colors duration-150",
-        "hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+        "group cursor-grab touch-none rounded-lg border border-default bg-surface p-3 shadow-card transition-all duration-150",
+        "hover:-translate-y-0.5 hover:border-accent/30 hover:bg-surface-hover hover:shadow-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
         "active:cursor-grabbing",
         task.status === "done" && "opacity-70"
       )}

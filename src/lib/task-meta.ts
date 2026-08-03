@@ -1,10 +1,14 @@
 import type { TaskPriority, TaskStatus } from "@/types/database";
 
-export const TASK_STATUS_META: { value: TaskStatus; label: string }[] = [
-  { value: "backlog", label: "Backlog" },
-  { value: "todo", label: "Todo" },
-  { value: "in_progress", label: "In Progress" },
-  { value: "done", label: "Done" },
+export const TASK_STATUS_META: {
+  value: TaskStatus;
+  label: string;
+  color: string;
+}[] = [
+  { value: "backlog", label: "Backlog", color: "var(--text-tertiary)" },
+  { value: "todo", label: "Todo", color: "var(--info)" },
+  { value: "in_progress", label: "In Progress", color: "var(--warning)" },
+  { value: "done", label: "Done", color: "var(--success)" },
 ];
 
 export const PRIORITY_META: { value: TaskPriority; label: string; color: string }[] = [

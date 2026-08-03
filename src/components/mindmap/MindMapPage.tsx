@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ExternalLink, Network, ZoomIn, ZoomOut } from "lucide-react";
 
 import { PageLoader } from "@/components/shell/PageLoader";
+import { PageHeader } from "@/components/shell/PageHeader";
 import { EmptyState } from "@/components/shell/EmptyState";
 import {
   ProjectFilter,
@@ -106,13 +107,13 @@ export function MindMapPage() {
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
-        <div>
-          <h1 className="text-lg font-semibold">Mind map</h1>
-          <p className="text-sm text-faint">
-            {graph.nodes.length} nodes · {graph.edges.length} connections — projects, tasks, notes, and links
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
+        <PageHeader
+          icon={Network}
+          title="Mind map"
+          className="mb-0"
+          description={`${graph.nodes.length} nodes · ${graph.edges.length} connections — projects, tasks, notes, and links`}
+          actions={
+            <div className="flex items-center gap-3">
           <ProjectFilter
             value={projectFilter}
             onChange={changeProject}
@@ -135,11 +136,13 @@ export function MindMapPage() {
           >
             <ZoomOut className="size-4" strokeWidth={1.75} />
           </button>
-            <span className="ml-2 font-mono text-xs text-faint">
-              {selected ? selected.label.slice(0, 28) : "drag to pan · scroll to zoom"}
-            </span>
-          </div>
-        </div>
+              <span className="ml-2 font-mono text-xs text-faint">
+                {selected ? selected.label.slice(0, 28) : "drag to pan · scroll to zoom"}
+              </span>
+            </div>
+            </div>
+          }
+        />
       </div>
 
       <div className="relative min-h-0 flex-1 overflow-hidden rounded-xl border border-default bg-surface/40 m-4 mt-0">

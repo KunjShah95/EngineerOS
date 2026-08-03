@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shell/EmptyState";
 import { PageLoader } from "@/components/shell/PageLoader";
+import { PageHeader } from "@/components/shell/PageHeader";
 import {
   useDeletePdf,
   usePdfChat,
@@ -106,22 +107,26 @@ export function PDFChatPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-6">
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold">PDF chat</h1>
-          <p className="text-sm text-faint">
+      <PageHeader
+        icon={MessageSquare}
+        title="PDF chat"
+        className="mb-4"
+        description={
+          <>
             Upload a paper and ask questions about it.{" "}
             {aiConfig?.configured
               ? "GPT-4o answers from the document."
               : "Local mode — no OPENAI_API_KEY set, so answers quote the closest passage."}
-          </p>
-        </div>
-        <ProjectFilter
-          value={projectFilter}
-          onChange={changeProject}
-          projects={projects ?? []}
-        />
-      </div>
+          </>
+        }
+        actions={
+          <ProjectFilter
+            value={projectFilter}
+            onChange={changeProject}
+            projects={projects ?? []}
+          />
+        }
+      />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_1fr]">
         {/* Upload + document list */}

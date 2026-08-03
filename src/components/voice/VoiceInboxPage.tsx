@@ -9,6 +9,7 @@ import { FileAudio, FileText, Loader2, Mic, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shell/EmptyState";
 import { PageLoader } from "@/components/shell/PageLoader";
+import { PageHeader } from "@/components/shell/PageHeader";
 import { VoiceRecorder } from "@/components/voice/VoiceRecorder";
 import {
   getVoiceNoteSignedUrl,
@@ -59,19 +60,23 @@ export function VoiceInboxPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-6">
-      <div className="mb-5 flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold">Voice inbox</h1>
-          <p className="text-sm text-faint">
+      <PageHeader
+        icon={Mic}
+        title="Voice inbox"
+        className="mb-5"
+        description={
+          <>
             {voiceNotes?.length ?? 0} recordings
             {unfiledCount > 0 ? ` · ${unfiledCount} unfiled` : ""}
-          </p>
-        </div>
-        <Button variant="secondary" size="sm" onClick={() => setRecordOpen((v) => !v)}>
-          <Mic className="size-4" strokeWidth={1.75} />
-          {recordOpen ? "Hide recorder" : "Record"}
-        </Button>
-      </div>
+          </>
+        }
+        actions={
+          <Button variant="secondary" size="sm" onClick={() => setRecordOpen((v) => !v)}>
+            <Mic className="size-4" strokeWidth={1.75} />
+            {recordOpen ? "Hide recorder" : "Record"}
+          </Button>
+        }
+      />
 
       {recordOpen && (
         <div className="mb-5 rounded-lg border border-border-subtle bg-surface p-4">

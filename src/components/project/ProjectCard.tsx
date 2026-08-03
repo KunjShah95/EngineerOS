@@ -27,8 +27,8 @@ export function ProjectCard({ project }: { project: ProjectWithCounts }) {
       <Link
         href={`/projects/${project.id}`}
         className={cn(
-          "group flex h-full flex-col gap-3 rounded-lg border border-default bg-surface p-4 transition-colors duration-150",
-          "hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+          "group flex h-full flex-col gap-3 rounded-xl border border-default bg-surface p-4 shadow-card transition-all duration-150",
+          "hover:-translate-y-0.5 hover:border-accent/25 hover:shadow-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
         )}
       >
         <div className="flex items-start justify-between gap-2">

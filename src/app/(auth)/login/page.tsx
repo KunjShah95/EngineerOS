@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Terminal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,17 +58,38 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-base px-4 text-foreground">
+    <main className="relative flex min-h-dvh items-center justify-center bg-base px-4 py-10 text-foreground">
+      {/* Grid backdrop */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,var(--border-subtle)_1px,transparent_1px),linear-gradient(to_bottom,var(--border-subtle)_1px,transparent_1px)] bg-[size:56px_56px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,black,transparent)]"
+      />
+      {/* Ambient glow */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-0 -z-10 h-72 w-[560px] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(79,70,229,0.16),transparent_70%)] blur-3xl"
+      />
+
       <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <p className="text-sm font-medium tracking-wide text-accent">EngineerOS</p>
-          <h1 className="mt-2 text-lg font-semibold">Log in</h1>
-          <p className="mt-1 text-sm text-secondary">Welcome back to your workspace.</p>
+        <div className="mb-8 flex flex-col items-center text-center">
+          <Link
+            href="/"
+            aria-label="EngineerOS home"
+            className="flex size-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#6366f1] to-[#1e40af] shadow-[0_0_24px_-6px_var(--accent)]"
+          >
+            <Terminal className="size-5 text-white" strokeWidth={2} />
+          </Link>
+          <h1 className="mt-5 font-display text-2xl font-semibold tracking-tight">
+            Welcome back
+          </h1>
+          <p className="mt-1 text-sm text-secondary">
+            Log in to your EngineerOS workspace.
+          </p>
         </div>
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="space-y-4 rounded-lg border border-default bg-surface p-6"
+          className="space-y-4 rounded-2xl border border-default bg-surface/80 p-6 shadow-elevated backdrop-blur-sm"
         >
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
@@ -112,7 +133,7 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-secondary">
+        <p className="mt-5 text-center text-sm text-secondary">
           New to EngineerOS?{" "}
           <Link href="/register" className="font-medium text-accent hover:text-accent-hover">
             Create an account
