@@ -1,0 +1,38 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /(app)/
+Disallow: /(auth)/
+Disallow: /_next/
+Disallow: /api/ai/
+Disallow: /api/auth/
+Disallow: /api/automation/
+Disallow: /api/calendar/
+Disallow: /api/cron/
+Disallow: /api/github/
+Disallow: /api/pdf/
+Disallow: /api/search/
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: CCBot
+Disallow: /

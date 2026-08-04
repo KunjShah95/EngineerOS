@@ -79,9 +79,11 @@ export function LandingHero() {
           </h1>
 
           <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-secondary">
-            EngineerOS captures everything, finds it semantically, and lets you
-            ask questions across your entire knowledge base. Notes, tasks,
-            code, PDFs and daily entries, all in one place.
+            EngineerOS is an AI-native workspace that captures everything — notes,
+            tasks, projects, and daily entries — in one connected system. It uses
+            semantic search to find what you need, an AI assistant with citations
+            to source notes, and a knowledge graph that reveals hidden connections.
+            All data lives in your own Supabase project.
           </p>
 
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">

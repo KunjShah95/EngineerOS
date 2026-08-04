@@ -23,28 +23,63 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: { default: "EngineerOS", template: "%s · EngineerOS" },
   description:
-    "EngineerOS is one connected system for notes, tasks, projects, and daily work — capture, find, and organize everything.",
+    "EngineerOS is an AI-native workspace for notes, tasks, projects, and daily work — capture, find, and organize everything with semantic search, knowledge graphs, and AI-powered citations.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
   applicationName: "EngineerOS",
-  keywords: ["notes", "tasks", "projects", "daily notes", "second brain", "productivity"],
+  keywords: [
+    "notes",
+    "tasks",
+    "projects",
+    "daily notes",
+    "second brain",
+    "productivity",
+    "AI-native workspace",
+    "semantic search",
+    "knowledge graph",
+    "AI assistant",
+    "markdown notes",
+    "kanban",
+    "automation",
+  ],
   openGraph: {
-    title: "EngineerOS",
-    description: "One connected system for notes, tasks, projects, and daily work.",
+    title: "EngineerOS — AI-native workspace for notes, tasks, and projects",
+    description:
+      "One connected system for notes, tasks, projects, and daily work. Semantic search, AI assistant with citations, knowledge graph, and automation rules.",
     type: "website",
     siteName: "EngineerOS",
     locale: "en_US",
+    images: [
+      {
+        url: "/icon.svg",
+        width: 1200,
+        height: 630,
+        alt: "EngineerOS — AI-native workspace",
+      },
+    ],
   },
   twitter: {
-    card: "summary",
-    title: "EngineerOS",
-    description: "One connected system for notes, tasks, projects, and daily work.",
+    card: "summary_large_image",
+    title: "EngineerOS — AI-native workspace for notes, tasks, and projects",
+    description:
+      "One connected system for notes, tasks, projects, and daily work. Semantic search, AI assistant with citations, knowledge graph, and automation rules.",
+    images: ["/icon.svg"],
   },
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
   icons: {
     icon: "/icon.svg",
+  },
+  other: {
+    "ai-seo": "true",
   },
 };
 

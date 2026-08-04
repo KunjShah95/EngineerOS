@@ -1,0 +1,37 @@
+# EngineerOS
+
+EngineerOS is an AI-native workspace for engineers, researchers, and builders. It combines notes, tasks, projects, and daily entries into one connected system with semantic search, a knowledge graph, and an AI assistant with citations.
+
+## What EngineerOS does
+
+- Capture notes, tasks, and daily entries in one place
+- Search everything with semantic (AI-powered) search
+- Visualize connections between your notes and tasks as a knowledge graph
+- Get AI-powered answers with citations back to source notes
+- Automate recurring tasks and daily note creation
+
+## Key pages
+
+- / — Landing page with product overview
+- /register — Create a free account
+- /login — Sign in to your workspace
+- /dashboard — Your home workspace view
+- /notes — Browse and search all notes
+- /tasks — Manage tasks and kanban boards
+- /projects — Organize work into projects
+- /daily — Daily notes with goals, journal, wins, and problems
+- /bookmarks — Save and organize links
+- /reading — Track reading progress
+- /meetings — Meeting notes with dates and attendees
+- /settings — Workspace and account settings
+
+## Pricing
+
+EngineerOS is free to start. Data lives in your own Supabase project — no vendor lock-in. See /pricing for structured pricing data.
+
+## AI features
+
+- Semantic search across all workspace content
+- AI assistant with source citations
+- Automatic knowledge graph from wikilinks and task links
+- Automation rules for recurring tasks, quick captures, and daily rollover
