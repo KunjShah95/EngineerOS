@@ -1,4 +1,5 @@
 import { resolveProvider } from "./ai/providers";
+import { extractiveAnswer, scoreCorpus } from "./ai/keyword";
 
 export function isAiConfigured(): boolean {
   try {
@@ -87,20 +88,12 @@ export function chunkText(text: string, size = 1400, overlap = 200): string[] {
 }
 
 export function retrieveChunks(question: string, chunks: string[], topK = 4): string[] {
-  const qWords = new Set(
-    question.toLowerCase().match(/[a-z0-9]{3,}/g) ?? []
-  );
-  const scored = chunks.map((c) => {
-    const cWords = c.toLowerCase().match(/[a-z0-9]{3,}/g) ?? [];
-    let score = 0;
-    for (const w of cWords) if (qWords.has(w)) score += 1;
-    return { c, score: score / Math.max(1, cWords.length) };
-  });
-  return scored
-    .filter((x) => x.score > 0)
-    .sort((a, b) => b.score - a.score)
+  return scoreCorpus(
+    question,
+    chunks.map((c) => ({ title: "", text: c }))
+  )
     .slice(0, topK)
-    .map((x) => x.c);
+    .map((x) => x.item.text);
 }
 
 export interface ChatAnswer {
@@ -124,9 +117,21 @@ export async function answerQuestion(documentText: string, question: string): Pr
   }
 
   if (!isAiConfigured()) {
-    const first = context.split("\n\n---\n\n")[0];
-    const answer = `Here's the closest passage I could find:\n\n> ${first.slice(0, 800)}`;
-    return { answer, model: "local-keyword", local: true, sources: [first] };
+    const extractive = extractiveAnswer(question, chunks.map((c) => ({ content: c })), 4, 1200);
+    if (extractive.trim()) {
+      return {
+        answer: `Here's the closest passage I could find:\n\n${extractive}`,
+        model: "local-extractive",
+        local: true,
+        sources: [extractive],
+      };
+    }
+    return {
+      answer: "I couldn't find that in the document. Try rephrasing, or ask about something the PDF actually covers.",
+      model: "local-keyword",
+      local: true,
+      sources: [],
+    };
   }
 
   const provider = resolveProvider();

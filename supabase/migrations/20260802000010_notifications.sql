@@ -10,13 +10,16 @@
 -- without a key the in-app reminders feed still works exactly as before.
 
 alter table public.workspaces
-  add column email text,
-  add column weekly_digest boolean not null default false;
+  add column if not exists email text,
+  add column if not exists weekly_digest boolean not null default false;
 
-alter type public.automation_job_kind add value 'digest';
+do $$ begin
+  alter type public.automation_job_kind add value 'digest';
+exception when duplicate_object then null;
+end $$;
 
 -- The drain looks up pending jobs by (workspace, kind, status, run_at) for
 -- reminders and digests; migration 09's index omits `kind`, so add one that
 -- serves both step-4/step-5 queries as the queue grows.
-create index jobs_workspace_kind_status_run_at_idx
+create index if not exists jobs_workspace_kind_status_run_at_idx
   on public.jobs (workspace_id, kind, status, run_at);

@@ -1,6 +1,7 @@
 import { resolveProvider } from "./providers";
 import { isAiConfigured, chunkText } from "../ai";
 import { embedQuery, embedText, isEmbeddingConfigured } from "./embeddings";
+import { extractiveAnswer, scoreCorpus, searchedTerms } from "./keyword";
 import { resourceHref } from "@/lib/resource-kind";
 import type { ChatSource, EmbeddingEntity, ResourceKind } from "@/types/database";
 
@@ -302,7 +303,7 @@ async function fetchWorkspaceCorpus(
       entity_type: "daily_note",
       entity_id: d.id,
       date: d.date,
-      title: `Daily A\u00e9 ${d.date}`,
+      title: `Daily Note ${d.date}`,
       href: `/daily/${d.date}`,
       text: `${d.date}\n${body}`,
     });
@@ -331,18 +332,12 @@ function sourceFor(row: CorpusRow, score: number): ChatSource {
 }
 
 function retrieveByKeyword(corpus: CorpusRow[], question: string, topK = 6): RagChunk[] {
-  const qWords = new Set(question.toLowerCase().match(/[a-z0-9]{3,}/g) ?? []);
-  const scored = corpus.map((row) => {
-    const words = row.text.toLowerCase().match(/[a-z0-9]{3,}/g) ?? [];
-    let hits = 0;
-    for (const w of words) if (qWords.has(w)) hits += 1;
-    return { row, score: words.length ? hits / Math.max(1, words.length) : 0 };
-  });
-  return scored
-    .filter((x) => x.score > 0)
-    .sort((a, b) => b.score - a.score)
+  return scoreCorpus(question, corpus)
     .slice(0, topK)
-    .map((x) => ({ content: x.row.text.slice(0, 1400), source: sourceFor(x.row, x.score) }));
+    .map(({ item, score }) => ({
+      content: item.text.slice(0, 1400),
+      source: sourceFor(item, score),
+    }));
 }
 
 export async function retrieveWorkspace(
@@ -382,6 +377,13 @@ export async function retrieveWorkspace(
   return retrieveByKeyword(corpus, question, topK);
 }
 
+function noContextMessage(question: string): string {
+  return (
+    `I couldn't find anything in your workspace matching that. I searched for: ${searchedTerms(question)}. ` +
+    "Try using fewer or different words, or create a note with those details first."
+  );
+}
+
 export async function answerWithContext(
   question: string,
   chunks: RagChunk[],
@@ -394,31 +396,28 @@ export async function answerWithContext(
   const sources = chunks.map((c) => c.source);
 
   if (!isAiConfigured()) {
-    if (!context) {
-      return {
-        answer:
-          "I couldn't find anything in your workspace that clearly answers that. Try rephrasing, or create a note about it first.",
-        model: "local-keyword",
-        local: true,
-        sources: [],
-      };
+    if (chunks.length > 0) {
+      const extractive = extractiveAnswer(question, chunks);
+      if (extractive.trim()) {
+        return {
+          answer: `Here's the closest context I found:\n\n${extractive}`,
+          model: "local-extractive",
+          local: true,
+          sources,
+        };
+      }
     }
-    const top = chunks
-      .slice(0, 3)
-      .map((c) => `> ${c.content.slice(0, 500)}`)
-      .join("\n\n");
     return {
-      answer: `Here's the closest context I found in your workspace:\n\n${top}`,
+      answer: noContextMessage(question),
       model: "local-keyword",
       local: true,
-      sources,
+      sources: [],
     };
   }
 
   if (!context) {
     return {
-      answer:
-        "I couldn't find anything in your workspace that clearly answers that. Try rephrasing, or create a note about it first.",
+      answer: noContextMessage(question),
       model: "no-retrieval",
       local: true,
       sources: [],

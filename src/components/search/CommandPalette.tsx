@@ -52,10 +52,10 @@ export function CommandPalette({ workspaceId }: { workspaceId: string }) {
     if (!data) return [];
     const items: KeywordCorpusItem[] = [];
     for (const n of data.notes) {
-      items.push({ entity_type: "note", entity_id: n.id, text: `${n.title}\n${n.body_markdown}` });
+      items.push({ entity_type: "note", entity_id: n.id, title: n.title, text: n.body_markdown });
     }
     for (const t of data.tasks) {
-      items.push({ entity_type: "task", entity_id: t.id, text: `${t.title}\n${t.description ?? ""}` });
+      items.push({ entity_type: "task", entity_id: t.id, title: t.title, text: t.description ?? "" });
     }
     return items;
   }, [data]);

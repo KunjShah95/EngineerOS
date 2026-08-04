@@ -67,7 +67,7 @@ export function AssistantPage() {
         role: m.role,
         content: m.content,
         sources: m.sources ?? [],
-        local: m.model === "local-keyword",
+        local: typeof m.model === "string" && m.model.startsWith("local"),
       })),
     [serverMessages]
   );
@@ -152,7 +152,7 @@ export function AssistantPage() {
             Ask questions across your notes, tasks, projects, and PDFs.
             {aiConfig?.configured
               ? " Answers cite the sources they came from."
-              : " Local mode — no OPENAI_API_KEY set, so answers quote the closest passages."}
+              : " Local mode — no API key set, so answers are extracted from the closest notes with citations."}
           </>
         }
         actions={

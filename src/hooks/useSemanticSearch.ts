@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
+import { scoreCorpus } from "@/lib/ai/keyword";
 import type { SemanticMatch } from "@/types/database";
 
 export interface SemanticResponse {
@@ -24,6 +25,8 @@ async function semanticQuery(query: string): Promise<SemanticResponse> {
 export interface KeywordCorpusItem {
   entity_type: SemanticMatch["entity_type"];
   entity_id: string;
+  /** Title is scored separately so title matches rank above body-only hits. */
+  title?: string;
   kind?: string | null;
   date?: string | null;
   text: string;
@@ -35,29 +38,19 @@ export interface KeywordCorpusItem {
  * way — it just ranks by shared token frequency over a small client corpus.
  */
 export function keywordFallback(query: string, corpus: KeywordCorpusItem[], topK = 8): SemanticMatch[] {
-  const qWords = new Set(query.toLowerCase().match(/[a-z0-9]{3,}/g) ?? []);
-  const scored = corpus.map((item, i) => {
-    const cWords = item.text.toLowerCase().match(/[a-z0-9]{3,}/g) ?? [];
-    let hits = 0;
-    for (const w of cWords) if (qWords.has(w)) hits += 1;
-    return {
-      item,
-      i,
-      score: cWords.length ? hits / Math.max(1, cWords.length) : 0,
-    };
-  });
-  return scored
-    .filter((x) => x.score > 0)
-    .sort((a, b) => b.score - a.score)
+  return scoreCorpus(
+    query,
+    corpus.map((c) => ({ ...c, title: c.title ?? "", text: c.text }))
+  )
     .slice(0, topK)
-    .map((x) => ({
-      entity_type: x.item.entity_type,
-      entity_id: x.item.entity_id,
+    .map(({ item, score }) => ({
+      entity_type: item.entity_type,
+      entity_id: item.entity_id,
       chunk_index: 0,
-      content: x.item.text.slice(0, 220),
-      score: x.score,
-      kind: x.item.kind,
-      date: x.item.date,
+      content: item.text.slice(0, 220),
+      score,
+      kind: item.kind,
+      date: item.date,
     }));
 }
 
@@ -80,11 +73,13 @@ export function useSemanticSearch(
     if (data?.mode === "embeddings" && data.chunks.length > 0) {
       return { mode: "embeddings" as const, chunks: data.chunks, isPending };
     }
-    // No live Supabase / no API key — score the client corpus locally so the
-    // toggle still feels functional in dev and without credentials.
+    // No live Supabase / no API key (or the RPC came back empty) — score the
+    // client corpus locally so the toggle still feels functional in dev and
+    // without credentials. Always labeled "local-keyword" so the palette never
+    // claims these were vector matches.
     const local = keywordFallback(term, corpus);
     return {
-      mode: (data?.mode ?? "local-keyword") as SemanticResponse["mode"],
+      mode: "local-keyword" as const,
       chunks: local,
       isPending,
     };

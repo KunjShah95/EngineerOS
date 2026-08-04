@@ -11,17 +11,25 @@ export async function GET() {
   const { supabase, workspace } = auth;
 
   const saved = await loadAiConfig(supabase, workspace.id);
-  const provider = runWithAiConfig(saved, () => (saved ? resolveProvider(saved.provider) : null));
+  const result = runWithAiConfig(saved, () => {
+    if (!saved) return null;
+    try {
+      const provider = resolveProvider(saved.provider);
+      return provider.isConfigured() ? provider : null;
+    } catch {
+      return null;
+    }
+  });
 
   return NextResponse.json({
-    configured: Boolean(provider?.isConfigured()),
-    provider: provider?.name ?? null,
-    providerName: provider?.displayName ?? null,
-    models: provider
+    configured: Boolean(result),
+    provider: result?.name ?? null,
+    providerName: result?.displayName ?? null,
+    models: result
       ? {
-          chat: provider.name,
-          embedding: provider.name,
-          transcription: provider.name,
+          chat: result.name,
+          embedding: result.name,
+          transcription: result.name,
         }
       : null,
     providers: listProviders(),
