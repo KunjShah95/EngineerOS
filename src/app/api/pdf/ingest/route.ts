@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import pdfParse from "pdf-parse";
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pdfParse = require("pdf-parse") as (buf: Buffer) => Promise<{ text: string; numpages: number }>;
 
 import { requireWorkspace } from "@/lib/supabase/auth";
 

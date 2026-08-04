@@ -27,6 +27,7 @@ export const anthropicProvider: AiProvider = {
   name: "anthropic",
   displayName: "Anthropic",
   description: "Claude 3.5 Sonnet for chat, no native embeddings or transcription",
+  supportsEmbeddings: false,
   isConfigured: () => Boolean(getKey()),
   async chat(messages, maxTokens = 400) {
     const key = getKey();

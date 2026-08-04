@@ -19,6 +19,7 @@ export const openrouterProvider: AiProvider = {
   name: "openrouter",
   displayName: "OpenRouter",
   description: "Access 200+ models via OpenRouter, including OpenAI, Anthropic, and more",
+  supportsEmbeddings: true,
   isConfigured: () => Boolean(getKey()),
   async chat(messages, maxTokens = 400) {
     const key = getKey();

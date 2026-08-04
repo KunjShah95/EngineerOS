@@ -21,6 +21,7 @@ export const nvidiaNimProvider: AiProvider = {
   name: "nvidia-nim",
   displayName: "NVIDIA NIM",
   description: "NVIDIA NIM endpoints for chat, embeddings, and transcription",
+  supportsEmbeddings: true,
   isConfigured: () => Boolean(getKey()),
   async chat(messages, maxTokens = 400) {
     const key = getKey();

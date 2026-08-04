@@ -11,6 +11,7 @@ export const openaiProvider: AiProvider = {
   name: "openai",
   displayName: "OpenAI",
   description: "GPT-4o-mini for chat, text-embedding-3-small for embeddings, Whisper for transcription",
+  supportsEmbeddings: true,
   isConfigured: () => Boolean(getKey()),
   async chat(messages, maxTokens = 400) {
     const key = getKey();

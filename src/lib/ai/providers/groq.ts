@@ -15,6 +15,7 @@ export const groqProvider: AiProvider = {
   name: "groq",
   displayName: "Groq",
   description: "Llama 3.3 70B for chat, no native embeddings or transcription",
+  supportsEmbeddings: false,
   isConfigured: () => Boolean(getKey()),
   async chat(messages, maxTokens = 400) {
     const key = getKey();

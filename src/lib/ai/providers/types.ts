@@ -2,6 +2,7 @@ export interface AiProvider {
   readonly name: string;
   readonly displayName: string;
   readonly description: string;
+  readonly supportsEmbeddings: boolean;
   isConfigured(): boolean;
   chat(messages: { role: string; content: string }[], maxTokens?: number): Promise<string>;
   embed(text: string): Promise<number[]>;

@@ -19,6 +19,7 @@ export const mistralProvider: AiProvider = {
   name: "mistral",
   displayName: "Mistral AI",
   description: "Mistral Small for chat, Mistral Embed for embeddings",
+  supportsEmbeddings: true,
   isConfigured: () => Boolean(getKey()),
   async chat(messages, maxTokens = 400) {
     const key = getKey();

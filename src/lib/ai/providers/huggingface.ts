@@ -19,6 +19,7 @@ export const huggingfaceProvider: AiProvider = {
   name: "huggingface",
   displayName: "HuggingFace",
   description: "Chat, embeddings, and transcription via HuggingFace Inference API",
+  supportsEmbeddings: true,
   isConfigured: () => Boolean(getKey()),
   async chat(messages, maxTokens = 400) {
     const key = getKey();

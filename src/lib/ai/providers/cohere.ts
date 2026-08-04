@@ -19,6 +19,7 @@ export const cohereProvider: AiProvider = {
   name: "cohere",
   displayName: "Cohere",
   description: "Command R Plus for chat, multilingual embeddings, no transcription",
+  supportsEmbeddings: true,
   isConfigured: () => Boolean(getKey()),
   async chat(messages, maxTokens = 400) {
     const key = getKey();

@@ -5,7 +5,7 @@ const EMBED_DIM = 1536;
 export function isEmbeddingConfigured(): boolean {
   try {
     const provider = resolveProvider();
-    return provider.isConfigured();
+    return provider.isConfigured() && provider.supportsEmbeddings;
   } catch {
     return false;
   }
