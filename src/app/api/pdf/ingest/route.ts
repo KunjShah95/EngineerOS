@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { PDFParse } from "pdf-parse";
+import pdfParse from "pdf-parse";
 
 import { requireWorkspace } from "@/lib/supabase/auth";
 
@@ -44,9 +44,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
-    const parser = new PDFParse({ data: buffer });
-    const result = await parser.getText();
-    await parser.destroy();
+    const result = await pdfParse(buffer);
 
     const text = result.text ?? "";
     if (text.trim().length < 20) {

@@ -78,6 +78,8 @@ export async function POST(request: NextRequest) {
       if (!qa.handled) {
         // Drain any pending index changes so the answer reflects the latest edits
         // (cheap when the queue is empty — the background hook usually keeps up).
+        // Only drain on the RAG path; structured Q&A queries live DB rows directly
+        // so stale embeddings don't affect the answer.
         await drainIndexQueue(supabase, workspace.id, 20);
         chunks = await retrieveWorkspace(supabase, workspace.id, question);
       }

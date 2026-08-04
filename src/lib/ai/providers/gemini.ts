@@ -22,13 +22,14 @@ export const geminiProvider: AiProvider = {
   name: "gemini",
   displayName: "Google Gemini",
   description: "Gemini 2.5 Flash for chat, text-embedding-004 for embeddings",
+  supportsEmbeddings: true,
   isConfigured: () => Boolean(getKey()),
   async chat(messages, maxTokens = 400) {
     const key = getKey();
     if (!key) throw new Error("Gemini API key not configured");
     const model = getModel();
     const res = await fetch(
-      `${BASE}/models/${model}:generateContent?key=${key}`,
+      `${BASE}/models/${model}:generateContent?key=${encodeURIComponent(key)}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -51,7 +52,7 @@ export const geminiProvider: AiProvider = {
     if (!key) throw new Error("Gemini API key not configured");
     const model = process.env.GEMINI_EMBEDDING_MODEL || "text-embedding-004";
     const res = await fetch(
-      `${BASE}/models/${model}:embedContent?key=${key}`,
+      `${BASE}/models/${model}:embedContent?key=${encodeURIComponent(key)}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

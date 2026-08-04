@@ -196,7 +196,9 @@ async function fetchEntityText(
         .eq("workspace_id", workspaceId)
         .maybeSingle();
       if (!data) return null;
-      return { kind: null, text: `${data.title}\n${data.text_content.slice(0, 12000)}` };
+      // text_content may be null in the DB despite the TypeScript cast; guard before slicing.
+      const content = data.text_content ?? "";
+      return { kind: null, text: `${data.title}\n${content.slice(0, 12000)}` };
     }
     default:
       // "project" is a valid EmbeddingEntity for chat citations but is never
@@ -243,13 +245,16 @@ export async function drainIndexQueue(
     }
   }
 
-  for (const row of processed) {
+  // Bulk-delete all processed rows in a single round-trip using the entity_id
+  // list. Each entity_id is a UUID and is unique within the queue (PK enforces
+  // this), so the .in() filter is safe and avoids N individual DELETE calls.
+  if (processed.length > 0) {
+    const processedIds = processed.map((r) => r.entity_id);
     await supabase
       .from("index_queue")
       .delete()
       .eq("workspace_id", workspaceId)
-      .eq("entity_type", row.entity_type)
-      .eq("entity_id", row.entity_id);
+      .in("entity_id", processedIds);
   }
 
   return { drained: processed.length, skipped: null };
@@ -334,13 +339,15 @@ async function fetchWorkspaceCorpus(
       text: `${d.date}\n${body}`,
     });
   }
-  for (const p of (pdfs.data ?? []) as { id: string; title: string; text_content: string }[]) {
+  for (const p of (pdfs.data ?? []) as { id: string; title: string; text_content: string | null }[]) {
+    // text_content may be null in the DB; guard before slicing.
+    const content = p.text_content ?? "";
     rows.push({
       entity_type: "pdf",
       entity_id: p.id,
       title: p.title,
       href: "/pdf-chat",
-      text: `${p.title}\n${p.text_content.slice(0, 12000)}`,
+      text: `${p.title}\n${content.slice(0, 12000)}`,
     });
   }
 
@@ -372,6 +379,9 @@ export async function retrieveWorkspace(
   question: string,
   topK = 6
 ): Promise<RagChunk[]> {
+  // Fetch the corpus once; reused by both the semantic and keyword paths.
+  const corpus = await fetchWorkspaceCorpus(supabase, workspaceId);
+
   if (isEmbeddingConfigured()) {
     try {
       const embedding = await embedQuery(question);
@@ -381,7 +391,6 @@ export async function retrieveWorkspace(
         q_limit: topK * 3,
       });
       if (!error && Array.isArray(data) && data.length > 0) {
-        const corpus = await fetchWorkspaceCorpus(supabase, workspaceId);
         const byKey = new Map(corpus.map((r) => [`${r.entity_type}:${r.entity_id}`, r]));
         const chunks: RagChunk[] = [];
         for (const row of data as { entity_type: EmbeddingEntity; entity_id: string; content: string; score: number }[]) {
@@ -395,11 +404,10 @@ export async function retrieveWorkspace(
         if (chunks.length > 0) return chunks.slice(0, topK);
       }
     } catch {
-      // RPC absent or failed \u2014 fall through to keyword.
+      // RPC absent or failed — fall through to keyword.
     }
   }
 
-  const corpus = await fetchWorkspaceCorpus(supabase, workspaceId);
   return retrieveByKeyword(corpus, question, topK);
 }
 
