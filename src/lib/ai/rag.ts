@@ -29,7 +29,11 @@ interface CorpusRow {
 
 export interface IndexResult {
   indexed: number;
+  /** Entities whose (re)indexing threw (e.g. a failed embedding call). */
+  failed: number;
   skipped: string | null;
+  /** First error message when failed > 0, for surfacing in the UI. */
+  error: string | null;
 }
 
 type Supabase = NonNullable<Awaited<ReturnType<typeof import("@/lib/supabase/server").createClient>>>;
@@ -138,24 +142,34 @@ export async function indexWorkspace(
   workspaceId: string
 ): Promise<IndexResult> {
   if (!isEmbeddingConfigured()) {
-    return { indexed: 0, skipped: "no-key" };
+    return { indexed: 0, failed: 0, skipped: "no-key", error: null };
   }
 
   const corpus = await fetchWorkspaceCorpus(supabase, workspaceId);
   let indexed = 0;
+  let failed = 0;
+  let firstError: string | null = null;
 
+  // Index entities one-by-one so a single failed embed (bad key, rate limit,
+  // network hiccup) can't abort the whole workspace. Successes still land;
+  // failures are counted and the first reason is surfaced to the caller.
   for (const row of corpus) {
-    indexed += await indexEntity(
-      supabase,
-      workspaceId,
-      row.entity_type,
-      row.entity_id,
-      row.kind ?? null,
-      row.text
-    );
+    try {
+      indexed += await indexEntity(
+        supabase,
+        workspaceId,
+        row.entity_type,
+        row.entity_id,
+        row.kind ?? null,
+        row.text
+      );
+    } catch (err) {
+      failed += 1;
+      firstError ??= err instanceof Error ? err.message : "embedding failed";
+    }
   }
 
-  return { indexed, skipped: null };
+  return { indexed, failed, skipped: null, error: firstError };
 }
 
 interface QueueRow {

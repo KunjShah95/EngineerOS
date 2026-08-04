@@ -164,8 +164,12 @@ export function AssistantPage() {
               onClick={() => {
                 toast.promise(indexWorkspace.mutateAsync(), {
                   loading: "Indexing workspace…",
-                  success: (r) => `Indexed ${r.indexed} chunks`,
-                  error: "Indexing failed",
+                  success: (r) =>
+                    r.failed > 0
+                      ? `Indexed ${r.indexed} chunk${r.indexed === 1 ? "" : "s"}, ${r.failed} failed`
+                      : `Indexed ${r.indexed} chunk${r.indexed === 1 ? "" : "s"}`,
+                  error: (err) =>
+                    `Indexing failed${err instanceof Error && err.message ? `: ${err.message}` : ""}`,
                 });
               }}
               disabled={indexWorkspace.isPending}

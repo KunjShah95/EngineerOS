@@ -89,8 +89,11 @@ export function useIndexWorkspace() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () =>
-      fetchJson<{ indexed: number; skipped: string | null }>("/api/ai/index", { method: "POST" }),
+      fetchJson<{ indexed: number; failed: number; skipped: string | null; error: string | null }>("/api/ai/index", {
+        method: "POST",
+      }),
     onSuccess: () => {
+      // Clear the semantic search cache so the freshly embedded chunks show up.
       queryClient.invalidateQueries({ queryKey: ["semantic"] });
     },
   });
