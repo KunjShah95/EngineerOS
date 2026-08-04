@@ -164,10 +164,12 @@ export function AssistantPage() {
               onClick={() => {
                 toast.promise(indexWorkspace.mutateAsync(), {
                   loading: "Indexing workspace…",
-                  success: (r) =>
-                    r.failed > 0
-                      ? `Indexed ${r.indexed} chunk${r.indexed === 1 ? "" : "s"}, ${r.failed} failed`
-                      : `Indexed ${r.indexed} chunk${r.indexed === 1 ? "" : "s"}`,
+                  success: (r) => {
+                    if (r.skipped === "no-key") return "No embedding provider configured";
+                    if (r.failed > 0)
+                      return `Indexed ${r.indexed} chunk${r.indexed === 1 ? "" : "s"}, ${r.failed} failed${r.error ? `: ${r.error}` : ""}`;
+                    return `Indexed ${r.indexed} chunk${r.indexed === 1 ? "" : "s"}`;
+                  },
                   error: (err) =>
                     `Indexing failed${err instanceof Error && err.message ? `: ${err.message}` : ""}`,
                 });

@@ -11,13 +11,11 @@ export async function POST(request: NextRequest) {
 
   const auth = await requireWorkspace();
   if (auth.error) return auth.error;
-  const { supabase, workspace } = auth;
+  const { supabase, user, workspace } = auth;
 
-  // Storage paths are namespaced as <workspace_id>/<file>. Reject anything
-  // that doesn't match the user's own workspace (defense in depth on top of
-  // the bucket policy, which already scopes reads to auth.uid()).
-
-  if (!body.storage_path.startsWith(`${workspace.id}/`)) {
+  // Storage paths are namespaced as <user_id>/<file>. The bucket policy also
+  // enforces auth.uid() as the first path segment, so this is defense in depth.
+  if (!body.storage_path.startsWith(`${user.id}/`)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 

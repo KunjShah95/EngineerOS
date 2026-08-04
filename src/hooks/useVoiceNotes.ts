@@ -84,8 +84,11 @@ export function useCreateVoiceNote() {
     mutationFn: async ({ workspaceId, noteId, audio, durationMs }: CreateVoiceNoteInput) => {
       const supabase = createClient();
 
+      // Storage policy gates on auth.uid() as the first path segment.
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
       const ext = audio.type.includes("ogg") ? "ogg" : "webm";
-      const storagePath = `${workspaceId}/${crypto.randomUUID()}.${ext}`;
+      const storagePath = `${user.id}/${crypto.randomUUID()}.${ext}`;
       const { error: upError } = await supabase.storage
         .from("voice-notes")
         .upload(storagePath, audio, { contentType: audio.type || "audio/webm" });

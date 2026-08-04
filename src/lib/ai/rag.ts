@@ -288,16 +288,27 @@ export async function drainIndexQueue(
     }
   }
 
-  // Bulk-delete all processed rows in a single round-trip using the entity_id
-  // list. Each entity_id is a UUID and is unique within the queue (PK enforces
-  // this), so the .in() filter is safe and avoids N individual DELETE calls.
+  // Delete processed rows grouped by entity_type. The PK is
+  // (workspace_id, entity_type, entity_id), so a bare .in("entity_id") filter
+  // without entity_type could delete rows of a different type that happen to
+  // share the same UUID (theoretically possible across tables).
   if (processed.length > 0) {
-    const processedIds = processed.map((r) => r.entity_id);
-    await supabase
-      .from("index_queue")
-      .delete()
-      .eq("workspace_id", workspaceId)
-      .in("entity_id", processedIds);
+    const byType = new Map<string, string[]>();
+    for (const r of processed) {
+      const ids = byType.get(r.entity_type);
+      if (ids) ids.push(r.entity_id);
+      else byType.set(r.entity_type, [r.entity_id]);
+    }
+    await Promise.all(
+      Array.from(byType.entries()).map(([type, ids]) =>
+        supabase
+          .from("index_queue")
+          .delete()
+          .eq("workspace_id", workspaceId)
+          .eq("entity_type", type)
+          .in("entity_id", ids)
+      )
+    );
   }
 
   return { drained: processed.length, skipped: null };

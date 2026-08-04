@@ -11,10 +11,11 @@ export async function GET() {
   const { supabase, workspace } = auth;
 
   const saved = await loadAiConfig(supabase, workspace.id);
+  // When no BYOK config exists, fall through to the env-var provider so the
+  // Reindex button and AI features appear for users who set env keys directly.
   const result = runWithAiConfig(saved, () => {
-    if (!saved) return null;
     try {
-      const provider = resolveProvider(saved.provider);
+      const provider = resolveProvider(saved?.provider);
       return provider.isConfigured() ? provider : null;
     } catch {
       return null;

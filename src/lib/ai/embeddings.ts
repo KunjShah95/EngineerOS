@@ -11,6 +11,21 @@ export function isEmbeddingConfigured(): boolean {
   }
 }
 
+/**
+ * Normalize a raw provider embedding to EMBED_DIM.
+ * Different providers output different dimensions (Gemini=768, Mistral=1024,
+ * HuggingFace=384, etc.). The DB column is vector(1536) so any mismatch causes
+ * a pgvector insert error. Padding with zeros preserves cosine-similarity
+ * ordering within a single provider; truncation keeps the most-significant dims.
+ */
+function normalizeDim(vec: number[]): number[] {
+  if (vec.length === EMBED_DIM) return vec;
+  if (vec.length < EMBED_DIM) {
+    return [...vec, ...new Array(EMBED_DIM - vec.length).fill(0)];
+  }
+  return vec.slice(0, EMBED_DIM);
+}
+
 function localFingerprint(text: string): number[] {
   const vec = new Array<number>(EMBED_DIM).fill(0);
   const words = text.toLowerCase().match(/[a-z0-9]{3,}/g) ?? [];
@@ -36,7 +51,8 @@ function hash32(str: string): number {
 export async function embedText(text: string): Promise<number[]> {
   if (!isEmbeddingConfigured()) return localFingerprint(text);
   const provider = resolveProvider();
-  return provider.embed(text);
+  const vec = await provider.embed(text);
+  return normalizeDim(vec);
 }
 
 export function embedQuery(query: string): Promise<number[]> {

@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
   const auth = await requireWorkspace();
   if (auth.error) return auth.error;
-  const { supabase, workspace } = auth;
+  const { supabase, user, workspace } = auth;
 
   // Optional project assignment — must be a real uuid that belongs to this workspace.
   let projectId: string | null = null;
@@ -53,7 +53,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Also keep the original file in the private pdfs bucket.
-    const storagePath = `${workspace.id}/${crypto.randomUUID()}.pdf`;
+    // Storage policy checks auth.uid() as the first path segment, not workspace.id.
+    const storagePath = `${user.id}/${crypto.randomUUID()}.pdf`;
     const { error: upError } = await supabase.storage
       .from("pdfs")
       .upload(storagePath, file, { contentType: "application/pdf" });

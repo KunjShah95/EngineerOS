@@ -57,7 +57,7 @@ export const cohereProvider: AiProvider = {
         "Content-Type": "application/json",
         Authorization: `Bearer ${key}`,
       },
-      body: JSON.stringify({ model: getEmbeddingModel(), texts: [text.slice(0, 8000)] }),
+      body: JSON.stringify({ model: getEmbeddingModel(), texts: [text.slice(0, 8000)], input_type: "search_document" }),
     });
     if (!res.ok) throw new Error(`Cohere embedding request failed (${res.status})`);
     const json = (await res.json()) as { embeddings?: number[][] };
