@@ -3,7 +3,8 @@
 import { useMemo, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Pin, Plus } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Loader2, MoreHorizontal, Pencil, Pin, Plus, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 
@@ -17,8 +18,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/shell/EmptyState";
-import { useCreateResource, useResources } from "@/hooks/useResources";
+import { useCreateResource, useDeleteResource, useResources } from "@/hooks/useResources";
 import { useProjects } from "@/hooks/useProjects";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { getResourceKindMeta, READING_STATUS_LABELS } from "@/lib/resource-kind";
@@ -45,6 +53,7 @@ export function ResourceList({
 }) {
   const meta = getResourceKindMeta(kind);
   const icon = meta.icon;
+  const basePath = `/${meta.path}`;
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: workspace } = useWorkspace();
@@ -67,13 +76,13 @@ export function ResourceList({
     const params = new URLSearchParams(searchParams.toString());
     if (value === "all") params.delete("project");
     else params.set("project", value);
-    router.replace(`/${kind}?${params.toString()}`);
+    router.replace(`${basePath}?${params.toString()}`);
   };
 
   const newResource = async () => {
     try {
       const resource = await createResource.mutateAsync({});
-      router.push(`/${kind}/${resource.id}`);
+      router.push(`${basePath}/${resource.id}`);
     } catch {
       toast.error(`Failed to create ${meta.label.toLowerCase()}. Please try again.`);
     }
@@ -132,7 +141,7 @@ export function ResourceList({
       ) : (
         <div className="space-y-2">
           {filtered.map((resource) => (
-            <ResourceRow key={resource.id} kind={kind} resource={resource} />
+            <ResourceRow key={resource.id} basePath={basePath} resource={resource} />
           ))}
         </div>
       )}
@@ -140,19 +149,42 @@ export function ResourceList({
   );
 }
 
-function ResourceRow({ kind, resource }: { kind: ResourceKind; resource: ResourceWithRelations }) {
+function ResourceRow({
+  basePath,
+  resource,
+}: {
+  basePath: string;
+  resource: ResourceWithRelations;
+}) {
   const tagsList = resource.resource_tags.map((rt) => rt.tag);
   const m = resource.metadata;
+  const queryClient = useQueryClient();
+  const { data: workspace } = useWorkspace();
+  const deleteResource = useDeleteResource(resource.id, workspace?.id ?? null);
+
+  const handleDelete = async () => {
+    const ok = window.confirm(`Delete "${resource.title || "this item"}"? This cannot be undone.`);
+    if (!ok) return;
+    try {
+      await deleteResource.mutateAsync();
+      toast.success("Deleted");
+      queryClient.invalidateQueries({ queryKey: ["resources"] });
+    } catch {
+      toast.error("Failed to delete. Please try again.");
+    }
+  };
 
   return (
-    <Link
-      href={`/${kind}/${resource.id}`}
+    <div
       className={cn(
         "group flex items-start justify-between gap-4 rounded-lg border border-default bg-surface p-4 transition-colors duration-150",
-        "hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+        "hover:bg-surface-hover"
       )}
     >
-      <div className="min-w-0 flex-1">
+      <Link
+        href={`${basePath}/${resource.id}`}
+        className="min-w-0 flex-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+      >
         <div className="flex items-center gap-2">
           {resource.pinned ? (
             <Pin className="size-3.5 shrink-0 text-accent" strokeWidth={1.75} />
@@ -191,12 +223,52 @@ function ResourceRow({ kind, resource }: { kind: ResourceKind; resource: Resourc
             ))}
           </div>
         )}
-      </div>
+      </Link>
 
-      <span className="shrink-0 text-xs text-faint">
-        {formatDistanceToNow(new Date(resource.updated_at), { addSuffix: true })}
-      </span>
-    </Link>
+      <div className="flex shrink-0 items-center gap-2">
+        <span className="text-xs text-faint">
+          {formatDistanceToNow(new Date(resource.updated_at), { addSuffix: true })}
+        </span>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
+              aria-label="More actions"
+              onClick={(e) => e.preventDefault()}
+            >
+              <MoreHorizontal className="size-4 text-secondary" strokeWidth={1.75} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link href={`${basePath}/${resource.id}`}>
+                <Pencil className="size-4" strokeWidth={1.75} />
+                Edit
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              variant="destructive"
+              disabled={deleteResource.isPending}
+              onSelect={(e) => {
+                e.preventDefault();
+                void handleDelete();
+              }}
+            >
+              {deleteResource.isPending ? (
+                <Loader2 className="size-4 animate-spin" strokeWidth={1.75} />
+              ) : (
+                <Trash2 className="size-4" strokeWidth={1.75} />
+              )}
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
   );
 }
 

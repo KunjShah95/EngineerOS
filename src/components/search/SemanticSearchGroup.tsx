@@ -4,7 +4,8 @@ import type { ReactNode } from "react";
 import { BookOpen, CalendarDays, CheckSquare, FileText, Search, Sparkles } from "lucide-react";
 
 import { CommandGroup, CommandItem } from "@/components/ui/command";
-import type { SemanticMatch } from "@/types/database";
+import { resourceHref } from "@/lib/resource-kind";
+import type { ResourceKind, SemanticMatch } from "@/types/database";
 
 const ICONS: Record<SemanticMatch["entity_type"], ReactNode> = {
   note: <FileText className="size-4 text-secondary" strokeWidth={1.75} />,
@@ -21,7 +22,7 @@ function hrefFor(match: SemanticMatch): string {
     case "task":
       return `/tasks?task=${match.entity_id}`;
     case "resource":
-      return match.kind ? `/${match.kind}/${match.entity_id}` : `/notes`;
+      return match.kind ? resourceHref(match.kind as ResourceKind, match.entity_id) : `/notes`;
     case "daily_note":
       return match.date ? `/daily/${match.date}` : `/daily`;
     case "pdf":

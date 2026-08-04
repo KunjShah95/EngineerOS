@@ -2,7 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { createClient } from "@/lib/supabase/client";
 import { buildWikilinkIndex, extractWikilinks, resolveWikilink } from "@/lib/wikilinks";
-import type { GraphEdge, GraphEntityKind, GraphNode, KnowledgeGraph, NoteLink } from "@/types/database";
+import { resourceHref } from "@/lib/resource-kind";
+import type { GraphEdge, GraphEntityKind, GraphNode, KnowledgeGraph, NoteLink, ResourceKind } from "@/types/database";
 
 export function knowledgeGraphKey(workspaceId: string | null) {
   return ["knowledge_graph", workspaceId ?? ""] as const;
@@ -10,7 +11,6 @@ export function knowledgeGraphKey(workspaceId: string | null) {
 
 const noteHref = (id: string) => `/notes/${id}`;
 const taskHref = (id: string) => `/tasks?task=${id}`;
-const resourceHref = (kind: string, id: string) => `/${kind}/${id}`;
 
 export async function fetchKnowledgeGraph(workspaceId: string): Promise<KnowledgeGraph> {
   const supabase = createClient();
@@ -86,7 +86,7 @@ export async function fetchKnowledgeGraph(workspaceId: string): Promise<Knowledg
       id: r.id,
       kind: "resource" as GraphEntityKind,
       label: r.title,
-      href: resourceHref(r.kind, r.id),
+      href: resourceHref(r.kind as ResourceKind, r.id),
       meta: r.kind,
       color: null as string | null,
       project_id: r.project_id,

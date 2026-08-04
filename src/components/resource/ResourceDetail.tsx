@@ -116,14 +116,14 @@ export function ResourceDetail({
   const handleDelete = async () => {
     await deleteResource.mutateAsync();
     toast.success("Deleted");
-    router.push(`/${kind}`);
+    router.push(`/${meta.path}`);
   };
 
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-6">
       <div className="mb-4 flex items-center justify-between">
         <Link
-          href={`/${kind}`}
+          href={`/${meta.path}`}
           className="inline-flex items-center gap-1.5 text-sm text-secondary transition-colors hover:text-foreground"
         >
           <ArrowLeft className="size-4" strokeWidth={1.75} />

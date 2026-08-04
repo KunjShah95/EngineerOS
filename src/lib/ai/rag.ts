@@ -8,7 +8,8 @@
 
 import { openaiChat, isAiConfigured, chunkText } from "../ai";
 import { embedQuery, embedText, isEmbeddingConfigured } from "./embeddings";
-import type { ChatSource, EmbeddingEntity } from "@/types/database";
+import { resourceHref } from "@/lib/resource-kind";
+import type { ChatSource, EmbeddingEntity, ResourceKind } from "@/types/database";
 
 export interface RagChunk {
   content: string;
@@ -316,13 +317,13 @@ async function fetchWorkspaceCorpus(
       text: `${t.title}\n${t.description ?? ""}`,
     });
   }
-  for (const r of (resources.data ?? []) as { id: string; kind: string; title: string; body_markdown: string }[]) {
+  for (const r of (resources.data ?? []) as { id: string; kind: ResourceKind; title: string; body_markdown: string }[]) {
     rows.push({
       entity_type: "resource",
       entity_id: r.id,
       kind: r.kind,
       title: r.title,
-      href: `/${r.kind}/${r.id}`,
+      href: resourceHref(r.kind, r.id),
       text: `${r.title}\n${r.body_markdown}`,
     });
   }
