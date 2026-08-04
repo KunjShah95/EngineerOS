@@ -40,14 +40,10 @@ export async function GET(request: Request) {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const { data: workspaces, error } = await admin.from("workspaces").select("id");
-  if (error) {
-    log("error", "cron drain — workspace lookup failed", { error: error.message });
-    return NextResponse.json({ ok: false, error: error.message }, { status: 502 });
-  }
-
   const started = Date.now();
   let drained = 0;
+  let lastProcessed: string | null = null;
+  let brokeOnBudget = false;
   const total: DrainSummary = {
     recurring_created: 0,
     triaged: 0,
@@ -55,6 +51,25 @@ export async function GET(request: Request) {
     reminders_created: 0,
     digests_sent: 0,
   };
+
+  // Resume where the previous run left off so that, as the workspace count
+  // grows, every workspace still gets drained across runs instead of the time
+  // budget always being consumed by the first few in the list. Workspaces are
+  // re-checked in id order; finishing a whole batch resets the cursor so the
+  // next run starts fresh (each re-check is cheap and idempotent).
+  const { data: cursorRow } = await admin
+    .from("cron_state")
+    .select("value")
+    .eq("key", "automation_cursor")
+    .maybeSingle();
+
+  let q = admin.from("workspaces").select("id").is("deleted_at", null).order("id", { ascending: true });
+  if (cursorRow?.value) q = q.gt("id", cursorRow.value);
+  const { data: workspaces, error } = await q;
+  if (error) {
+    log("error", "cron drain — workspace lookup failed", { error: error.message });
+    return NextResponse.json({ ok: false, error: error.message }, { status: 502 });
+  }
 
   // NOTE on concurrency: this cron can overlap the client-side drain (load +
   // visibility interval, possibly several tabs). runRecurringRule's select→
@@ -65,7 +80,10 @@ export async function GET(request: Request) {
   // add a DB-level guard (e.g. unique (rule_id, run_period) or an advisory
   // lock in a security-definer function).
   for (const workspace of workspaces ?? []) {
-    if (Date.now() - started > TIME_BUDGET_MS) break;
+    if (Date.now() - started > TIME_BUDGET_MS) {
+      brokeOnBudget = true;
+      break;
+    }
     try {
       const result = await drainAutomation(admin, workspace.id);
       drained += 1;
@@ -81,8 +99,21 @@ export async function GET(request: Request) {
         error: (err as Error).message,
       });
     }
+    // Record progress even on failure so a poisoned workspace can't stall the
+    // cursor indefinitely (in the worst case it gets one retry per run).
+    lastProcessed = workspace.id;
   }
 
-  log("info", "cron drain complete", { drained, ...total });
-  return NextResponse.json({ ok: true, drained, total });
+  // Persist the resume cursor. On a complete pass, reset to "" so the next run
+  // starts from the top; on a budget break, resume after the last workspace.
+  if (lastProcessed) {
+    if (!brokeOnBudget) {
+      await admin.from("cron_state").upsert({ key: "automation_cursor", value: "" }, { onConflict: "key" });
+    } else {
+      await admin.from("cron_state").upsert({ key: "automation_cursor", value: lastProcessed }, { onConflict: "key" });
+    }
+  }
+
+  log("info", "cron drain complete", { drained, cursor: lastProcessed ?? null, ...total });
+  return NextResponse.json({ ok: true, drained, cursor: lastProcessed ?? null, total });
 }

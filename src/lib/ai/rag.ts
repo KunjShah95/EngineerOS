@@ -49,11 +49,40 @@ function taskMeta(t: {
 }
 
 const BATCH = 6;
+const RETRY_ATTEMPTS = 3;
+const RETRY_BASE_MS = 400;
+const BATCH_PAUSE_MS = 50;
+
+/**
+ * Embed a single text with exponential-backoff retry. Real provider calls can
+ * transiently 429/5xx under bursts (e.g. a busy workspace or many users), and
+ * the deterministic local-fingerprint path never throws, so retrying only helps
+ * genuine API hiccups without masking a missing-key.
+ */
+async function embedWithRetry(text: string): Promise<number[]> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < RETRY_ATTEMPTS; attempt++) {
+    try {
+      return await embedText(text);
+    } catch (err) {
+      lastErr = err;
+      if (attempt < RETRY_ATTEMPTS - 1) {
+        await new Promise((r) => setTimeout(r, RETRY_BASE_MS * Math.pow(2, attempt)));
+      }
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error("embedText failed");
+}
+
 async function embedBatch(texts: string[]): Promise<number[][]> {
   const out: number[][] = [];
   for (let i = 0; i < texts.length; i += BATCH) {
     const batch = texts.slice(i, i + BATCH);
-    out.push(...(await Promise.all(batch.map((t) => embedText(t)))));
+    out.push(...(await Promise.all(batch.map((t) => embedWithRetry(t)))));
+    // Small inter-batch delay keeps embedding API concurrency modest.
+    if (i + BATCH < texts.length) {
+      await new Promise((r) => setTimeout(r, BATCH_PAUSE_MS));
+    }
   }
   return out;
 }
