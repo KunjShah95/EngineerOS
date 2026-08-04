@@ -34,6 +34,20 @@ export interface IndexResult {
 
 type Supabase = NonNullable<Awaited<ReturnType<typeof import("@/lib/supabase/server").createClient>>>;
 
+/** Structured one-liner for a task so keyword/semantic search can match status. */
+function taskMeta(t: {
+  status?: string | null;
+  priority?: string | null;
+  due_date?: string | null;
+  completed_at?: string | null;
+}): string {
+  const parts: string[] = [`status: ${t.status ?? "unknown"}`];
+  if (t.priority && t.priority !== "none") parts.push(`priority: ${t.priority}`);
+  if (t.due_date) parts.push(`due: ${t.due_date}`);
+  if ((t.status === "done" || t.completed_at) && t.completed_at) parts.push(`completed: ${String(t.completed_at).slice(0, 10)}`);
+  return parts.join(", ");
+}
+
 const BATCH = 6;
 async function embedBatch(texts: string[]): Promise<number[][]> {
   const out: number[][] = [];
@@ -142,13 +156,13 @@ async function fetchEntityText(
     case "task": {
       const { data } = await supabase
         .from("tasks")
-        .select("title, description")
+        .select("title, description, status, priority, due_date, completed_at")
         .eq("id", entityId)
         .eq("workspace_id", workspaceId)
         .is("deleted_at", null)
         .maybeSingle();
       if (!data) return null;
-      return { kind: null, text: `${data.title}\n${data.description ?? ""}` };
+      return { kind: null, text: `${data.title}\n${taskMeta(data)}\n${data.description ?? ""}` };
     }
     case "resource": {
       const { data } = await supabase
@@ -164,12 +178,12 @@ async function fetchEntityText(
     case "daily_note": {
       const { data } = await supabase
         .from("daily_notes")
-        .select("date, journal, learned, wins, problems, tomorrow")
+        .select("date, morning_goals, journal, learned, wins, problems, tomorrow")
         .eq("id", entityId)
         .eq("workspace_id", workspaceId)
         .maybeSingle();
       if (!data) return null;
-      const body = [data.journal, data.learned, data.wins, data.problems, data.tomorrow]
+      const body = [data.morning_goals, data.journal, data.learned, data.wins, data.problems, data.tomorrow]
         .filter(Boolean)
         .join("\n");
       return { kind: null, text: `${data.date}\n${body}` };
@@ -184,6 +198,10 @@ async function fetchEntityText(
       if (!data) return null;
       return { kind: null, text: `${data.title}\n${data.text_content.slice(0, 12000)}` };
     }
+    default:
+      // "project" is a valid EmbeddingEntity for chat citations but is never
+      // queued for embedding indexing, so it should never reach here.
+      return null;
   }
 }
 
@@ -249,7 +267,7 @@ async function fetchWorkspaceCorpus(
       .is("deleted_at", null),
     supabase
       .from("tasks")
-      .select("id, title, description")
+      .select("id, title, description, status, priority, due_date, completed_at")
       .eq("workspace_id", workspaceId)
       .is("deleted_at", null),
     supabase
@@ -259,7 +277,7 @@ async function fetchWorkspaceCorpus(
       .is("deleted_at", null),
     supabase
       .from("daily_notes")
-      .select("id, date, journal, learned, wins, problems, tomorrow")
+      .select("id, date, morning_goals, journal, learned, wins, problems, tomorrow")
       .eq("workspace_id", workspaceId),
     supabase
       .from("pdf_documents")
@@ -278,13 +296,21 @@ async function fetchWorkspaceCorpus(
       text: `${n.title}\n${n.body_markdown}`,
     });
   }
-  for (const t of (tasks.data ?? []) as { id: string; title: string; description: string | null }[]) {
+  for (const t of (tasks.data ?? []) as {
+    id: string;
+    title: string;
+    description: string | null;
+    status: string;
+    priority: string;
+    due_date: string | null;
+    completed_at: string | null;
+  }[]) {
     rows.push({
       entity_type: "task",
       entity_id: t.id,
       title: t.title,
       href: `/tasks?task=${t.id}`,
-      text: `${t.title}\n${t.description ?? ""}`,
+      text: `${t.title}\n${taskMeta(t)}\n${t.description ?? ""}`,
     });
   }
   for (const r of (resources.data ?? []) as { id: string; kind: ResourceKind; title: string; body_markdown: string }[]) {
@@ -297,8 +323,8 @@ async function fetchWorkspaceCorpus(
       text: `${r.title}\n${r.body_markdown}`,
     });
   }
-  for (const d of (dailies.data ?? []) as { id: string; date: string; journal: string | null; learned: string | null; wins: string | null; problems: string | null; tomorrow: string | null }[]) {
-    const body = [d.journal, d.learned, d.wins, d.problems, d.tomorrow].filter(Boolean).join("\n");
+  for (const d of (dailies.data ?? []) as { id: string; date: string; morning_goals: string | null; journal: string | null; learned: string | null; wins: string | null; problems: string | null; tomorrow: string | null }[]) {
+    const body = [d.morning_goals, d.journal, d.learned, d.wins, d.problems, d.tomorrow].filter(Boolean).join("\n");
     rows.push({
       entity_type: "daily_note",
       entity_id: d.id,
@@ -387,7 +413,8 @@ function noContextMessage(question: string): string {
 export async function answerWithContext(
   question: string,
   chunks: RagChunk[],
-  history: { role: "user" | "assistant"; content: string }[]
+  history: { role: "user" | "assistant"; content: string }[],
+  localFallback?: string
 ): Promise<RagAnswer> {
   const context = chunks
     .map((c, i) => `[source ${i + 1}: ${c.source.title}] ${c.content}`)
@@ -396,6 +423,14 @@ export async function answerWithContext(
   const sources = chunks.map((c) => c.source);
 
   if (!isAiConfigured()) {
+    if (localFallback?.trim()) {
+      return {
+        answer: localFallback,
+        model: "local-structured",
+        local: true,
+        sources,
+      };
+    }
     if (chunks.length > 0) {
       const extractive = extractiveAnswer(question, chunks);
       if (extractive.trim()) {
@@ -416,6 +451,14 @@ export async function answerWithContext(
   }
 
   if (!context) {
+    if (localFallback?.trim()) {
+      return {
+        answer: localFallback,
+        model: "local-structured",
+        local: true,
+        sources: [],
+      };
+    }
     return {
       answer: noContextMessage(question),
       model: "no-retrieval",

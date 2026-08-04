@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { BookOpen, CalendarDays, CheckSquare, FileText, Search, Sparkles } from "lucide-react";
+import { BookOpen, CalendarDays, CheckSquare, FileText, Folder, Search, Sparkles } from "lucide-react";
 
 import { CommandGroup, CommandItem } from "@/components/ui/command";
 import { resourceHref } from "@/lib/resource-kind";
@@ -13,6 +13,7 @@ const ICONS: Record<SemanticMatch["entity_type"], ReactNode> = {
   resource: <BookOpen className="size-4 text-secondary" strokeWidth={1.75} />,
   daily_note: <CalendarDays className="size-4 text-secondary" strokeWidth={1.75} />,
   pdf: <Search className="size-4 text-secondary" strokeWidth={1.75} />,
+  project: <Folder className="size-4 text-secondary" strokeWidth={1.75} />,
 };
 
 function hrefFor(match: SemanticMatch): string {
@@ -27,6 +28,8 @@ function hrefFor(match: SemanticMatch): string {
       return match.date ? `/daily/${match.date}` : `/daily`;
     case "pdf":
       return "/pdf-chat";
+    case "project":
+      return `/projects/${match.entity_id}`;
   }
 }
 

@@ -215,7 +215,7 @@ export interface ResourceWithRelations extends Resource {
 // Phase 8a — semantic search (embeddings table + semantic_search RPC)
 // ---------------------------------------------------------------------------
 
-export type EmbeddingEntity = "note" | "task" | "resource" | "daily_note" | "pdf";
+export type EmbeddingEntity = "note" | "task" | "resource" | "daily_note" | "pdf" | "project";
 
 /** One ranked hit from the semantic_search RPC (or the local keyword scorer). */
 export interface SemanticMatch {

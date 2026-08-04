@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { requireWorkspace } from "@/lib/supabase/auth";
 import { answerWithContext, drainIndexQueue, retrieveWorkspace } from "@/lib/ai/rag";
+import { answerWorkspaceQuestion } from "@/lib/ai/workspace-qa";
 import { loadAiConfig } from "@/lib/ai/db-config";
 import { runWithAiConfig } from "@/lib/ai/server-config";
 import type { ChatSource } from "@/types/database";
@@ -66,11 +67,21 @@ export async function POST(request: NextRequest) {
   try {
     const aiConfig = await loadAiConfig(supabase, workspace.id);
     return await runWithAiConfig(aiConfig, async () => {
-      // Drain any pending index changes so the answer reflects the latest edits
-      // (cheap when the queue is empty — the background hook usually keeps up).
-      await drainIndexQueue(supabase, workspace.id, 20);
-      const chunks = await retrieveWorkspace(supabase, workspace.id, question);
-      const result = await answerWithContext(question, chunks, history);
+      // Analytical questions ("what did I do last week?", "summarize my open
+      // tasks") can't be answered by document retrieval — no note contains those
+      // words. Route them through the structured Q&A layer (tasks by status,
+      // daily notes by date window, projects, meetings) first, and only fall
+      // back to RAG when no intent matches.
+      const qa = await answerWorkspaceQuestion(supabase, workspace.id, question);
+      let chunks = qa.chunks;
+      const localFallback = qa.summary;
+      if (!qa.handled) {
+        // Drain any pending index changes so the answer reflects the latest edits
+        // (cheap when the queue is empty — the background hook usually keeps up).
+        await drainIndexQueue(supabase, workspace.id, 20);
+        chunks = await retrieveWorkspace(supabase, workspace.id, question);
+      }
+      const result = await answerWithContext(question, chunks, history, localFallback ?? undefined);
 
       // Persist the assistant reply; a DB hiccup here shouldn't discard the
       // answer, so surface it with a warning flag instead of failing.
