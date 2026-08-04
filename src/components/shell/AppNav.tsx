@@ -83,7 +83,7 @@ const itemVariants = {
   visible: { opacity: 1, x: 0, transition: { duration: 0.18 } },
 };
 
-export function AppNav() {
+export function AppNav({ collapsed = false }: { collapsed?: boolean }) {
   const pathname = usePathname();
   const setCommandPaletteOpen = useUiStore((s) => s.setCommandPaletteOpen);
 
@@ -100,9 +100,11 @@ export function AppNav() {
       >
         {NAV_GROUPS.map((group) => (
           <div key={group.label} className="flex flex-col gap-1">
-            <span className="px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-faint">
-              {group.label}
-            </span>
+            {!collapsed && (
+              <span className="px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-faint">
+                {group.label}
+              </span>
+            )}
             <div className="flex flex-col gap-0.5">
               {group.items.map((item) => {
                 const Icon = item.icon;
@@ -111,8 +113,10 @@ export function AppNav() {
                   <motion.div key={item.href} variants={itemVariants}>
                     <Link
                       href={item.href}
+                      title={collapsed ? item.label : undefined}
                       className={cn(
-                        "group relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+                        "group relative flex items-center rounded-lg py-2 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+                        collapsed ? "justify-center px-0" : "gap-2.5 px-3",
                         active
                           ? "bg-accent-muted/60 text-foreground"
                           : "text-secondary hover:bg-surface-hover hover:text-foreground"
@@ -133,7 +137,7 @@ export function AppNav() {
                         )}
                         strokeWidth={1.75}
                       />
-                      {item.label}
+                      {!collapsed && item.label}
                     </Link>
                   </motion.div>
                 );
@@ -151,13 +155,21 @@ export function AppNav() {
           type="button"
           onClick={() => setCommandPaletteOpen(true)}
           aria-label="Search (⌘K)"
-          className="flex w-full items-center gap-2.5 rounded-lg border border-border-subtle bg-base/50 px-3 py-2 text-sm font-medium text-secondary transition-all duration-150 hover:border-accent/30 hover:bg-base hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+          title={collapsed ? "Search (⌘K)" : undefined}
+          className={cn(
+            "flex w-full items-center rounded-lg border border-border-subtle bg-base/50 text-sm font-medium text-secondary transition-all duration-150 hover:border-accent/30 hover:bg-base hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+            collapsed ? "justify-center gap-0 px-0 py-2" : "gap-2.5 px-3 py-2"
+          )}
         >
           <Search className="size-4 shrink-0" strokeWidth={1.75} />
-          Search
-          <kbd className="ml-auto rounded border border-border-subtle bg-elevated px-1.5 py-0.5 text-[10px] font-medium text-faint">
-            ⌘K
-          </kbd>
+          {!collapsed && (
+            <>
+              Search
+              <kbd className="ml-auto rounded border border-border-subtle bg-elevated px-1.5 py-0.5 text-[10px] font-medium text-faint">
+                ⌘K
+              </kbd>
+            </>
+          )}
         </motion.button>
       </div>
     </nav>

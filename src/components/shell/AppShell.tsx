@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogIn, Terminal, X } from "lucide-react";
+import { LogIn, PanelLeftClose, PanelLeftOpen, Terminal, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { AppNav } from "@/components/shell/AppNav";
@@ -17,22 +17,45 @@ import { useAutoIndex } from "@/hooks/useAutoIndex";
 import { useAutoAutomation } from "@/hooks/useAutoAutomation";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { Button } from "@/components/ui/button";
+import { useUiStore, getStoredSidebarCollapsed } from "@/lib/store/ui";
 import { cn } from "@/lib/utils";
 
-function SidebarHeader({ className }: { className?: string }) {
+function SidebarHeader({
+  collapsed,
+  onToggle,
+  className,
+}: {
+  collapsed: boolean;
+  onToggle: () => void;
+  className?: string;
+}) {
   return (
     <div
       className={cn(
-        "flex h-14 shrink-0 items-center gap-2.5 border-b border-default px-4",
+        "flex h-14 shrink-0 items-center border-b border-default px-4",
+        collapsed ? "justify-center" : "justify-between",
         className
       )}
     >
       <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#6366f1] to-[#1e40af] shadow-[0_0_16px_-4px_var(--accent)]">
         <Terminal className="size-4 text-white" strokeWidth={2} />
       </span>
-      <span className="text-sm font-semibold tracking-tight text-foreground">
-        EngineerOS
-      </span>
+      {!collapsed && (
+        <span className="text-sm font-semibold tracking-tight text-foreground">EngineerOS</span>
+      )}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onToggle}
+        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        className={cn("size-7 text-secondary hover:text-foreground", collapsed && "mt-1")}
+      >
+        {collapsed ? (
+          <PanelLeftOpen className="size-4" strokeWidth={1.75} />
+        ) : (
+          <PanelLeftClose className="size-4" strokeWidth={1.75} />
+        )}
+      </Button>
     </div>
   );
 }
@@ -42,6 +65,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { data: workspace, isLoading, isError } = useWorkspace();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [prevPathname, setPrevPathname] = useState(pathname);
+  const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
+  const toggleSidebar = useUiStore((s) => s.toggleSidebar);
+
+  // Hydrate the persisted collapsed state once on mount.
+  useEffect(() => {
+    useUiStore.setState({ sidebarCollapsed: getStoredSidebarCollapsed() });
+  }, []);
 
   // Keep the embeddings index fresh in the background (silent, non-blocking).
   useAutoIndex(workspace?.id ?? null);
@@ -101,7 +131,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const drawer = (
     <div className="flex h-full w-64 flex-col bg-surface">
       <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-default pr-2 md:hidden">
-        <SidebarHeader className="flex-1 border-b-0 pl-4" />
+        <SidebarHeader collapsed={false} onToggle={() => {}} className="flex-1 border-b-0 pl-4" />
         <Button
           variant="ghost"
           size="icon"
@@ -127,9 +157,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </a>
 
       {/* Desktop sidebar */}
-      <aside className="hidden w-56 shrink-0 flex-col border-r border-default bg-surface md:flex">
-        <SidebarHeader />
-        <AppNav />
+      <aside
+        className={cn(
+          "hidden shrink-0 flex-col border-r border-default bg-surface transition-[width] duration-200 md:flex",
+          sidebarCollapsed ? "w-16" : "w-56"
+        )}
+      >
+        <SidebarHeader collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
+        <AppNav collapsed={sidebarCollapsed} />
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">

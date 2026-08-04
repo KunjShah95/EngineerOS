@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { requireWorkspace, type Supabase } from "@/lib/supabase/auth";
 import { embedQuery, isEmbeddingConfigured } from "@/lib/ai/embeddings";
+import { loadAiConfig } from "@/lib/ai/db-config";
+import { runWithAiConfig } from "@/lib/ai/server-config";
 import type { SemanticMatch } from "@/types/database";
 
 type RpcRow = {
@@ -55,16 +57,18 @@ export async function POST(request: NextRequest) {
   if (auth.error) return auth.error;
   const { supabase, workspace } = auth;
 
+  const aiConfig = await loadAiConfig(supabase, workspace.id);
+
   // Embed the query. On the no-key path this is a local fingerprint vector;
   // on a configured-API failure we DON'T fall back (throws) — we degrade to a
   // keyword-mode response the client understands instead.
-  if (!isEmbeddingConfigured()) {
+  if (!runWithAiConfig(aiConfig, () => isEmbeddingConfigured())) {
     return NextResponse.json({ mode: "local-keyword", chunks: [] }, { status: 200 });
   }
 
   let embedding: number[];
   try {
-    embedding = await embedQuery(query);
+    embedding = await runWithAiConfig(aiConfig, () => embedQuery(query));
   } catch {
     return NextResponse.json({ mode: "local-keyword", chunks: [] }, { status: 200 });
   }

@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { requireWorkspace } from "@/lib/supabase/auth";
 import { answerWithContext, drainIndexQueue, retrieveWorkspace } from "@/lib/ai/rag";
+import { loadAiConfig } from "@/lib/ai/db-config";
+import { runWithAiConfig } from "@/lib/ai/server-config";
 import type { ChatSource } from "@/types/database";
 
 export async function POST(request: NextRequest) {
@@ -62,26 +64,29 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Drain any pending index changes so the answer reflects the latest edits
-    // (cheap when the queue is empty — the background hook usually keeps up).
-    await drainIndexQueue(supabase, workspace.id, 20);
-    const chunks = await retrieveWorkspace(supabase, workspace.id, question);
-    const result = await answerWithContext(question, chunks, history);
+    const aiConfig = await loadAiConfig(supabase, workspace.id);
+    return await runWithAiConfig(aiConfig, async () => {
+      // Drain any pending index changes so the answer reflects the latest edits
+      // (cheap when the queue is empty — the background hook usually keeps up).
+      await drainIndexQueue(supabase, workspace.id, 20);
+      const chunks = await retrieveWorkspace(supabase, workspace.id, question);
+      const result = await answerWithContext(question, chunks, history);
 
-    // Persist the assistant reply; a DB hiccup here shouldn't discard the
-    // answer, so surface it with a warning flag instead of failing.
-    const { error: replyInsertError } = await supabase.from("chat_messages").insert({
-      thread_id: threadId,
-      role: "assistant",
-      content: result.answer,
-      sources: result.sources as ChatSource[],
-      model: result.model,
-    });
+      // Persist the assistant reply; a DB hiccup here shouldn't discard the
+      // answer, so surface it with a warning flag instead of failing.
+      const { error: replyInsertError } = await supabase.from("chat_messages").insert({
+        thread_id: threadId,
+        role: "assistant",
+        content: result.answer,
+        sources: result.sources as ChatSource[],
+        model: result.model,
+      });
 
-    return NextResponse.json({
-      thread_id: threadId,
-      ...result,
-      persisted: !replyInsertError,
+      return NextResponse.json({
+        thread_id: threadId,
+        ...result,
+        persisted: !replyInsertError,
+      });
     });
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 502 });

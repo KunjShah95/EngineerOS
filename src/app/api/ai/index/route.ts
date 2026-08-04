@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 
 import { requireWorkspace } from "@/lib/supabase/auth";
 import { indexWorkspace } from "@/lib/ai/rag";
+import { loadAiConfig } from "@/lib/ai/db-config";
+import { runWithAiConfig } from "@/lib/ai/server-config";
 
 export const maxDuration = 120;
 
@@ -11,7 +13,8 @@ export async function POST() {
   const { supabase, workspace } = auth;
 
   try {
-    const result = await indexWorkspace(supabase, workspace.id);
+    const aiConfig = await loadAiConfig(supabase, workspace.id);
+    const result = await runWithAiConfig(aiConfig, () => indexWorkspace(supabase, workspace.id));
     return NextResponse.json(result);
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 502 });

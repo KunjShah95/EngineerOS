@@ -1,18 +1,16 @@
-// Server-only embedding helpers. When OPENAI_API_KEY is absent we return a
-// deterministic local fingerprint vector so the pipeline still runs and the
-// app is testable without a provider. When present we use text-embedding-3-small.
-
-import { OPENAI_BASE } from "../ai";
+import { resolveProvider } from "./providers";
 
 const EMBED_DIM = 1536;
 
 export function isEmbeddingConfigured(): boolean {
-  return Boolean(process.env.OPENAI_API_KEY);
+  try {
+    const provider = resolveProvider();
+    return provider.isConfigured();
+  } catch {
+    return false;
+  }
 }
 
-// Deterministic, stable 1536-d vector from a string, for the no-key path.
-// Not semantically meaningful, but consistent, so similarity is still
-// computed between identical/near-identical texts.
 function localFingerprint(text: string): number[] {
   const vec = new Array<number>(EMBED_DIM).fill(0);
   const words = text.toLowerCase().match(/[a-z0-9]{3,}/g) ?? [];
@@ -37,23 +35,10 @@ function hash32(str: string): number {
 
 export async function embedText(text: string): Promise<number[]> {
   if (!isEmbeddingConfigured()) return localFingerprint(text);
-  const res = await fetch(`${OPENAI_BASE}/embeddings`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({ model: "text-embedding-3-small", input: text.slice(0, 8000) }),
-  });
-  if (!res.ok) throw new Error(`Embedding request failed (${res.status})`);
-  const json = (await res.json()) as { data?: { embedding?: number[] }[] };
-  const embedding = json.data?.[0]?.embedding;
-  if (!embedding) throw new Error("Embedding request returned no data");
-  return embedding;
+  const provider = resolveProvider();
+  return provider.embed(text);
 }
 
-// Queries are embedded with the same provider so both sides live in the same
-// vector space.
 export function embedQuery(query: string): Promise<number[]> {
   return embedText(query);
 }

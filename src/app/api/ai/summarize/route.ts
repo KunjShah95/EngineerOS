@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { requireWorkspace } from "@/lib/supabase/auth";
 import { summarizeText } from "@/lib/ai";
+import { loadAiConfig } from "@/lib/ai/db-config";
+import { runWithAiConfig } from "@/lib/ai/server-config";
 import type { SummaryEntityType } from "@/types/database";
 
 export async function POST(request: NextRequest) {
@@ -56,7 +58,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const result = await summarizeText(text);
+    const aiConfig = await loadAiConfig(supabase, workspace.id);
+    const result = await runWithAiConfig(aiConfig, () => summarizeText(text));
     const { error } = await supabase.from("ai_summaries").upsert(
       {
         workspace_id: workspace.id,

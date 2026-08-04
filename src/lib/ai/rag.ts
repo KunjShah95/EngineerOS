@@ -1,12 +1,5 @@
-// Phase 8b — workspace Q&A / RAG assistant.
-//
-// Retrieval is workspace-wide across notes, tasks, resources, daily notes, and
-// PDFs. When the embeddings table is live (OPENAI_API_KEY + migration 05) the
-// semantic_search RPC ranks chunks; otherwise a keyword-weighted pass over the
-// live tables backs the same answer shape. Generation reuses openaiChat, with
-// a local fallback that quotes the best passages when no key is set.
-
-import { openaiChat, isAiConfigured, chunkText } from "../ai";
+import { resolveProvider } from "./providers";
+import { isAiConfigured, chunkText } from "../ai";
 import { embedQuery, embedText, isEmbeddingConfigured } from "./embeddings";
 import { resourceHref } from "@/lib/resource-kind";
 import type { ChatSource, EmbeddingEntity, ResourceKind } from "@/types/database";
@@ -40,7 +33,6 @@ export interface IndexResult {
 
 type Supabase = NonNullable<Awaited<ReturnType<typeof import("@/lib/supabase/server").createClient>>>;
 
-// Embed with a small concurrency window so large workspaces don't time out.
 const BATCH = 6;
 async function embedBatch(texts: string[]): Promise<number[][]> {
   const out: number[][] = [];
@@ -51,7 +43,6 @@ async function embedBatch(texts: string[]): Promise<number[][]> {
   return out;
 }
 
-/** Remove every embedding row for one entity. */
 async function deleteEmbeddings(
   supabase: Supabase,
   workspaceId: string,
@@ -66,7 +57,6 @@ async function deleteEmbeddings(
     .eq("entity_id", entityId);
 }
 
-/** Chunk + embed one entity and replace its embedding rows. */
 async function indexEntity(
   supabase: Supabase,
   workspaceId: string,
@@ -99,11 +89,6 @@ async function indexEntity(
   return chunks.length;
 }
 
-/**
- * Embed every workspace entity (chunked) into the embeddings table so the
- * pgvector retrieval path works. Requires OPENAI_API_KEY; without it returns
- * a skipped marker and the keyword fallback keeps working.
- */
 export async function indexWorkspace(
   supabase: Supabase,
   workspaceId: string
@@ -129,17 +114,12 @@ export async function indexWorkspace(
   return { indexed, skipped: null };
 }
 
-/** One row waiting in the index queue. */
 interface QueueRow {
   entity_type: EmbeddingEntity;
   entity_id: string;
   action: "upsert" | "delete";
 }
 
-/**
- * Fetch the current embeddable text for a single entity, or null when the
- * row is gone / soft-deleted (callers treat null as "remove embeddings").
- */
 async function fetchEntityText(
   supabase: Supabase,
   workspaceId: string,
@@ -206,11 +186,6 @@ async function fetchEntityText(
   }
 }
 
-/**
- * Process pending index-queue rows for a workspace: re-embed changed
- * entities, drop embeddings for deleted ones, then clear the queue rows.
- * Returns how many rows were drained (0 + skipped "no-key" without a key).
- */
 export async function drainIndexQueue(
   supabase: Supabase,
   workspaceId: string,
@@ -238,7 +213,6 @@ export async function drainIndexQueue(
       } else {
         const entity = await fetchEntityText(supabase, workspaceId, row.entity_type, row.entity_id);
         if (!entity) {
-          // Gone or soft-deleted since enqueue — clear any stale embeddings.
           await deleteEmbeddings(supabase, workspaceId, row.entity_type, row.entity_id);
         } else {
           await indexEntity(supabase, workspaceId, row.entity_type, row.entity_id, entity.kind, entity.text);
@@ -246,14 +220,10 @@ export async function drainIndexQueue(
       }
       processed.push(row);
     } catch (err) {
-      // Transient failure (rate limit, API hiccup) — leave this row queued so
-      // the next drain retries it; the rest of the batch still proceeds.
       console.error("[drain] failed for", row.entity_type, row.entity_id, (err as Error).message);
     }
   }
 
-  // Clear the successfully processed rows (one delete per row keeps RLS +
-  // composite PK happy). Failed rows stay queued for the next drain.
   for (const row of processed) {
     await supabase
       .from("index_queue")
@@ -266,7 +236,6 @@ export async function drainIndexQueue(
   return { drained: processed.length, skipped: null };
 }
 
-/** Build the searchable corpus for a workspace from the live tables. */
 async function fetchWorkspaceCorpus(
   supabase: NonNullable<Awaited<ReturnType<typeof import("@/lib/supabase/server").createClient>>>,
   workspaceId: string
@@ -333,7 +302,7 @@ async function fetchWorkspaceCorpus(
       entity_type: "daily_note",
       entity_id: d.id,
       date: d.date,
-      title: `Daily · ${d.date}`,
+      title: `Daily A\u00e9 ${d.date}`,
       href: `/daily/${d.date}`,
       text: `${d.date}\n${body}`,
     });
@@ -344,7 +313,6 @@ async function fetchWorkspaceCorpus(
       entity_id: p.id,
       title: p.title,
       href: "/pdf-chat",
-      // Keep the corpus bounded — the retrieval pass reads the whole thing.
       text: `${p.title}\n${p.text_content.slice(0, 12000)}`,
     });
   }
@@ -362,7 +330,6 @@ function sourceFor(row: CorpusRow, score: number): ChatSource {
   };
 }
 
-/** Keyword-weighted retrieval over the live corpus — the no-vector fallback. */
 function retrieveByKeyword(corpus: CorpusRow[], question: string, topK = 6): RagChunk[] {
   const qWords = new Set(question.toLowerCase().match(/[a-z0-9]{3,}/g) ?? []);
   const scored = corpus.map((row) => {
@@ -378,11 +345,6 @@ function retrieveByKeyword(corpus: CorpusRow[], question: string, topK = 6): Rag
     .map((x) => ({ content: x.row.text.slice(0, 1400), source: sourceFor(x.row, x.score) }));
 }
 
-/**
- * Retrieve the most relevant passages across the whole workspace. Tries the
- * pgvector RPC when embeddings are configured; falls back to keyword scoring
- * over the live tables (which works even before any indexing runs).
- */
 export async function retrieveWorkspace(
   supabase: NonNullable<Awaited<ReturnType<typeof import("@/lib/supabase/server").createClient>>>,
   workspaceId: string,
@@ -398,8 +360,6 @@ export async function retrieveWorkspace(
         q_limit: topK * 3,
       });
       if (!error && Array.isArray(data) && data.length > 0) {
-        // The RPC returns raw entity ids — map them back to titles/hrefs via
-        // the corpus so citations are useful.
         const corpus = await fetchWorkspaceCorpus(supabase, workspaceId);
         const byKey = new Map(corpus.map((r) => [`${r.entity_type}:${r.entity_id}`, r]));
         const chunks: RagChunk[] = [];
@@ -414,7 +374,7 @@ export async function retrieveWorkspace(
         if (chunks.length > 0) return chunks.slice(0, topK);
       }
     } catch {
-      // RPC absent (migration not applied) — fall through to keyword.
+      // RPC absent or failed \u2014 fall through to keyword.
     }
   }
 
@@ -422,7 +382,6 @@ export async function retrieveWorkspace(
   return retrieveByKeyword(corpus, question, topK);
 }
 
-/** Answer a question with retrieved context, reusing the shared LLM helper. */
 export async function answerWithContext(
   question: string,
   chunks: RagChunk[],
@@ -444,7 +403,6 @@ export async function answerWithContext(
         sources: [],
       };
     }
-    // Local fallback: quote the most relevant passages verbatim.
     const top = chunks
       .slice(0, 3)
       .map((c) => `> ${c.content.slice(0, 500)}`)
@@ -458,7 +416,6 @@ export async function answerWithContext(
   }
 
   if (!context) {
-    // Key configured but retrieval found nothing — no generation needed.
     return {
       answer:
         "I couldn't find anything in your workspace that clearly answers that. Try rephrasing, or create a note about it first.",
@@ -467,6 +424,8 @@ export async function answerWithContext(
       sources: [],
     };
   }
+
+  const provider = resolveProvider();
 
   const system =
     "You are EngineerOS, an assistant that answers questions about the user's workspace. " +
@@ -480,7 +439,7 @@ export async function answerWithContext(
     .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`)
     .join("\n");
 
-  const answer = await openaiChat(
+  const answer = await provider.chat(
     [
       { role: "system", content: system },
       { role: "user", content: `Workspace excerpts:\n\n${context}\n\n---\n\n${historyBlock ? `Conversation so far:\n${historyBlock}\n\n` : ""}Question: ${question}` },
@@ -488,5 +447,5 @@ export async function answerWithContext(
     500
   );
 
-  return { answer, model: "gpt-4o-mini", local: false, sources };
+  return { answer, model: provider.name, local: false, sources };
 }

@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { requireWorkspace } from "@/lib/supabase/auth";
 import { transcribeAudio } from "@/lib/ai";
+import { loadAiConfig } from "@/lib/ai/db-config";
+import { runWithAiConfig } from "@/lib/ai/server-config";
 
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => null)) as { storage_path?: string } | null;
@@ -27,7 +29,10 @@ export async function POST(request: NextRequest) {
   const mime = filename.endsWith(".ogg") ? "audio/ogg" : "audio/webm";
 
   try {
-    const result = await transcribeAudio(Buffer.from(await data.arrayBuffer()), filename, mime);
+    const aiConfig = await loadAiConfig(supabase, workspace.id);
+    const result = await runWithAiConfig(aiConfig, async () =>
+      transcribeAudio(Buffer.from(await data.arrayBuffer()), filename, mime)
+    );
     return NextResponse.json({ transcript: result?.transcript ?? null, model: result?.model ?? null });
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 502 });

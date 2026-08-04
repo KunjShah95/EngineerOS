@@ -1,34 +1,18 @@
-// Server-only AI helpers. When OPENAI_API_KEY is absent every feature falls
-// back to a local, dependency-free implementation so the app still works.
-
-export const OPENAI_BASE = "https://api.openai.com/v1";
+import { resolveProvider } from "./ai/providers";
 
 export function isAiConfigured(): boolean {
-  return Boolean(process.env.OPENAI_API_KEY);
+  try {
+    const provider = resolveProvider();
+    return provider.isConfigured();
+  } catch {
+    return false;
+  }
 }
 
 export async function openaiChat(messages: { role: string; content: string }[], maxTokens = 400) {
-  const res = await fetch(`${OPENAI_BASE}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      messages,
-      max_tokens: maxTokens,
-      temperature: 0.4,
-    }),
-  });
-  if (!res.ok) throw new Error(`AI request failed (${res.status})`);
-  const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-  return json.choices?.[0]?.message?.content?.trim() ?? "";
+  const provider = resolveProvider();
+  return provider.chat(messages, maxTokens);
 }
-
-// ---------------------------------------------------------------------------
-// AI summary
-// ---------------------------------------------------------------------------
 
 export interface SummaryResult {
   summary: string;
@@ -36,7 +20,6 @@ export interface SummaryResult {
   local: boolean;
 }
 
-/** Extract the most informative sentences, in original order. */
 function extractiveSummary(text: string, maxSentences = 5): string {
   const sentences = text
     .split(/(?<=[.!?])\s+/)
@@ -66,20 +49,20 @@ export async function summarizeText(text: string): Promise<SummaryResult> {
   if (!isAiConfigured()) {
     return { summary: extractiveSummary(text), model: "local-extractive", local: true };
   }
-  const summary = await openaiChat([
-    {
-      role: "system",
-      content:
-        "You summarize notes concisely in 3–5 bullet points. Use the same language as the source text. Output markdown bullets only.",
-    },
-    { role: "user", content: text.slice(0, 12000) },
-  ], 300);
-  return { summary, model: "gpt-4o-mini", local: false };
+  const provider = resolveProvider();
+  const summary = await provider.chat(
+    [
+      {
+        role: "system",
+        content:
+          "You summarize notes concisely in 3\u20135 bullet points. Use the same language as the source text. Output markdown bullets only.",
+      },
+      { role: "user", content: text.slice(0, 12000) },
+    ],
+    300
+  );
+  return { summary, model: provider.name, local: false };
 }
-
-// ---------------------------------------------------------------------------
-// Voice transcription (Whisper)
-// ---------------------------------------------------------------------------
 
 export async function transcribeAudio(
   audio: Buffer,
@@ -87,26 +70,9 @@ export async function transcribeAudio(
   mime: string
 ): Promise<{ transcript: string; model: string } | null> {
   if (!isAiConfigured()) return null;
-
-  const bytes = new Uint8Array(audio);
-  const form = new FormData();
-  form.append("file", new Blob([bytes], { type: mime }), filename);
-  form.append("model", "whisper-1");
-  form.append("response_format", "text");
-
-  const res = await fetch(`${OPENAI_BASE}/audio/transcriptions`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
-    body: form,
-  });
-  if (!res.ok) throw new Error(`Transcription failed (${res.status})`);
-  const transcript = (await res.text()).trim();
-  return { transcript, model: "whisper-1" };
+  const provider = resolveProvider();
+  return provider.transcribe(audio, filename, mime);
 }
-
-// ---------------------------------------------------------------------------
-// PDF chat — chunk + retrieve, then answer (LLM or local keyword)
-// ---------------------------------------------------------------------------
 
 export function chunkText(text: string, size = 1400, overlap = 200): string[] {
   const clean = text.replace(/\s+/g, " ").trim();
@@ -120,7 +86,6 @@ export function chunkText(text: string, size = 1400, overlap = 200): string[] {
   return chunks;
 }
 
-/** Score chunks by how many question tokens they contain. */
 export function retrieveChunks(question: string, chunks: string[], topK = 4): string[] {
   const qWords = new Set(
     question.toLowerCase().match(/[a-z0-9]{3,}/g) ?? []
@@ -145,7 +110,6 @@ export interface ChatAnswer {
   sources: string[];
 }
 
-/** Answer a question against a document (retrieval + generation). */
 export async function answerQuestion(documentText: string, question: string): Promise<ChatAnswer> {
   const chunks = chunkText(documentText);
   const context = retrieveChunks(question, chunks, 4).join("\n\n---\n\n");
@@ -160,13 +124,13 @@ export async function answerQuestion(documentText: string, question: string): Pr
   }
 
   if (!isAiConfigured()) {
-    // Local fallback: surface the most relevant passage verbatim.
     const first = context.split("\n\n---\n\n")[0];
     const answer = `Here's the closest passage I could find:\n\n> ${first.slice(0, 800)}`;
     return { answer, model: "local-keyword", local: true, sources: [first] };
   }
 
-  const answer = await openaiChat(
+  const provider = resolveProvider();
+  const answer = await provider.chat(
     [
       {
         role: "system",
@@ -177,5 +141,5 @@ export async function answerQuestion(documentText: string, question: string): Pr
     ],
     350
   );
-  return { answer, model: "gpt-4o-mini", local: false, sources: context.split("\n\n---\n\n") };
+  return { answer, model: provider.name, local: false, sources: context.split("\n\n---\n\n") };
 }

@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { requireWorkspace } from "@/lib/supabase/auth";
 import { answerQuestion } from "@/lib/ai";
+import { loadAiConfig } from "@/lib/ai/db-config";
+import { runWithAiConfig } from "@/lib/ai/server-config";
 
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => null)) as {
@@ -26,7 +28,9 @@ export async function POST(request: NextRequest) {
   if (!doc) return NextResponse.json({ error: "document-not-found" }, { status: 404 });
 
   try {
-    const result = await answerQuestion(doc.text_content, body.question);
+    const aiConfig = await loadAiConfig(supabase, workspace.id);
+    const question = body.question as string;
+    const result = await runWithAiConfig(aiConfig, () => answerQuestion(doc.text_content, question));
     return NextResponse.json(result);
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 502 });

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Bell, LogOut, Mail, Moon, Settings, ShieldAlert, Sun, Upload } from "lucide-react";
+import { Bell, Brain, LogOut, Mail, Moon, Settings, ShieldAlert, Sun, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shell/PageHeader";
@@ -28,6 +28,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useSyncedState } from "@/lib/use-synced-state";
 import { useQueryClient } from "@tanstack/react-query";
 import { GitHubSection } from "@/components/integrations/GitHubSection";
+import { useAiConfig } from "@/hooks/useAiConfig";
 
 export function SettingsPage() {
   const router = useRouter();
@@ -46,6 +47,17 @@ export function SettingsPage() {
   const [savingName, setSavingName] = useState(false);
   const [savingNotif, setSavingNotif] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [aiProvider, setAiProvider] = useState("");
+  const [aiApiKey, setAiApiKey] = useState("");
+  const [savingAi, setSavingAi] = useState(false);
+  const { data: aiConfigData } = useAiConfig();
+
+  // Reflect the persisted provider once the config loads.
+  const [prevProvider, setPrevProvider] = useState(aiConfigData?.provider ?? null);
+  if (aiConfigData?.provider && aiConfigData.provider !== prevProvider) {
+    setPrevProvider(aiConfigData.provider);
+    setAiProvider(aiConfigData.provider);
+  }
 
   const saveDisplayName = async () => {
     if (!displayName.trim()) return;
@@ -132,6 +144,25 @@ export function SettingsPage() {
       toast.error("Failed to upload avatar");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const saveAiProvider = async () => {
+    setSavingAi(true);
+    try {
+      const res = await fetch("/api/ai/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider: aiProvider, apiKey: aiApiKey }),
+      });
+      if (!res.ok) throw new Error("Failed to save AI provider");
+      setAiApiKey("");
+      await queryClient.invalidateQueries({ queryKey: ["ai_config"] });
+      toast.success("AI provider saved — your key is stored securely per workspace");
+    } catch {
+      toast.error("Failed to save AI provider");
+    } finally {
+      setSavingAi(false);
     }
   };
 
@@ -288,6 +319,51 @@ export function SettingsPage() {
             onCheckedChange={(v) => void toggleWeeklyDigest(v)}
             aria-label="Weekly digest"
           />
+        </div>
+      </section>
+
+      {/* AI Provider */}
+      <section className="rounded-lg border border-default bg-surface p-5">
+        <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold">
+          <Brain className="size-4 text-accent" strokeWidth={1.75} />
+          AI Provider
+        </h2>
+        <div className="space-y-1.5">
+          <Label htmlFor="ai-provider">Provider</Label>
+          <select
+            id="ai-provider"
+            value={aiProvider}
+            onChange={(e) => setAiProvider(e.target.value)}
+            className="w-full rounded-md border border-border-default bg-base px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-accent/60 focus:ring-2 focus:ring-ring/30"
+          >
+            <option value="">Default (OpenAI)</option>
+            {(aiConfigData?.providers ?? []).map((p) => (
+              <option key={p.name} value={p.name}>
+                {p.displayName} {p.configured ? "✓" : ""}
+              </option>
+            ))}
+          </select>
+          <Label htmlFor="ai-api-key">API Key</Label>
+          <div className="flex gap-2">
+            <Input
+              id="ai-api-key"
+              type="password"
+              value={aiApiKey}
+              onChange={(e) => setAiApiKey(e.target.value)}
+              placeholder="Enter your API key"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void saveAiProvider();
+              }}
+            />
+            <Button onClick={() => void saveAiProvider()} disabled={savingAi || !aiProvider}>
+              {savingAi ? "Saving…" : "Save"}
+            </Button>
+          </div>
+          <p className="text-xs text-faint">
+            {aiConfigData?.configured
+              ? `Using ${aiConfigData.providerName ?? aiConfigData.provider ?? "AI"} — your key stays in your own workspace.`
+              : "No AI key saved yet. Bring your own key to unlock AI features (works without one too)."}
+          </p>
         </div>
       </section>
 
