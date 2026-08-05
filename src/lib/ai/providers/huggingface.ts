@@ -77,7 +77,7 @@ export const huggingfaceProvider: AiProvider = {
         Authorization: `Bearer ${key}`,
         "Content-Type": mime,
       },
-      body: audio,
+      body: new Uint8Array(audio),
     });
     if (!res.ok) return null;
     const json = (await res.json()) as { text?: string };
