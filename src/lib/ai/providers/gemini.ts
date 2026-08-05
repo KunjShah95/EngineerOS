@@ -12,10 +12,7 @@ function getModel(): string {
 }
 
 function buildGeminiContent(message: { role: string; content: string }) {
-  if (message.role === "system") {
-    return { role: "user", parts: [{ text: message.content }] };
-  }
-  return { role: message.role === "assistant" ? "model" : message.role, parts: [{ text: message.content }] };
+  return { role: message.role === "assistant" ? "model" : "user", parts: [{ text: message.content }] };
 }
 
 export const geminiProvider: AiProvider = {
@@ -28,13 +25,16 @@ export const geminiProvider: AiProvider = {
     const key = getKey();
     if (!key) throw new Error("Gemini API key not configured");
     const model = getModel();
+    const systemMsg = messages.find((m) => m.role === "system");
+    const turns = messages.filter((m) => m.role !== "system").map(buildGeminiContent);
     const res = await fetch(
       `${BASE}/models/${model}:generateContent?key=${encodeURIComponent(key)}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: messages.map(buildGeminiContent),
+          ...(systemMsg ? { systemInstruction: { parts: [{ text: systemMsg.content }] } } : {}),
+          contents: turns,
           generationConfig: {
             maxOutputTokens: maxTokens,
             temperature: 0.4,

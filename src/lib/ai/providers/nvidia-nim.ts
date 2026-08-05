@@ -2,7 +2,7 @@ import type { AiProvider } from "./types";
 import { getAiApiKey } from "@/lib/ai/server-config";
 
 function getBaseUrl(): string {
-  return process.env.NVIDIA_NIM_BASE_URL || "https://ai.api.nvidia.com/v1";
+  return process.env.NVIDIA_NIM_BASE_URL || "https://integrate.api.nvidia.com/v1";
 }
 
 function getKey(): string | undefined {
@@ -10,11 +10,11 @@ function getKey(): string | undefined {
 }
 
 function getChatModel(): string {
-  return process.env.NVIDIA_NIM_CHAT_MODEL || "llama-3.1-405b-reasoning";
+  return process.env.NVIDIA_NIM_CHAT_MODEL || "meta/llama-3.1-405b-instruct";
 }
 
 function getEmbeddingModel(): string {
-  return process.env.NVIDIA_NIM_EMBEDDING_MODEL || "nv-embedqa-e5-v5";
+  return process.env.NVIDIA_NIM_EMBEDDING_MODEL || "nvidia/nv-embedqa-e5-v5";
 }
 
 export const nvidiaNimProvider: AiProvider = {

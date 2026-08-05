@@ -26,11 +26,14 @@ export async function POST(request: NextRequest) {
     .eq("workspace_id", workspace.id)
     .maybeSingle();
   if (!doc) return NextResponse.json({ error: "document-not-found" }, { status: 404 });
+  if (!doc.text_content?.trim()) {
+    return NextResponse.json({ error: "document has no extractable text" }, { status: 422 });
+  }
 
   try {
     const aiConfig = await loadAiConfig(supabase, workspace.id);
     const question = body.question as string;
-    const result = await runWithAiConfig(aiConfig, () => answerQuestion(doc.text_content, question));
+    const result = await runWithAiConfig(aiConfig, () => answerQuestion(doc.text_content as string, question));
     return NextResponse.json(result);
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 502 });

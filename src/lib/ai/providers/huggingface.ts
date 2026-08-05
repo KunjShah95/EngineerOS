@@ -66,21 +66,21 @@ export const huggingfaceProvider: AiProvider = {
     if (Array.isArray(json)) return json;
     throw new Error("HuggingFace embedding request returned no data");
   },
-  async transcribe(audio, filename, mime) {
+  async transcribe(audio, _filename, mime) {
     const key = getKey();
     if (!key) return null;
-    const bytes = new Uint8Array(audio);
-    const form = new FormData();
-    form.append("file", new Blob([bytes], { type: mime }), filename);
-    const res = await fetch(`${BASE}/models/openai/whisper`, {
+    const res = await fetch(`${BASE}/models/openai/whisper-large-v3`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${key}`,
+        "Content-Type": mime,
       },
-      body: form,
+      body: audio,
     });
     if (!res.ok) return null;
-    const transcript = (await res.text()).trim();
-    return { transcript, model: "whisper" };
+    const json = (await res.json()) as { text?: string };
+    const transcript = json.text?.trim() ?? "";
+    if (!transcript) return null;
+    return { transcript, model: "whisper-large-v3" };
   },
 };

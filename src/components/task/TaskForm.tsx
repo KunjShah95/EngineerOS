@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { CheckSquare } from "lucide-react";
 
@@ -110,16 +110,23 @@ function TaskFormFields({
   const [dueDate, setDueDate] = useState("");
   const [estimate, setEstimate] = useState("");
 
+  const inFlight = useRef(false);
+
   const submit = async () => {
-    if (!title.trim()) return;
-    await onSubmit({
-      title: title.trim(),
-      status,
-      priority,
-      project_id: projectId === "none" ? null : projectId,
-      due_date: dueDate || null,
-      estimate: estimate ? Number(estimate) : null,
-    });
+    if (!title.trim() || inFlight.current) return;
+    inFlight.current = true;
+    try {
+      await onSubmit({
+        title: title.trim(),
+        status,
+        priority,
+        project_id: projectId === "none" ? null : projectId,
+        due_date: dueDate || null,
+        estimate: estimate ? Number(estimate) : null,
+      });
+    } finally {
+      inFlight.current = false;
+    }
   };
 
   return (
@@ -217,7 +224,7 @@ function TaskFormFields({
         <Button type="button" variant="ghost" onClick={onCancel}>
           Cancel
         </Button>
-        <Button onClick={() => void submit()} disabled={!title.trim() || submitting}>
+        <Button type="button" onClick={() => void submit()} disabled={!title.trim() || submitting}>
           {submitting ? "Creating…" : "Create task"}
         </Button>
       </DialogFooter>

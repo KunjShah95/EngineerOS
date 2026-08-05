@@ -12,7 +12,7 @@ function getChatModel(): string {
 }
 
 function getEmbeddingModel(): string {
-  return process.env.COHERE_EMBEDDING_MODEL || "multilingual-22-12";
+  return process.env.COHERE_EMBEDDING_MODEL || "embed-multilingual-v3.0";
 }
 
 export const cohereProvider: AiProvider = {

@@ -8,7 +8,7 @@ function getKey(): string | undefined {
 }
 
 function getModel(): string {
-  return process.env.ANTHROPIC_MODEL || "claude-3-5-sonnet-20241022";
+  return process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
 }
 
 function toAnthropicMessages(messages: { role: string; content: string }[]) {
@@ -26,7 +26,7 @@ function toAnthropicMessages(messages: { role: string; content: string }[]) {
 export const anthropicProvider: AiProvider = {
   name: "anthropic",
   displayName: "Anthropic",
-  description: "Claude 3.5 Sonnet for chat, no native embeddings or transcription",
+  description: "Claude Sonnet 4.6 for chat, no native embeddings or transcription",
   supportsEmbeddings: false,
   isConfigured: () => Boolean(getKey()),
   async chat(messages, maxTokens = 400) {
@@ -36,7 +36,7 @@ export const anthropicProvider: AiProvider = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${key}`,
+        "x-api-key": key,
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({

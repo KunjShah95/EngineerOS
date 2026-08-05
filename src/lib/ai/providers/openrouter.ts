@@ -19,7 +19,7 @@ export const openrouterProvider: AiProvider = {
   name: "openrouter",
   displayName: "OpenRouter",
   description: "Access 200+ models via OpenRouter, including OpenAI, Anthropic, and more",
-  supportsEmbeddings: true,
+  supportsEmbeddings: false,
   isConfigured: () => Boolean(getKey()),
   async chat(messages, maxTokens = 400) {
     const key = getKey();
@@ -43,22 +43,8 @@ export const openrouterProvider: AiProvider = {
     const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
     return json.choices?.[0]?.message?.content?.trim() ?? "";
   },
-  async embed(text) {
-    const key = getKey();
-    if (!key) throw new Error("OpenRouter API key not configured");
-    const res = await fetch(`${BASE}/embeddings`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${key}`,
-      },
-      body: JSON.stringify({ model: getEmbeddingModel(), input: text.slice(0, 8000) }),
-    });
-    if (!res.ok) throw new Error(`OpenRouter embedding request failed (${res.status})`);
-    const json = (await res.json()) as { data?: { embedding?: number[] }[] };
-    const embedding = json.data?.[0]?.embedding;
-    if (!embedding) throw new Error("OpenRouter embedding request returned no data");
-    return embedding;
+  async embed(_text) {
+    throw new Error("OpenRouter does not provide an embeddings endpoint");
   },
   async transcribe(_audio, _filename, _mime) {
     return null;
