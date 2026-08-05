@@ -1,7 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server";
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require("pdf-parse") as (buf: Buffer) => Promise<{ text: string; numpages: number }>;
-
 import { requireWorkspace } from "@/lib/supabase/auth";
 
 export const runtime = "nodejs";
@@ -44,6 +41,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const pdfParse = require("pdf-parse") as (buf: Buffer) => Promise<{ text: string; numpages: number }>;
     const buffer = Buffer.from(await file.arrayBuffer());
     const result = await pdfParse(buffer);
 
