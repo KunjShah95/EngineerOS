@@ -1,7 +1,9 @@
 import type { AiProvider } from "./types";
-import { getAiApiKey } from "@/lib/ai/server-config";
+import { getAiApiKey, getAiBaseUrl } from "@/lib/ai/server-config";
 
-const BASE = "https://generativelanguage.googleapis.com/v1beta";
+function getBase(): string {
+  return getAiBaseUrl() ?? "https://generativelanguage.googleapis.com/v1beta";
+}
 
 function getKey(): string | undefined {
   return getAiApiKey() ?? process.env.GEMINI_API_KEY;
@@ -28,7 +30,7 @@ export const geminiProvider: AiProvider = {
     const systemMsg = messages.find((m) => m.role === "system");
     const turns = messages.filter((m) => m.role !== "system").map(buildGeminiContent);
     const res = await fetch(
-      `${BASE}/models/${model}:generateContent?key=${encodeURIComponent(key)}`,
+      `${getBase()}/models/${model}:generateContent?key=${encodeURIComponent(key)}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -52,7 +54,7 @@ export const geminiProvider: AiProvider = {
     if (!key) throw new Error("Gemini API key not configured");
     const model = process.env.GEMINI_EMBEDDING_MODEL || "text-embedding-004";
     const res = await fetch(
-      `${BASE}/models/${model}:embedContent?key=${encodeURIComponent(key)}`,
+      `${getBase()}/models/${model}:embedContent?key=${encodeURIComponent(key)}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

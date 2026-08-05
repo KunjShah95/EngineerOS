@@ -1,7 +1,9 @@
 import type { AiProvider } from "./types";
-import { getAiApiKey } from "@/lib/ai/server-config";
+import { getAiApiKey, getAiBaseUrl } from "@/lib/ai/server-config";
 
-const BASE = "https://api.anthropic.com/v1";
+function getBase(): string {
+  return getAiBaseUrl() ?? "https://api.anthropic.com/v1";
+}
 
 function getKey(): string | undefined {
   return getAiApiKey() ?? process.env.ANTHROPIC_API_KEY;
@@ -32,7 +34,7 @@ export const anthropicProvider: AiProvider = {
   async chat(messages, maxTokens = 400) {
     const key = getKey();
     if (!key) throw new Error("Anthropic API key not configured");
-    const res = await fetch(`${BASE}/messages`, {
+    const res = await fetch(`${getBase()}/messages`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

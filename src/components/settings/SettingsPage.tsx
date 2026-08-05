@@ -85,6 +85,7 @@ export function SettingsPage() {
   const [uploading, setUploading] = useState(false);
   const [aiProvider, setAiProvider] = useState("");
   const [aiApiKey, setAiApiKey] = useState("");
+  const [aiBaseUrl, setAiBaseUrl] = useState("");
   const [savingAi, setSavingAi] = useState(false);
   const { data: aiConfigData } = useAiConfig();
 
@@ -187,7 +188,7 @@ export function SettingsPage() {
       const res = await fetch("/api/ai/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider: aiProvider, apiKey: aiApiKey }),
+        body: JSON.stringify({ provider: aiProvider, apiKey: aiApiKey, baseUrl: aiBaseUrl || undefined }),
       });
       if (!res.ok) throw new Error("Failed to save AI provider");
       setAiApiKey("");
@@ -427,6 +428,31 @@ export function SettingsPage() {
                     ))}
                   </select>
                 </div>
+                {aiProvider && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ai-base-url">Base URL <span className="text-faint font-normal">(optional)</span></Label>
+                    <Input
+                      id="ai-base-url"
+                      type="url"
+                      value={aiBaseUrl}
+                      onChange={(e) => setAiBaseUrl(e.target.value)}
+                      placeholder={
+                        {
+                          openai: "https://api.openai.com/v1",
+                          anthropic: "https://api.anthropic.com/v1",
+                          groq: "https://api.groq.com/openai/v1",
+                          mistral: "https://api.mistral.ai/v1",
+                          huggingface: "https://api-inference.huggingface.co",
+                          openrouter: "https://openrouter.ai/api/v1",
+                          cohere: "https://api.cohere.com/v1",
+                          gemini: "https://generativelanguage.googleapis.com/v1beta",
+                          "nvidia-nim": "https://integrate.api.nvidia.com/v1",
+                        }[aiProvider] ?? "https://..."
+                      }
+                    />
+                    <p className="text-xs text-faint">Leave blank to use the provider default. Override for self-hosted or proxy endpoints.</p>
+                  </div>
+                )}
                 <div className="space-y-1.5">
                   <Label htmlFor="ai-api-key">API Key</Label>
                   <div className="flex gap-2">

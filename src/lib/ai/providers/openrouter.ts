@@ -1,7 +1,9 @@
 import type { AiProvider } from "./types";
-import { getAiApiKey } from "@/lib/ai/server-config";
+import { getAiApiKey, getAiBaseUrl } from "@/lib/ai/server-config";
 
-const BASE = "https://openrouter.ai/api/v1";
+function getBase(): string {
+  return getAiBaseUrl() ?? "https://openrouter.ai/api/v1";
+}
 
 function getKey(): string | undefined {
   return getAiApiKey() ?? process.env.OPENROUTER_API_KEY;
@@ -24,7 +26,7 @@ export const openrouterProvider: AiProvider = {
   async chat(messages, maxTokens = 400) {
     const key = getKey();
     if (!key) throw new Error("OpenRouter API key not configured");
-    const res = await fetch(`${BASE}/chat/completions`, {
+    const res = await fetch(`${getBase()}/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

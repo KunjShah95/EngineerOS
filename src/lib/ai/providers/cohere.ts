@@ -1,7 +1,9 @@
 import type { AiProvider } from "./types";
-import { getAiApiKey } from "@/lib/ai/server-config";
+import { getAiApiKey, getAiBaseUrl } from "@/lib/ai/server-config";
 
-const BASE = "https://api.cohere.com/v1";
+function getBase(): string {
+  return getAiBaseUrl() ?? "https://api.cohere.com/v1";
+}
 
 function getKey(): string | undefined {
   return getAiApiKey() ?? process.env.COHERE_API_KEY;
@@ -29,7 +31,7 @@ export const cohereProvider: AiProvider = {
     const chatHistory = messages
       .filter((m) => m.role !== "system" && m.role !== "user")
       .map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", message: m.content }));
-    const res = await fetch(`${BASE}/chat`, {
+    const res = await fetch(`${getBase()}/chat`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -51,7 +53,7 @@ export const cohereProvider: AiProvider = {
   async embed(text) {
     const key = getKey();
     if (!key) throw new Error("Cohere API key not configured");
-    const res = await fetch(`${BASE}/embed`, {
+    const res = await fetch(`${getBase()}/embed`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

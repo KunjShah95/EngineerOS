@@ -41,6 +41,7 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as {
     provider?: string;
     apiKey?: string;
+    baseUrl?: string;
   } | null;
   if (!body?.provider || !body?.apiKey) {
     return NextResponse.json({ error: "provider and apiKey are required" }, { status: 400 });
@@ -59,7 +60,7 @@ export async function POST(request: Request) {
   const { error } = await supabase
     .from("ai_configs")
     .upsert(
-      { workspace_id: workspace.id, provider: body.provider, api_key: body.apiKey.trim() },
+      { workspace_id: workspace.id, provider: body.provider, api_key: body.apiKey.trim(), base_url: body.baseUrl?.trim() || null },
       { onConflict: "workspace_id" }
     );
   if (error) {

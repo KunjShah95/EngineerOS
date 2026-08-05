@@ -1,7 +1,9 @@
 import type { AiProvider } from "./types";
-import { getAiApiKey } from "@/lib/ai/server-config";
+import { getAiApiKey, getAiBaseUrl } from "@/lib/ai/server-config";
 
-const BASE = "https://api.mistral.ai/v1";
+function getBase(): string {
+  return getAiBaseUrl() ?? "https://api.mistral.ai/v1";
+}
 
 function getKey(): string | undefined {
   return getAiApiKey() ?? process.env.MISTRAL_API_KEY;
@@ -24,7 +26,7 @@ export const mistralProvider: AiProvider = {
   async chat(messages, maxTokens = 400) {
     const key = getKey();
     if (!key) throw new Error("Mistral API key not configured");
-    const res = await fetch(`${BASE}/chat/completions`, {
+    const res = await fetch(`${getBase()}/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -44,7 +46,7 @@ export const mistralProvider: AiProvider = {
   async embed(text) {
     const key = getKey();
     if (!key) throw new Error("Mistral API key not configured");
-    const res = await fetch(`${BASE}/embeddings`, {
+    const res = await fetch(`${getBase()}/embeddings`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

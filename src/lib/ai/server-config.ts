@@ -11,6 +11,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 export type AiRuntimeConfig = {
   provider: string;
   apiKey: string;
+  baseUrl?: string;
 };
 
 const storage = new AsyncLocalStorage<AiRuntimeConfig>();
@@ -26,4 +27,8 @@ export function getAiApiKey(): string | undefined {
 
 export function getAiProviderName(): string | undefined {
   return storage.getStore()?.provider;
+}
+
+export function getAiBaseUrl(): string | undefined {
+  return storage.getStore()?.baseUrl;
 }

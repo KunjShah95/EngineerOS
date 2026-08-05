@@ -1,7 +1,9 @@
 import type { AiProvider } from "./types";
-import { getAiApiKey } from "@/lib/ai/server-config";
+import { getAiApiKey, getAiBaseUrl } from "@/lib/ai/server-config";
 
-const BASE = "https://api-inference.huggingface.co";
+function getBase(): string {
+  return getAiBaseUrl() ?? "https://api-inference.huggingface.co";
+}
 
 function getKey(): string | undefined {
   return getAiApiKey() ?? process.env.HUGGINGFACE_API_KEY;
@@ -29,7 +31,7 @@ export const huggingfaceProvider: AiProvider = {
     const prompt = systemMsg
       ? `${systemMsg.content}\n\n${userMsg?.content ?? ""}`
       : userMsg?.content ?? "";
-    const res = await fetch(`${BASE}/models/${getChatModel()}`, {
+    const res = await fetch(`${getBase()}/models/${getChatModel()}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -53,7 +55,7 @@ export const huggingfaceProvider: AiProvider = {
   async embed(text) {
     const key = getKey();
     if (!key) throw new Error("HuggingFace API key not configured");
-    const res = await fetch(`${BASE}/models/${getEmbeddingModel()}`, {
+    const res = await fetch(`${getBase()}/models/${getEmbeddingModel()}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -69,7 +71,7 @@ export const huggingfaceProvider: AiProvider = {
   async transcribe(audio, _filename, mime) {
     const key = getKey();
     if (!key) return null;
-    const res = await fetch(`${BASE}/models/openai/whisper-large-v3`, {
+    const res = await fetch(`${getBase()}/models/openai/whisper-large-v3`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${key}`,

@@ -1,8 +1,8 @@
 import type { AiProvider } from "./types";
-import { getAiApiKey } from "@/lib/ai/server-config";
+import { getAiApiKey, getAiBaseUrl } from "@/lib/ai/server-config";
 
 function getBaseUrl(): string {
-  return process.env.NVIDIA_NIM_BASE_URL || "https://integrate.api.nvidia.com/v1";
+  return getAiBaseUrl() ?? process.env.NVIDIA_NIM_BASE_URL ?? "https://integrate.api.nvidia.com/v1";
 }
 
 function getKey(): string | undefined {
@@ -14,7 +14,7 @@ function getChatModel(): string {
 }
 
 function getEmbeddingModel(): string {
-  return process.env.NVIDIA_NIM_EMBEDDING_MODEL || "nvidia/nv-embedqa-e5-v5";
+  return process.env.NVIDIA_NIM_EMBEDDING_MODEL || "nvidia/llama-3.2-nv-embedqa-1b-v2";
 }
 
 export const nvidiaNimProvider: AiProvider = {
