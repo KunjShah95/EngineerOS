@@ -23,7 +23,7 @@ type Columns = Record<TaskStatus, TaskWithProject[]>;
 const EMPTY_COLUMNS: Columns = { backlog: [], todo: [], in_progress: [], done: [] };
 
 function groupByStatus(tasks: TaskWithProject[]): Columns {
-  const grouped: Columns = { ...EMPTY_COLUMNS };
+  const grouped: Columns = { backlog: [], todo: [], in_progress: [], done: [] };
   for (const task of tasks) {
     grouped[task.status]?.push(task);
   }
