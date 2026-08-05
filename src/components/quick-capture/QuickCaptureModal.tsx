@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { CheckSquare, FileText, Inbox, Mic, Zap } from "lucide-react";
@@ -51,9 +51,12 @@ export function QuickCaptureModal({ workspaceId }: { workspaceId: string }) {
   const createNote = useCreateNote(workspaceId);
   const createVoiceNote = useCreateVoiceNote();
 
+  const inFlight = useRef(false);
+
   const submit = async () => {
-    if (!text.trim()) return;
-    await createCapture.mutateAsync({
+    if (!text.trim() || inFlight.current) return;
+    inFlight.current = true;
+    try { await createCapture.mutateAsync({
       raw_text: text,
       triageInto: destination === "inbox" ? undefined : destination,
       project_id: projectId === "none" ? null : projectId,
@@ -67,6 +70,7 @@ export function QuickCaptureModal({ workspaceId }: { workspaceId: string }) {
     );
     setText("");
     setOpen(false);
+    } finally { inFlight.current = false; }
   };
 
   return (
