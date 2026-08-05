@@ -54,7 +54,13 @@ export const nvidiaNimProvider: AiProvider = {
         Authorization: `Bearer ${key}`,
         "Accept": "application/json",
       },
-      body: JSON.stringify({ model: getEmbeddingModel(), input: text.slice(0, 8000) }),
+      body: JSON.stringify({
+        model: getEmbeddingModel(),
+        input: [text.slice(0, 8000)],
+        input_type: "passage",
+        encoding_format: "float",
+        truncate: "END",
+      }),
     });
     if (!res.ok) throw new Error(`NVIDIA NIM embedding request failed (${res.status})`);
     const json = (await res.json()) as { data?: { embedding?: number[] }[] };
