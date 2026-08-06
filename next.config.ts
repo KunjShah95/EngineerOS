@@ -10,10 +10,30 @@ const appUrl =
   process.env.NEXT_PUBLIC_APP_URL ??
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined);
 
+const csp = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://plausible.io",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src * data: blob:",
+  "font-src 'self' data:",
+  "connect-src 'self' https: wss:",
+  "frame-ancestors 'none'",
+  "object-src 'none'",
+  "base-uri 'self'",
+].join("; ");
+
 const nextConfig: NextConfig = {
   ...(appUrl ? { env: { NEXT_PUBLIC_APP_URL: appUrl } } : {}),
   poweredByHeader: false,
   compress: true,
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [{ key: "Content-Security-Policy", value: csp }],
+      },
+    ];
+  },
   experimental: {
     optimizePackageImports: [
       "lucide-react",

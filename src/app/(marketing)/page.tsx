@@ -9,9 +9,11 @@ import { LandingCta } from "@/components/marketing/landing-cta";
 import { MarketingFooter } from "@/components/marketing/marketing-footer";
 
 export const metadata = {
-  title: "EngineerOS — One connected system for notes, tasks, projects, and daily work",
+  title: {
+    absolute: "EngineerOS — AI Workspace for Notes, Tasks & Projects",
+  },
   description:
-    "EngineerOS is an AI-native workspace that captures everything — notes, tasks, projects, and daily entries — and lets you search semantically, get AI-powered answers with citations, and visualize connections as a knowledge graph.",
+    "AI-native workspace for notes, tasks & projects. Semantic search, AI answers with citations, and a knowledge graph — all in one connected system.",
   alternates: {
     canonical: "https://engineeros-delta.vercel.app",
   },
@@ -23,21 +25,12 @@ export const metadata = {
     siteName: "EngineerOS",
     locale: "en_US",
     url: "https://engineeros-delta.vercel.app",
-    images: [
-      {
-        url: "/og.png",
-        width: 1200,
-        height: 630,
-        alt: "EngineerOS — AI-native workspace for notes, tasks, and projects",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "EngineerOS — AI-native workspace for notes, tasks, and projects",
     description:
       "One connected system for notes, tasks, projects, and daily work. Semantic search, AI assistant with citations, knowledge graph, and automation rules.",
-    images: ["/og.png"],
   },
 };
 
@@ -96,6 +89,14 @@ export default function LandingPage() {
             description:
               "AI-native workspace for notes, tasks, projects, and daily work — with semantic search, knowledge graph, and AI assistant with citations.",
             dateModified: "2026-08-06",
+            potentialAction: {
+              "@type": "SearchAction",
+              target: {
+                "@type": "EntryPoint",
+                urlTemplate: `${BASE}/notes?q={search_term_string}`,
+              },
+              "query-input": "required name=search_term_string",
+            },
           }),
         }}
       />
@@ -199,6 +200,17 @@ export default function LandingPage() {
             name: "EngineerOS",
             url: BASE,
             description: "AI-native workspace for engineers, researchers, and builders",
+            logo: {
+              "@type": "ImageObject",
+              url: `${BASE}/icon.svg`,
+              width: 512,
+              height: 512,
+            },
+            contactPoint: {
+              "@type": "ContactPoint",
+              contactType: "customer support",
+              url: "https://github.com/KunjShah95",
+            },
             sameAs: [
               "https://github.com/KunjShah95",
             ],

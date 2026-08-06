@@ -49,21 +49,12 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "EngineerOS",
     locale: "en_US",
-    images: [
-      {
-        url: "/og.png",
-        width: 1200,
-        height: 630,
-        alt: "EngineerOS — AI-native workspace",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "EngineerOS — AI-native workspace for notes, tasks, and projects",
     description:
       "One connected system for notes, tasks, projects, and daily work. Semantic search, AI assistant with citations, knowledge graph, and automation rules.",
-    images: ["/og.png"],
   },
   robots: {
     index: true,
