@@ -545,7 +545,7 @@ export function SettingsPage() {
                         .eq("workspace_id", workspace.id)
                         .is("deleted_at", null);
                       if (!data?.length) { toast.error("No notes to export"); return; }
-                      const content = data.map((n) => `# ${n.title}\n\n${n.body_markdown}`).join("\n\n---\n\n");
+                      const content = data.map((n: { title: string; body_markdown: string | null }) => `# ${n.title}\n\n${n.body_markdown ?? ""}`).join("\n\n---\n\n");
                       const a = Object.assign(document.createElement("a"), {
                         href: URL.createObjectURL(new Blob([content], { type: "text/markdown" })),
                         download: "notes-export.md",
@@ -569,7 +569,7 @@ export function SettingsPage() {
                         .is("deleted_at", null);
                       if (!data?.length) { toast.error("No tasks to export"); return; }
                       const header = "title,status,priority,due_date,description";
-                      const rows = data.map((t) =>
+                      const rows = data.map((t: { title: string | null; status: string | null; priority: string | null; due_date: string | null; description: string | null }) =>
                         [t.title, t.status, t.priority, t.due_date ?? "", (t.description ?? "").replace(/"/g, '""')]
                           .map((v) => `"${v}"`).join(",")
                       );
