@@ -1,37 +1,47 @@
 # EngineerOS
 
-EngineerOS is an AI-native workspace for engineers, researchers, and builders. It combines notes, tasks, projects, and daily entries into one connected system with semantic search, a knowledge graph, and an AI assistant with citations.
+> AI-native workspace for engineers, researchers, and builders.
+
+EngineerOS combines notes, tasks, projects, and daily entries into one connected system with semantic search, a knowledge graph, and an AI assistant with citations. All data lives in your own Supabase project — no vendor lock-in.
 
 ## What EngineerOS does
 
 - Capture notes, tasks, and daily entries in one place
-- Search everything with semantic (AI-powered) search
-- Visualize connections between your notes and tasks as a knowledge graph
-- Get AI-powered answers with citations back to source notes
+- Search everything with semantic (embedding-powered) search
+- Visualize connections between notes and tasks as a knowledge graph
+- Get AI-powered answers with citations back to exact source notes
 - Automate recurring tasks and daily note creation
+- Track reading, bookmarks, meetings, and code snippets in one system
+- Integrate with GitHub for issues and repos
+
+## Who it's for
+
+Engineers, researchers, and builders who want a single second-brain workspace — without locking data in a proprietary cloud.
 
 ## Key pages
 
-- / — Landing page with product overview
-- /register — Create a free account
-- /login — Sign in to your workspace
-- /dashboard — Your home workspace view
-- /notes — Browse and search all notes
-- /tasks — Manage tasks and kanban boards
-- /projects — Organize work into projects
-- /daily — Daily notes with goals, journal, wins, and problems
-- /bookmarks — Save and organize links
-- /reading — Track reading progress
-- /meetings — Meeting notes with dates and attendees
-- /settings — Workspace and account settings
+- https://engineeros-delta.vercel.app/ — Landing page with product overview
+- https://engineeros-delta.vercel.app/register — Create a free account (no credit card required)
+- https://engineeros-delta.vercel.app/login — Sign in to your workspace
+- https://engineeros-delta.vercel.app/pricing.md — Machine-readable pricing data
 
-## Pricing
+## Pricing summary
 
-EngineerOS is free to start. Data lives in your own Supabase project — no vendor lock-in. See /pricing for structured pricing data.
+EngineerOS is free to start. See /pricing.md for structured tier details.
+- Free: $0/month — unlimited notes, tasks, daily entries, semantic search, AI assistant
+- Pro: contact for pricing — priority AI, advanced automation, custom themes
+- Enterprise: custom — SSO, SLA, audit logs, dedicated support
 
 ## AI features
 
-- Semantic search across all workspace content
-- AI assistant with source citations
+- Semantic search across all workspace content (embedding-based)
+- AI assistant with source citations — answers grounded in your own notes
 - Automatic knowledge graph from wikilinks and task links
-- Automation rules for recurring tasks, quick captures, and daily rollover
+- Automation rules: recurring tasks, keyword-based quick captures, daily rollover
+
+## Technical details
+
+- Built on Next.js (App Router) + Supabase (Postgres + pgvector)
+- Self-hosted: your data stays in your own Supabase project
+- Open-source core
+- Robots.txt allows GPTBot, PerplexityBot, ClaudeBot, Google-Extended, Bingbot

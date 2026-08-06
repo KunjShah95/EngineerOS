@@ -2,7 +2,24 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, FileText, FolderKanban, Hash, CheckSquare, Loader2, Sparkles } from "lucide-react";
+import {
+  Calendar,
+  CalendarDays,
+  CheckSquare,
+  FileText,
+  Focus,
+  FolderKanban,
+  GitFork,
+  Hash,
+  LayoutDashboard,
+  Loader2,
+  Moon,
+  PanelLeftClose,
+  Settings,
+  Sparkles,
+  Sun,
+  Zap,
+} from "lucide-react";
 
 import {
   CommandDialog,
@@ -16,12 +33,27 @@ import { SemanticSearchGroup } from "@/components/search/SemanticSearchGroup";
 import { useSearch } from "@/hooks/useSearch";
 import { useSemanticSearch, type KeywordCorpusItem } from "@/hooks/useSemanticSearch";
 import { useUiStore } from "@/lib/store/ui";
+import { useThemeStore } from "@/lib/store/theme";
 import { cn } from "@/lib/utils";
+
+interface PaletteCommand {
+  id: string;
+  label: string;
+  keywords: string;
+  icon: typeof FileText;
+  run: () => void;
+}
 
 export function CommandPalette({ workspaceId }: { workspaceId: string }) {
   const router = useRouter();
   const open = useUiStore((s) => s.commandPaletteOpen);
   const setOpen = useUiStore((s) => s.setCommandPaletteOpen);
+  const setQuickCaptureOpen = useUiStore((s) => s.setQuickCaptureOpen);
+  const toggleFocusMode = useUiStore((s) => s.toggleFocusMode);
+  const toggleSidebar = useUiStore((s) => s.toggleSidebar);
+  const theme = useThemeStore((s) => s.theme);
+  const setTheme = useThemeStore((s) => s.setTheme);
+
   const [query, setQuery] = useState("");
   const [semantic, setSemantic] = useState(false);
 
@@ -78,6 +110,92 @@ export function CommandPalette({ workspaceId }: { workspaceId: string }) {
     router.push(href);
   };
 
+  // ---- Commands (actions that do things, not just navigate) ----
+  const commands: PaletteCommand[] = [
+    {
+      id: "new-note",
+      label: "New note",
+      keywords: "create write markdown doc",
+      icon: FileText,
+      run: () => goto("/notes?new=1"),
+    },
+    {
+      id: "new-task",
+      label: "New task",
+      keywords: "create todo kanban",
+      icon: CheckSquare,
+      run: () => goto("/tasks?new=1"),
+    },
+    {
+      id: "new-project",
+      label: "New project",
+      keywords: "create workspace folder",
+      icon: FolderKanban,
+      run: () => goto("/projects"),
+    },
+    {
+      id: "quick-capture",
+      label: "Quick capture",
+      keywords: "capture inbox thought note voice",
+      icon: Zap,
+      run: () => {
+        setOpen(false);
+        setQuickCaptureOpen(true);
+      },
+    },
+    {
+      id: "focus-mode",
+      label: "Toggle focus mode",
+      keywords: "distraction minimal zen",
+      icon: Focus,
+      run: () => {
+        setOpen(false);
+        toggleFocusMode();
+      },
+    },
+    {
+      id: "sidebar",
+      label: "Toggle sidebar",
+      keywords: "collapse nav panel",
+      icon: PanelLeftClose,
+      run: () => {
+        setOpen(false);
+        toggleSidebar();
+      },
+    },
+    {
+      id: "theme",
+      label: theme === "light" ? "Switch to dark theme" : "Switch to light theme",
+      keywords: "theme dark light mode appearance",
+      icon: theme === "light" ? Moon : Sun,
+      run: () => {
+        setOpen(false);
+        setTheme(theme === "light" ? "dark" : "light");
+      },
+    },
+  ];
+
+  const navItems: PaletteCommand[] = [
+    { id: "nav-dashboard", label: "Dashboard", keywords: "home overview", icon: LayoutDashboard, run: () => goto("/dashboard") },
+    { id: "nav-projects", label: "Projects", keywords: "workspaces folders", icon: FolderKanban, run: () => goto("/projects") },
+    { id: "nav-tasks", label: "Tasks", keywords: "kanban todo board", icon: CheckSquare, run: () => goto("/tasks") },
+    { id: "nav-calendar", label: "Calendar", keywords: "schedule dates", icon: Calendar, run: () => goto("/calendar") },
+    { id: "nav-notes", label: "Notes", keywords: "markdown writing docs", icon: FileText, run: () => goto("/notes") },
+    { id: "nav-daily", label: "Daily", keywords: "journal log", icon: CalendarDays, run: () => goto("/daily") },
+    { id: "nav-assistant", label: "Assistant", keywords: "ai chat ask", icon: Sparkles, run: () => goto("/assistant") },
+    { id: "nav-graph", label: "Knowledge graph", keywords: "connections links graph", icon: GitFork, run: () => goto("/graph") },
+    { id: "nav-settings", label: "Settings", keywords: "preferences config", icon: Settings, run: () => goto("/settings") },
+  ];
+
+  const q = query.trim().toLowerCase();
+  const visibleCommands = !q
+    ? commands
+    : commands.filter((c) => c.label.toLowerCase().includes(q) || c.keywords.includes(q));
+
+  const visibleNav = !q
+    ? navItems
+    : navItems.filter((c) => c.label.toLowerCase().includes(q) || c.keywords.includes(q));
+
   const groupCount = useMemo(
     () =>
       (data?.notes.length ?? 0) +
@@ -118,14 +236,52 @@ export function CommandPalette({ workspaceId }: { workspaceId: string }) {
         )}
       </div>
       <CommandInput
-        placeholder="Search notes, tasks, projects, tags…"
+        placeholder="Search notes, tasks, projects… or run a command"
         value={query}
         onValueChange={setQuery}
         autoFocus
       />
       <CommandList>
-        {debouncedQuery.trim() === "" ? (
-          <CommandEmpty>Type to search across your workspace.</CommandEmpty>
+        {visibleCommands.length > 0 && (
+          <CommandGroup heading="Commands">
+            {visibleCommands.map((cmd) => {
+              const Icon = cmd.icon;
+              return (
+                <CommandItem
+                  key={cmd.id}
+                  value={`cmd:${cmd.label}`}
+                  onSelect={cmd.run}
+                >
+                  <Icon className="size-4 text-accent" strokeWidth={1.75} />
+                  <span className="line-clamp-1">{cmd.label}</span>
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+        )}
+
+        {visibleNav.length > 0 && (
+          <CommandGroup heading="Go to">
+            {visibleNav.map((cmd) => {
+              const Icon = cmd.icon;
+              return (
+                <CommandItem
+                  key={cmd.id}
+                  value={`nav:${cmd.label}`}
+                  onSelect={cmd.run}
+                >
+                  <Icon className="size-4 text-secondary" strokeWidth={1.75} />
+                  <span className="line-clamp-1">{cmd.label}</span>
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+        )}
+
+        {q === "" ? (
+          visibleCommands.length === 0 && visibleNav.length === 0 ? (
+            <CommandEmpty>Type to search across your workspace.</CommandEmpty>
+          ) : null
         ) : isFetching && !hasAnyResults ? (
           <div className="flex items-center justify-center gap-2 py-6 text-sm text-secondary">
             <Loader2 className="size-4 animate-spin" strokeWidth={1.75} />
@@ -186,13 +342,6 @@ export function CommandPalette({ workspaceId }: { workspaceId: string }) {
                 ))}
               </CommandGroup>
             )}
-
-            <CommandGroup heading="Go to">
-              <CommandItem onSelect={() => goto("/dashboard")}>
-                <CalendarDays className={cn("size-4 text-secondary")} strokeWidth={1.75} />
-                Dashboard
-              </CommandItem>
-            </CommandGroup>
           </>
         )}
       </CommandList>

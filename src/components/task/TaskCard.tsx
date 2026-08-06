@@ -2,7 +2,7 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CalendarDays, Timer } from "lucide-react";
+import { CalendarDays, GitBranch, Timer } from "lucide-react";
 
 import { priorityColor } from "@/lib/task-meta";
 import { projectColorStyle } from "@/lib/project-colors";
@@ -12,9 +12,11 @@ import type { TaskWithProject } from "@/types/database";
 interface TaskCardProps {
   task: TaskWithProject;
   onOpen: (id: string) => void;
+  /** True when the task has an open dependency. */
+  blocked?: boolean;
 }
 
-export function TaskCard({ task, onOpen }: TaskCardProps) {
+export function TaskCard({ task, onOpen, blocked = false }: TaskCardProps) {
   const {
     attributes,
     listeners,
@@ -67,6 +69,16 @@ export function TaskCard({ task, onOpen }: TaskCardProps) {
               aria-hidden
             />
             {task.project.name}
+          </span>
+        ) : null}
+
+        {blocked && task.status !== "done" ? (
+          <span
+            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium text-warning"
+            title="Blocked by an open dependency"
+          >
+            <GitBranch className="size-3.5" strokeWidth={1.75} />
+            Blocked
           </span>
         ) : null}
 

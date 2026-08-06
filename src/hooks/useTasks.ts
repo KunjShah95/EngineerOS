@@ -1,7 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { createClient } from "@/lib/supabase/client";
-import type { Task, TaskComment, TaskPriority, TaskStatus, TaskWithProject } from "@/types/database";
+import {
+  DependencyCycleError,
+  wouldCreateDependencyCycle,
+  type DependencyEdge,
+} from "@/lib/task-dependencies";
+import type {
+  Tag,
+  Task,
+  TaskActivityRow,
+  TaskComment,
+  TaskPriority,
+  TaskStatus,
+  TaskWithProject,
+} from "@/types/database";
 
 export const TASK_STATUSES: TaskStatus[] = ["backlog", "todo", "in_progress", "done"];
 
@@ -359,5 +372,253 @@ export function useDeleteTaskComment(taskId: string | null) {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["task_comments", taskId ?? ""] });
     },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Task tags (task_tags junction)
+// ---------------------------------------------------------------------------
+
+export interface LinkedTaskTag {
+  task_id: string;
+  tag_id: string;
+  tag: Tag;
+}
+
+export function useTaskTags(taskId: string | null) {
+  return useQuery({
+    queryKey: ["task_tags", taskId ?? ""],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("task_tags")
+        .select("task_id, tag_id, tag:tags(*)")
+        .eq("task_id", taskId!);
+      if (error) throw error;
+      return (data ?? []) as LinkedTaskTag[];
+    },
+    enabled: Boolean(taskId),
+  });
+}
+
+export function useSetTaskTags(taskId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (tagIds: string[]) => {
+      const supabase = createClient();
+      const { error: delError } = await supabase
+        .from("task_tags")
+        .delete()
+        .eq("task_id", taskId);
+      if (delError) throw delError;
+      if (tagIds.length > 0) {
+        const { error: insError } = await supabase
+          .from("task_tags")
+          .insert(tagIds.map((tag_id) => ({ task_id: taskId, tag_id })));
+        if (insError) throw insError;
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["task_tags", taskId ?? ""] });
+      queryClient.invalidateQueries({ queryKey: ["tags"] });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Task dependencies (task_id depends on depends_on_task_id)
+// ---------------------------------------------------------------------------
+
+export interface TaskDependencies {
+  /** Tasks this task depends on (prerequisites — block this task). */
+  dependsOn: TaskWithProject[];
+  /** Tasks that depend on this one (successors — blocked by this task). */
+  blocking: TaskWithProject[];
+}
+
+export async function fetchTaskDependencies(taskId: string): Promise<TaskDependencies> {
+  const supabase = createClient();
+  const depsRes = await supabase
+    .from("task_dependencies")
+    .select("depends_on_task_id")
+    .eq("task_id", taskId);
+  const blockersRes = await supabase
+    .from("task_dependencies")
+    .select("task_id")
+    .eq("depends_on_task_id", taskId);
+  if (depsRes.error) throw depsRes.error;
+  if (blockersRes.error) throw blockersRes.error;
+
+  const deps = (depsRes.data ?? []) as { depends_on_task_id: string }[];
+  const blockers = (blockersRes.data ?? []) as { task_id: string }[];
+
+  const ids = [...new Set([...deps.map((d) => d.depends_on_task_id), ...blockers.map((b) => b.task_id)])];
+
+  const tasks: TaskWithProject[] = [];
+  if (ids.length > 0) {
+    const { data, error } = await supabase
+      .from("tasks")
+      .select(taskSelect)
+      .in("id", ids)
+      .is("deleted_at", null);
+    if (error) throw error;
+    tasks.push(...((data ?? []) as TaskWithProject[]));
+  }
+
+  const byId = new Map(tasks.map((t) => [t.id, t]));
+  return {
+    dependsOn: deps
+      .map((d) => byId.get(d.depends_on_task_id))
+      .filter((t): t is TaskWithProject => Boolean(t)),
+    blocking: blockers
+      .map((b) => byId.get(b.task_id))
+      .filter((t): t is TaskWithProject => Boolean(t)),
+  };
+}
+
+export function useTaskDependencies(taskId: string | null) {
+  return useQuery({
+    queryKey: ["task_dependencies", taskId ?? ""],
+    queryFn: () => fetchTaskDependencies(taskId!),
+    enabled: Boolean(taskId),
+  });
+}
+
+/**
+ * Every dependency edge visible to the current user. No workspace filter is
+ * needed — the RLS policy on task_dependencies already scopes reads to edges
+ * whose task belongs to one of the user's workspaces (a single workspace in
+ * this app), which is exactly the graph we must check for cycles.
+ */
+export async function fetchTaskDependencyGraph(): Promise<DependencyEdge[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("task_dependencies")
+    .select("task_id, depends_on_task_id");
+  if (error) throw error;
+  return (data ?? []) as DependencyEdge[];
+}
+
+export function useTaskDependencyGraph(workspaceId: string | null) {
+  return useQuery({
+    queryKey: ["task_dependencies_graph", workspaceId ?? ""],
+    queryFn: () => fetchTaskDependencyGraph(),
+    enabled: Boolean(workspaceId),
+  });
+}
+
+export function useAddTaskDependency(taskId: string | null, workspaceId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (dependsOnTaskId: string) => {
+      const supabase = createClient();
+      // Cycle guard: adding taskId → dependsOnTaskId creates a loop exactly
+      // when dependsOnTaskId already reaches taskId transitively.
+      const graph = await fetchTaskDependencyGraph();
+      if (wouldCreateDependencyCycle(graph, taskId!, dependsOnTaskId)) {
+        throw new DependencyCycleError();
+      }
+      const { error } = await supabase
+        .from("task_dependencies")
+        .insert({ task_id: taskId, depends_on_task_id: dependsOnTaskId });
+      if (error) throw error;
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["task_dependencies", taskId ?? ""] });
+      queryClient.invalidateQueries({ queryKey: ["task_activity", taskId ?? ""] });
+      queryClient.invalidateQueries({ queryKey: ["task_blocked", workspaceId ?? ""] });
+      queryClient.invalidateQueries({ queryKey: ["task_dependencies_graph", workspaceId ?? ""] });
+    },
+  });
+}
+
+export function useRemoveTaskDependency(taskId: string | null, workspaceId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (dependsOnTaskId: string) => {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("task_dependencies")
+        .delete()
+        .eq("task_id", taskId)
+        .eq("depends_on_task_id", dependsOnTaskId);
+      if (error) throw error;
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["task_dependencies", taskId ?? ""] });
+      queryClient.invalidateQueries({ queryKey: ["task_activity", taskId ?? ""] });
+      queryClient.invalidateQueries({ queryKey: ["task_blocked", workspaceId ?? ""] });
+      queryClient.invalidateQueries({ queryKey: ["task_dependencies_graph", workspaceId ?? ""] });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Task activity history (append-only, written by DB triggers)
+// ---------------------------------------------------------------------------
+
+export function useTaskActivity(taskId: string | null) {
+  return useQuery({
+    queryKey: ["task_activity", taskId ?? ""],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("task_activity")
+        .select("*")
+        .eq("task_id", taskId!)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return (data ?? []) as TaskActivityRow[];
+    },
+    enabled: Boolean(taskId),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Blocked indicators (for the kanban board + lists)
+// ---------------------------------------------------------------------------
+
+/** Ids of tasks that have at least one open dependency. */
+export async function fetchBlockedTaskIds(workspaceId: string): Promise<Set<string>> {
+  const supabase = createClient();
+  // Dependencies pointing at tasks still open (not done).
+  const { data, error } = await supabase
+    .from("task_dependencies")
+    .select("task_id, depends_on:depends_on_task_id!inner(workspace_id, status)")
+    .eq("depends_on.workspace_id", workspaceId)
+    .neq("depends_on.status", "done");
+  if (error) throw error;
+  return new Set(((data ?? []) as { task_id: string }[]).map((d) => d.task_id));
+}
+
+export function useBlockedTaskIds(workspaceId: string | null) {
+  return useQuery({
+    queryKey: ["task_blocked", workspaceId ?? ""],
+    queryFn: () => fetchBlockedTaskIds(workspaceId!),
+    enabled: Boolean(workspaceId),
+  });
+}
+
+/** Activity for every task in a project (Sprint 4 — project Activity tab). */
+export interface ProjectActivityRow extends TaskActivityRow {
+  task: { id: string; title: string };
+}
+
+export function useProjectActivity(workspaceId: string | null, projectId: string | null) {
+  return useQuery({
+    queryKey: ["project_activity", workspaceId ?? "", projectId ?? ""],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("task_activity")
+        .select("*, task:tasks!inner(id, title)")
+        .eq("task.project_id", projectId!)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return (data ?? []) as unknown as ProjectActivityRow[];
+    },
+    enabled: Boolean(workspaceId) && Boolean(projectId),
   });
 }

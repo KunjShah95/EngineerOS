@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -17,7 +17,6 @@ import {
   Pin,
   PinOff,
   RefreshCw,
-  RotateCcw,
   Sparkles,
   Trash2,
 } from "lucide-react";
@@ -50,6 +49,14 @@ import { VoiceRecorder } from "@/components/voice/VoiceRecorder";
 import { VoiceNotesList } from "@/components/voice/VoiceNotesList";
 import { BacklinksPanel } from "@/components/graph/BacklinksPanel";
 import { useKnowledgeGraph } from "@/hooks/useKnowledgeGraph";
+import { NoteAttachments } from "@/components/note/NoteAttachments";
+import { VersionTimeline } from "@/components/note/VersionTimeline";
+import {
+  SlashCommandMenu,
+  buildSlashRows,
+  filterSlashCommands,
+  type SlashCommand,
+} from "@/components/note/SlashCommandMenu";
 
 type EditorMode = "edit" | "preview";
 
@@ -77,6 +84,15 @@ export function NoteDetail({ noteId }: { noteId: string }) {
   const updateNote = useUpdateNote(noteId, workspaceId);
   const setNoteTags = useSetNoteTags(noteId, workspaceId);
   const deleteNote = useDeleteNote(noteId, workspaceId);
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [slash, setSlash] = useState<{
+    index: number;
+    query: string;
+    top: number;
+    left: number;
+  } | null>(null);
+  const [slashHighlight, setSlashHighlight] = useState(0);
 
   const [mode, setMode] = useSyncedState<EditorMode>(
     note?.body_markdown ? "preview" : "edit"
@@ -142,6 +158,92 @@ export function NoteDetail({ noteId }: { noteId: string }) {
     await deleteNote.mutateAsync();
     toast.success("Note deleted");
     router.push("/notes");
+  };
+
+  // ---- Slash commands (type "/" at the start of a line) ----
+  const applySlashCommand = (cmd: SlashCommand) => {
+    if (!slash) return;
+    const before = body.slice(0, slash.index);
+    const after = body.slice(slash.index + 1 + slash.query.length);
+    const next = before + cmd.template + after;
+    setBody(next);
+    saveBody(next);
+    const caret = Math.max(0, Math.min(next.length, before.length + cmd.template.length + (cmd.caretOffset ?? 0)));
+    requestAnimationFrame(() => {
+      const ta = textareaRef.current;
+      if (ta) {
+        ta.focus();
+        ta.setSelectionRange(caret, caret);
+      }
+    });
+    setSlash(null);
+    setSlashHighlight(0);
+  };
+
+  const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const ta = e.currentTarget;
+
+    // Open the menu when "/" is typed at the start of a line.
+    if (!slash) {
+      if (e.key === "/") {
+        const caret = ta.selectionStart ?? 0;
+        const before = ta.value.slice(0, caret);
+        const lineStart = before.lastIndexOf("\n") + 1;
+        if (before.slice(lineStart).trim() === "") {
+          const pos = getCaretCoordinates(ta, caret);
+          setSlash({ index: caret, query: "", top: pos.top, left: pos.left });
+          // Start the highlight on the first actual command (row 0 is a group header).
+          const first = buildSlashRows(filterSlashCommands("")).findIndex(
+            (r) => r.type === "command"
+          );
+          setSlashHighlight(first === -1 ? 0 : first);
+        }
+      }
+      return;
+    }
+
+    const rows = buildSlashRows(filterSlashCommands(slash.query));
+    const commandRows = rows
+      .map((r, i) => (r.type === "command" ? i : -1))
+      .filter((i) => i >= 0);
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setSlashHighlight((h) => {
+          const idx = commandRows.indexOf(h);
+          return idx === -1 ? commandRows[0] : commandRows[(idx + 1) % commandRows.length];
+        });
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setSlashHighlight((h) => {
+          const idx = commandRows.indexOf(h);
+          return idx === -1
+            ? commandRows[commandRows.length - 1]
+            : commandRows[(idx - 1 + commandRows.length) % commandRows.length];
+        });
+        break;
+      case "Enter":
+      case "Tab": {
+        e.preventDefault();
+        const row = rows[slashHighlight];
+        if (row?.type === "command") applySlashCommand(row.command);
+        break;
+      }
+      case "Escape":
+        e.preventDefault();
+        setSlash(null);
+        break;
+      case "Backspace":
+        if (slash.query === "") {
+          e.preventDefault();
+          setSlash(null);
+        }
+        break;
+      default:
+        break;
+    }
   };
 
   return (
@@ -358,66 +460,73 @@ export function NoteDetail({ noteId }: { noteId: string }) {
         <BacklinksPanel noteId={noteId} />
       </div>
 
-      {/* Version history */}
+      {/* Sprint 2 — file attachments */}
+      <div className="mb-6">
+        <NoteAttachments noteId={note.id} workspaceId={workspace.id} />
+      </div>
+
+      {/* Version history — timeline + visual diff */}
       {showVersions && (
-        <div className="mb-6 rounded-lg border border-border-subtle bg-surface p-4">
-          <p className="mb-3 text-xs font-semibold text-secondary uppercase tracking-wide">
-            Version history ({versions?.length ?? 0})
-          </p>
-          {(versions ?? []).length === 0 ? (
-            <p className="text-sm text-faint">No saved versions yet. Click History → Save to snapshot.</p>
-          ) : (
-            <div className="space-y-1.5">
-              {(versions ?? []).map((v) => (
-                <div
-                  key={v.id}
-                  className="flex items-center justify-between gap-3 rounded-md border border-border-subtle px-3 py-2 text-sm"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{v.title}</p>
-                    <p className="text-xs text-faint">{new Date(v.created_at).toLocaleString()}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setBody(v.body_markdown);
-                      setTitle(v.title);
-                      updateNote.mutate(
-                        { title: v.title, body_markdown: v.body_markdown },
-                        { onSuccess: () => toast.success("Version restored") }
-                      );
-                    }}
-                    className="shrink-0 inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-accent transition-colors hover:bg-accent-muted"
-                  >
-                    <RotateCcw className="size-3" strokeWidth={1.75} />
-                    Restore
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="mb-6">
+          <VersionTimeline
+            versions={versions ?? []}
+            currentTitle={title}
+            currentBody={body}
+            onRestore={(v) => {
+              setBody(v.body_markdown);
+              setTitle(v.title);
+              updateNote.mutate(
+                { title: v.title, body_markdown: v.body_markdown },
+                { onSuccess: () => toast.success("Version restored") }
+              );
+            }}
+          />
         </div>
       )}
 
       {mode === "edit" ? (
-        <textarea
-          value={body}
-          onChange={(e) => {
-            setBody(e.target.value);
-            saveBody(e.target.value);
-          }}
-          onBlur={() =>
-            updateNote.mutate(
-              { body_markdown: body },
-              { onSuccess: () => setJustSaved(true), onError: () => toast.error("Failed to save note") }
-            )
-          }
-          placeholder="Write in markdown…"
-          aria-label="Note body (markdown)"
-          className="field-sizing-content min-h-[50vh] w-full resize-y rounded-lg border border-border-subtle bg-transparent px-4 py-3 text-sm leading-relaxed text-foreground outline-none transition-colors duration-150 placeholder:text-faint focus:border-default focus:ring-2 focus:ring-ring/30"
-        />
+        <div className="relative">
+          <textarea
+            ref={textareaRef}
+            value={body}
+            onChange={(e) => {
+              const value = e.target.value;
+              setBody(value);
+              saveBody(value);
+              // Keep the slash query in sync with what was typed after "/".
+              setSlash((prev) => {
+                if (!prev) return prev;
+                const caret = e.target.selectionStart ?? value.length;
+                const query = value.slice(prev.index + 1, caret);
+                if (query.includes("\n") || value[prev.index] !== "/") return null;
+                return { ...prev, query };
+              });
+            }}
+            onKeyDown={handleEditorKeyDown}
+            onBlur={() => {
+              setSlash(null);
+              updateNote.mutate(
+                { body_markdown: body },
+                { onSuccess: () => setJustSaved(true), onError: () => toast.error("Failed to save note") }
+              );
+            }}
+            placeholder={"Write in markdown… (type \"/\" for commands)"}
+            aria-label="Note body (markdown)"
+            className="field-sizing-content min-h-[50vh] w-full resize-y rounded-lg border border-border-subtle bg-transparent px-4 py-3 text-[15px] leading-7 text-foreground outline-none transition-colors duration-150 placeholder:text-faint focus:border-default focus:ring-2 focus:ring-ring/30"
+          />
+          {slash && (
+            <SlashCommandMenu
+              rows={buildSlashRows(filterSlashCommands(slash.query))}
+              highlightIndex={slashHighlight}
+              top={slash.top}
+              left={slash.left}
+              onMouseEnter={setSlashHighlight}
+              onSelect={applySlashCommand}
+            />
+          )}
+        </div>
       ) : body.trim() ? (
-        <div className="rounded-lg border border-border-subtle bg-surface px-6 py-4">
+        <div className="rounded-lg border border-border-subtle bg-surface px-6 py-5">
           <MarkdownRenderer content={body} resolveWikilink={resolveWikilink} />
         </div>
       ) : (
@@ -455,4 +564,40 @@ export function NoteDetail({ noteId }: { noteId: string }) {
       </div>
     </div>
   );
+}
+
+/**
+ * Measure the caret position inside a textarea using a hidden mirror node that
+ * replicates its font/padding/width. Returns coordinates relative to the
+ * textarea's top-left, used to anchor the slash-command menu.
+ */
+function getCaretCoordinates(
+  textarea: HTMLTextAreaElement,
+  index: number
+): { top: number; left: number } {
+  const cs = getComputedStyle(textarea);
+  const mirror = document.createElement("div");
+  mirror.style.cssText = [
+    "position:absolute",
+    "visibility:hidden",
+    "white-space:pre-wrap",
+    "word-wrap:break-word",
+    `font:${cs.font}`,
+    `padding-top:${cs.paddingTop}`,
+    `padding-bottom:${cs.paddingBottom}`,
+    `padding-left:${cs.paddingLeft}`,
+    `padding-right:${cs.paddingRight}`,
+    `border-top-width:${cs.borderTopWidth}`,
+    `border-bottom-width:${cs.borderBottomWidth}`,
+    `box-sizing:${cs.boxSizing}`,
+    `width:${textarea.clientWidth}px`,
+  ].join(";");
+  const span = document.createElement("span");
+  span.textContent = textarea.value.slice(0, index);
+  mirror.appendChild(span);
+  document.body.appendChild(mirror);
+  const rect = span.getBoundingClientRect();
+  document.body.removeChild(mirror);
+  const taRect = textarea.getBoundingClientRect();
+  return { top: rect.bottom - taRect.top, left: rect.left - taRect.left };
 }

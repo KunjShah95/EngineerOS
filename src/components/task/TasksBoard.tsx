@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CheckSquare, Kanban, List, Plus } from "lucide-react";
 
@@ -42,6 +42,26 @@ export function TasksBoard() {
 
   const [addStatus, setAddStatus] = useState<TaskStatus | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
+
+  // Deep link ?new=1 (⇧⌘N / command palette) — open the new-task form, then
+  // clear the param so a refresh doesn't re-open it. The state adjustment
+  // happens during render (React-recommended) and the effect only touches the
+  // URL, so no cascading setState.
+  const newTaskPending = searchParams.get("new") === "1";
+  const [newTaskHandled, setNewTaskHandled] = useState(false);
+  if (newTaskPending && !newTaskHandled) {
+    setNewTaskHandled(true);
+    setAddStatus("todo");
+  } else if (!newTaskPending && newTaskHandled) {
+    // Reset so a later ⇧⌘N press re-opens the form.
+    setNewTaskHandled(false);
+  }
+  useEffect(() => {
+    if (!newTaskPending) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("new");
+    router.replace(`${pathname}?${params.toString()}`);
+  }, [newTaskPending, searchParams, pathname, router]);
 
   const updateFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());

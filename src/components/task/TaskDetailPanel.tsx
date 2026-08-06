@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   AlertCircle,
@@ -10,6 +10,8 @@ import {
   Clock,
   Copy,
   FileText,
+  GitBranch,
+  History,
   Link2,
   ListChecks,
   MessageCircle,
@@ -18,6 +20,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,23 +36,35 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import {
+  useAddTaskDependency,
   useCreateTask,
   useCreateTaskComment,
   useDeleteTask,
   useDeleteTaskComment,
   useLinkNoteToTask,
+  useRemoveTaskDependency,
+  useSetTaskTags,
   useTask,
+  useTaskActivity,
   useTaskComments,
+  useTaskDependencies,
+  useTaskDependencyGraph,
   useTaskLinkedNotes,
+  useTasks,
+  useTaskTags,
   useUnlinkNoteFromTask,
   useUpdateTask,
 } from "@/hooks/useTasks";
 import { useNotes } from "@/hooks/useNotes";
 import { useProjects } from "@/hooks/useProjects";
+import { useTags } from "@/hooks/useTags";
+import { DependencyCycleError, wouldCreateDependencyCycle } from "@/lib/task-dependencies";
+import { TagInput } from "@/components/note/TagInput";
 import { PRIORITY_META, TASK_STATUS_META } from "@/lib/task-meta";
 import { useSyncedState } from "@/lib/use-synced-state";
 import { cn } from "@/lib/utils";
 import type { TaskPriority, TaskStatus } from "@/types/database";
+import { ACTIVITY_ICONS, activityText } from "@/lib/task-activity";
 
 interface TaskDetailPanelProps {
   workspaceId: string;
@@ -73,12 +88,38 @@ export function TaskDetailPanel({ workspaceId, taskId, onClose }: TaskDetailPane
   const createComment = useCreateTaskComment(taskId, workspaceId);
   const deleteComment = useDeleteTaskComment(taskId);
 
+  const { data: allTags } = useTags(workspaceId);
+  const { data: taskTags } = useTaskTags(taskId);
+  const setTaskTags = useSetTaskTags(taskId);
+  const tagIds = (taskTags ?? []).map((t) => t.tag_id);
+
+  // Sprint 3 — dependencies + activity
+  const { data: allTasks } = useTasks(workspaceId);
+  const { data: deps } = useTaskDependencies(taskId);
+  const addDependency = useAddTaskDependency(taskId, workspaceId);
+  const removeDependency = useRemoveTaskDependency(taskId, workspaceId);
+  const { data: activity } = useTaskActivity(taskId);
+
+  // Cycle detection — grey out any task that would close a dependency loop.
+  const { data: dependencyGraph } = useTaskDependencyGraph(workspaceId);
+  const cycleCandidates = useMemo(() => {
+    const graph = dependencyGraph ?? [];
+    const set = new Set<string>();
+    for (const t of allTasks ?? []) {
+      if (t.id === taskId) continue;
+      if ((deps?.dependsOn ?? []).some((d) => d.id === t.id)) continue;
+      if (wouldCreateDependencyCycle(graph, taskId, t.id)) set.add(t.id);
+    }
+    return set;
+  }, [dependencyGraph, allTasks, taskId, deps]);
+
   const [title, setTitle] = useSyncedState(task?.title ?? "");
   const [description, setDescription] = useSyncedState(task?.description ?? "");
   const [noteToAdd, setNoteToAdd] = useState<string>("none");
   const [newSubtask, setNewSubtask] = useState("");
   const [newComment, setNewComment] = useState("");
   const [logHours, setLogHours] = useState("");
+  const [depToAdd, setDepToAdd] = useState<string>("none");
 
   // Escape key to close
   useEffect(() => {
@@ -324,6 +365,35 @@ export function TaskDetailPanel({ workspaceId, taskId, onClose }: TaskDetailPane
             />
           </div>
 
+          {/* Tags */}
+          <div className="space-y-1.5">
+            <Label className="inline-flex items-center gap-1.5">
+              Tags
+            </Label>
+            <div className="rounded-md border border-default bg-surface px-2 py-1.5">
+              <TagInput
+                workspaceId={workspaceId}
+                tagIds={tagIds}
+                allTags={allTags ?? []}
+                onChange={(ids) => setTaskTags.mutate(ids)}
+                disabled={setTaskTags.isPending}
+              />
+            </div>
+          </div>
+
+          {/* Metadata */}
+          <div className="flex items-center gap-4 text-[11px] text-faint">
+            <span>Created {new Date(task.created_at).toLocaleDateString()}</span>
+            <span>·</span>
+            <span>Updated {new Date(task.updated_at).toLocaleDateString()}</span>
+            {task.completed_at ? (
+              <>
+                <span>·</span>
+                <span className="text-success">Completed {new Date(task.completed_at).toLocaleDateString()}</span>
+              </>
+            ) : null}
+          </div>
+
           {/* Subtasks */}
           <div className="space-y-2">
             <Label className="inline-flex items-center gap-1.5">
@@ -434,6 +504,112 @@ export function TaskDetailPanel({ workspaceId, taskId, onClose }: TaskDetailPane
               >
                 Log
               </Button>
+            </div>
+          </div>
+
+          {/* Sprint 3 — dependencies */}
+          <div className="space-y-2">
+            <Label className="inline-flex items-center gap-1.5">
+              <GitBranch className="size-4" strokeWidth={1.75} />
+              Dependencies
+            </Label>
+
+            <div className="space-y-1.5">
+              <p className="text-[11px] font-medium text-secondary">Blocked by</p>
+              {(deps?.dependsOn ?? []).length === 0 ? (
+                <p className="text-sm text-faint">Nothing blocking this task.</p>
+              ) : (
+                <div className="space-y-1">
+                  {(deps?.dependsOn ?? []).map((dep) => (
+                    <div
+                      key={dep.id}
+                      className="flex items-center justify-between gap-2 rounded-md border border-border-subtle bg-surface px-3 py-2 text-sm"
+                    >
+                      <span className="inline-flex min-w-0 items-center gap-2">
+                        <span
+                          className={cn(
+                            "size-2 shrink-0 rounded-full",
+                            dep.status === "done" ? "bg-success" : "bg-warning"
+                          )}
+                          aria-hidden
+                        />
+                        <span className="truncate">{dep.title}</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => void removeDependency.mutateAsync(dep.id)}
+                        aria-label={`Remove dependency on ${dep.title}`}
+                        className="rounded p-1 text-faint transition-colors hover:bg-surface-hover hover:text-danger"
+                      >
+                        <X className="size-3.5" strokeWidth={1.75} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {(deps?.blocking ?? []).length > 0 && (
+                <>
+                  <p className="pt-1 text-[11px] font-medium text-secondary">Blocking</p>
+                  <div className="space-y-1">
+                    {(deps?.blocking ?? []).map((dep) => (
+                      <div
+                        key={dep.id}
+                        className="flex items-center gap-2 rounded-md border border-border-subtle bg-surface px-3 py-2 text-sm"
+                      >
+                        <span className="size-2 shrink-0 rounded-full bg-info" aria-hidden />
+                        <span className="truncate">{dep.title}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              <Select
+                value={depToAdd}
+                onValueChange={(v) => {
+                  setDepToAdd("none");
+                  void addDependency
+                    .mutateAsync(v)
+                    .then(() => toast.success("Dependency added"))
+                    .catch((err) => {
+                      if (err instanceof DependencyCycleError) {
+                        toast.warning("Can't link — this would create a dependency loop");
+                      } else {
+                        toast.error("Couldn't add dependency");
+                      }
+                    });
+                }}
+              >
+                <SelectTrigger className="w-full" aria-label="Block this task on…">
+                  <SelectValue placeholder="Block this task on…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(allTasks ?? [])
+                    .filter(
+                      (t) => t.id !== taskId && !(deps?.dependsOn ?? []).some((d) => d.id === t.id)
+                    )
+                    .map((t) => (
+                      <SelectItem
+                        key={t.id}
+                        value={t.id}
+                        disabled={cycleCandidates.has(t.id)}
+                        title={
+                          cycleCandidates.has(t.id)
+                            ? "Linking this task would create a dependency loop"
+                            : undefined
+                        }
+                      >
+                        {t.title}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              {cycleCandidates.size > 0 && (
+                <p className="text-[11px] text-faint">
+                  Greyed-out tasks would create a dependency loop.
+                </p>
+              )}
             </div>
           </div>
 
@@ -556,6 +732,47 @@ export function TaskDetailPanel({ workspaceId, taskId, onClose }: TaskDetailPane
               </Button>
             </div>
           </div>
+
+          {/* Sprint 3 — activity history */}
+          <div className="space-y-2">
+            <Label className="inline-flex items-center gap-1.5">
+              <History className="size-4" strokeWidth={1.75} />
+              Activity
+              {activity && activity.length > 0 && (
+                <span className="text-xs text-faint">({activity.length})</span>
+              )}
+            </Label>
+            {(activity ?? []).length === 0 ? (
+              <p className="text-sm text-faint">
+                No activity yet — changes are recorded automatically.
+              </p>
+            ) : (
+              <div className="space-y-1">
+                {(activity ?? []).map((row) => {
+                  const Icon = ACTIVITY_ICONS[row.action] ?? History;
+                  return (
+                    <div
+                      key={row.id}
+                      className="flex items-start gap-2 rounded-md border border-border-subtle bg-surface px-3 py-2"
+                    >
+                      <Icon
+                        className="mt-0.5 size-3.5 shrink-0 text-secondary"
+                        strokeWidth={1.75}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] leading-snug text-foreground">
+                          {activityText(row, projects ?? [])}
+                        </p>
+                        <p className="text-[10px] text-faint">
+                          {formatDistanceToNow(new Date(row.created_at), { addSuffix: true })}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Footer */}
@@ -593,3 +810,4 @@ export function TaskDetailPanel({ workspaceId, taskId, onClose }: TaskDetailPane
     </div>
   );
 }
+

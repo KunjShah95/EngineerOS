@@ -75,6 +75,23 @@ export interface TaskComment {
   created_at: string;
 }
 
+/** "task_id depends on depends_on_task_id" edge. */
+export interface TaskDependency {
+  task_id: string;
+  depends_on_task_id: string;
+  created_at: string;
+}
+
+/** Append-only activity entry per task (written by DB triggers). */
+export interface TaskActivityRow {
+  id: string;
+  task_id: string;
+  workspace_id: string;
+  action: "created" | "updated" | "comment_added" | "dependency_added" | "dependency_removed";
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
 export interface Snippet {
   id: string;
   workspace_id: string;
@@ -273,6 +290,18 @@ export interface PdfDocument {
   storage_path: string | null;
   text_content: string;
   char_count: number;
+  created_at: string;
+}
+
+/** A file attached to a note (object lives in the private "attachments" bucket). */
+export interface NoteAttachment {
+  id: string;
+  note_id: string;
+  workspace_id: string;
+  name: string;
+  storage_path: string;
+  mime_type: string | null;
+  size_bytes: number | null;
   created_at: string;
 }
 

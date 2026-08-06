@@ -15,9 +15,18 @@ interface KanbanColumnProps {
   tasks: TaskWithProject[];
   onOpenTask: (id: string) => void;
   onAddTask: (status: TaskStatus) => void;
+  /** Task ids blocked by an open dependency. */
+  blockedIds?: Set<string>;
 }
 
-export function KanbanColumn({ status, label, tasks, onOpenTask, onAddTask }: KanbanColumnProps) {
+export function KanbanColumn({
+  status,
+  label,
+  tasks,
+  onOpenTask,
+  onAddTask,
+  blockedIds,
+}: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: `column:${status}` });
   const statusColor =
     TASK_STATUS_META.find((s) => s.value === status)?.color ?? "var(--text-tertiary)";
@@ -55,7 +64,12 @@ export function KanbanColumn({ status, label, tasks, onOpenTask, onAddTask }: Ka
       <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
         <div className="flex flex-1 flex-col gap-2 px-3 pb-3">
           {tasks.map((task) => (
-            <TaskCard key={task.id} task={task} onOpen={onOpenTask} />
+            <TaskCard
+              key={task.id}
+              task={task}
+              onOpen={onOpenTask}
+              blocked={blockedIds?.has(task.id)}
+            />
           ))}
 
           {tasks.length === 0 && !isOver ? (

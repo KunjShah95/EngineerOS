@@ -22,6 +22,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageLoader } from "@/components/shell/PageLoader";
 import { PageHeader } from "@/components/shell/PageHeader";
+import { MemoryPanel } from "@/components/memory/MemoryPanel";
 import { useTasks } from "@/hooks/useTasks";
 import { useMarkReminderRead, useReminders } from "@/hooks/useAutomation";
 import { useNotes } from "@/hooks/useNotes";
@@ -243,6 +244,9 @@ export function DashboardPage() {
               </div>
             </div>
           </section>
+
+          {/* AI Memory Layer — context, not chat */}
+          <MemoryPanel workspaceId={workspace.id} />
 
           {overdue.length > 0 && (
             <section aria-label="Overdue">

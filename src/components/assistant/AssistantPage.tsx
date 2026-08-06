@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Bot, FileText, Loader2, MessageSquareText, Plus, RefreshCw, Send, Sparkles, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { EmptyState } from "@/components/shell/EmptyState";
+import { MemoryPanel } from "@/components/memory/MemoryPanel";
 import { PageLoader } from "@/components/shell/PageLoader";
 import { PageHeader } from "@/components/shell/PageHeader";
 import {
@@ -225,12 +225,22 @@ export function AssistantPage() {
         <div className="flex min-h-[420px] flex-col rounded-lg border border-default bg-surface">
           <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-4">
             {messages.length === 0 ? (
-              <div className="flex h-full items-center justify-center">
-                <EmptyState
-                  icon={Bot}
-                  title="Ask anything about your workspace"
-                  description="Try “What did I work on last week?”, “Summarize my open tasks”, or “What do my notes say about the auth migration?”"
-                />
+              <div className="flex min-h-full flex-col items-center justify-center gap-5 py-2">
+                <div className="w-full max-w-3xl">
+                  <MemoryPanel workspaceId={workspace.id} compact />
+                </div>
+                <div className="flex flex-col items-center gap-2 text-center">
+                  <div className="rounded-md bg-accent-muted p-2.5">
+                    <Bot className="size-5 text-accent" strokeWidth={1.75} />
+                  </div>
+                  <h3 className="text-sm font-medium text-foreground">
+                    Ask anything about your workspace
+                  </h3>
+                  <p className="max-w-sm text-sm text-faint">
+                    The assistant already knows what you did yesterday, what’s in flight, and
+                    what’s blocked — try a suggested question below.
+                  </p>
+                </div>
               </div>
             ) : (
               messages.map((m) => (

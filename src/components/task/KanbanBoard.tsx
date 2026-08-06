@@ -15,7 +15,12 @@ import { arrayMove } from "@dnd-kit/sortable";
 
 import { KanbanColumn } from "@/components/task/KanbanColumn";
 import { TASK_STATUS_META } from "@/lib/task-meta";
-import { useReorderTasks, useTasks, type TaskFilters } from "@/hooks/useTasks";
+import {
+  useBlockedTaskIds,
+  useReorderTasks,
+  useTasks,
+  type TaskFilters,
+} from "@/hooks/useTasks";
 import type { TaskStatus, TaskWithProject } from "@/types/database";
 
 type Columns = Record<TaskStatus, TaskWithProject[]>;
@@ -43,6 +48,7 @@ interface KanbanBoardProps {
 export function KanbanBoard({ workspaceId, filters, onOpenTask, onAddTask }: KanbanBoardProps) {
   const { data: tasks, isLoading } = useTasks(workspaceId, filters);
   const reorder = useReorderTasks(workspaceId);
+  const { data: blockedIds } = useBlockedTaskIds(workspaceId);
 
   const [columns, setColumns] = useState<Columns>(EMPTY_COLUMNS);
   const draggingRef = useRef(false);
@@ -190,6 +196,7 @@ export function KanbanBoard({ workspaceId, filters, onOpenTask, onAddTask }: Kan
             tasks={columns[value]}
             onOpenTask={onOpenTask}
             onAddTask={onAddTask}
+            blockedIds={blockedIds}
           />
         ))}
       </div>

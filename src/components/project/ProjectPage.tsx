@@ -1,17 +1,23 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
+  Bookmark,
   CalendarClock,
   CheckSquare,
+  ExternalLink,
+  FilePlus2,
   FileText,
   FolderKanban,
+  History,
   Link2,
   MoreHorizontal,
   Pencil,
 } from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -28,13 +34,17 @@ import { EmptyState } from "@/components/shell/EmptyState";
 import { ProjectForm } from "@/components/project/ProjectForm";
 import { useDeleteProject, useProjects, useUpdateProject } from "@/hooks/useProjects";
 import { useNotes } from "@/hooks/useNotes";
-import { useTasks } from "@/hooks/useTasks";
+import { useCreateNote } from "@/hooks/useNotes";
+import { useTasks, useProjectActivity } from "@/hooks/useTasks";
+import { useResources } from "@/hooks/useResources";
+import { usePdfDocuments } from "@/hooks/usePdfChat";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { projectColorStyle } from "@/lib/project-colors";
+import { ACTIVITY_ICONS, activityText } from "@/lib/task-activity";
 import { cn } from "@/lib/utils";
-import type { ProjectStatus, TaskPriority } from "@/types/database";
+import type { NoteWithRelations, ProjectStatus, TaskPriority } from "@/types/database";
 
-const TABS = ["overview", "notes", "tasks", "timeline", "resources"] as const;
+const TABS = ["overview", "notes", "tasks", "logs", "resources", "timeline", "activity"] as const;
 type Tab = (typeof TABS)[number];
 
 const statusStyles: Record<ProjectStatus, string> = {
@@ -63,6 +73,12 @@ export function ProjectPage({ projectId }: { projectId: string }) {
   const { data: tasks } = useTasks(workspaceId, { projectId });
   const deleteProject = useDeleteProject(workspaceId);
   const updateProject = useUpdateProject(workspaceId);
+  const createNote = useCreateNote(workspaceId);
+
+  // Sprint 4 — project resources + activity
+  const { data: bookmarks } = useResources(workspaceId, "bookmark", { projectId });
+  const { data: pdfs } = usePdfDocuments(workspaceId, projectId);
+  const { data: projectActivity } = useProjectActivity(workspaceId, projectId);
 
   const activeProject = projectQuery.data?.find((p) => p.id === projectId);
   const isLoading = projectQuery.isLoading || !workspace;
@@ -76,6 +92,30 @@ export function ProjectPage({ projectId }: { projectId: string }) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", value);
     router.replace(`${pathname}?${params.toString()}`);
+  };
+
+  // Daily logs: project notes grouped by their creation date, newest first.
+  const logsByDate = useMemo(() => {
+    const map = new Map<string, NoteWithRelations[]>();
+    for (const n of notes ?? []) {
+      const d = n.created_at.split("T")[0];
+      const list = map.get(d) ?? [];
+      list.push(n);
+      map.set(d, list);
+    }
+    return [...map.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
+  }, [notes]);
+
+  const newLog = async () => {
+    try {
+      const note = await createNote.mutateAsync({
+        title: `Log · ${format(new Date(), "yyyy-MM-dd")}`,
+        project_id: projectId,
+      });
+      router.push(`/notes/${note.id}`);
+    } catch {
+      toast.error("Failed to create log. Please try again.");
+    }
   };
 
   if (isLoading) {
@@ -199,15 +239,19 @@ export function ProjectPage({ projectId }: { projectId: string }) {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="notes">Notes ({noteCount})</TabsTrigger>
           <TabsTrigger value="tasks">Tasks ({taskCount})</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
+          <TabsTrigger value="logs">Daily logs</TabsTrigger>
           <TabsTrigger value="resources">Resources</TabsTrigger>
+          <TabsTrigger value="timeline">Timeline</TabsTrigger>
+          <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
             <StatCard label="Notes" value={noteCount} icon={FileText} />
             <StatCard label="Tasks" value={taskCount} icon={CheckSquare} />
             <StatCard label="Done" value={`${doneCount} · ${progress}%`} icon={CalendarClock} />
+            <StatCard label="Bookmarks" value={bookmarks?.length ?? 0} icon={Bookmark} />
+            <StatCard label="Logs" value={logsByDate.length} icon={FilePlus2} />
           </div>
 
           <div className="mt-6">
@@ -321,6 +365,131 @@ export function ProjectPage({ projectId }: { projectId: string }) {
           )}
         </TabsContent>
 
+        {/* Sprint 4 — daily logs */}
+        <TabsContent value="logs" className="mt-6">
+          <div className="mb-4 flex items-center justify-between">
+            <p className="text-sm text-secondary">
+              {logsByDate.length} {logsByDate.length === 1 ? "day" : "days"} logged
+            </p>
+            <Button size="sm" onClick={() => void newLog()} disabled={createNote.isPending}>
+              <FilePlus2 className="size-4" strokeWidth={1.75} />
+              New log
+            </Button>
+          </div>
+
+          {logsByDate.length === 0 ? (
+            <EmptyState
+              icon={FilePlus2}
+              title="No logs yet"
+              description="Capture what happened each day. New notes become entries grouped by date."
+              actionLabel="Write today's log"
+              onAction={() => void newLog()}
+            />
+          ) : (
+            <div className="space-y-4">
+              {logsByDate.map(([date, dayNotes]) => (
+                <section key={date}>
+                  <div className="mb-2 flex items-center gap-2">
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-secondary">
+                      {format(new Date(date), "EEEE, MMMM d, yyyy")}
+                    </h3>
+                    <span className="text-xs text-faint">({dayNotes.length})</span>
+                  </div>
+                  <div className="space-y-1">
+                    {dayNotes.map((note) => (
+                      <Link
+                        key={note.id}
+                        href={`/notes/${note.id}`}
+                        className="flex items-center justify-between rounded-md border border-default bg-surface px-4 py-3 text-sm transition-colors duration-150 hover:bg-surface-hover"
+                      >
+                        <span className="truncate font-medium">{note.title}</span>
+                        <span className="ml-4 shrink-0 text-xs text-faint">
+                          {formatDistanceToNow(new Date(note.created_at), { addSuffix: true })}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Sprint 4 — resources: bookmarks + PDFs */}
+        <TabsContent value="resources" className="mt-6">
+          <div className="space-y-8">
+            <section>
+              <h3 className="mb-3 flex items-center gap-1.5 text-sm font-medium text-secondary">
+                <Bookmark className="size-4" strokeWidth={1.75} />
+                Bookmarks
+                <span className="text-xs text-faint">({bookmarks?.length ?? 0})</span>
+              </h3>
+              {(bookmarks ?? []).length === 0 ? (
+                <p className="text-sm text-faint">
+                  No bookmarks for this project yet. Save them in{" "}
+                  <Link href="/bookmarks" className="text-accent hover:underline">
+                    Bookmarks
+                  </Link>{" "}
+                  and file them here.
+                </p>
+              ) : (
+                <div className="space-y-1">
+                  {(bookmarks ?? []).map((b) => (
+                    <div
+                      key={b.id}
+                      className="flex items-center gap-3 rounded-md border border-default bg-surface px-4 py-2.5 text-sm transition-colors hover:bg-surface-hover"
+                    >
+                      <Bookmark className="size-4 shrink-0 text-secondary" strokeWidth={1.75} />
+                      <span className="min-w-0 flex-1 truncate">{b.title}</span>
+                      {b.metadata?.url ? (
+                        <a
+                          href={b.metadata.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-accent transition-colors hover:text-accent-hover"
+                        >
+                          Open
+                          <ExternalLink className="size-3" strokeWidth={1.75} />
+                        </a>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section>
+              <h3 className="mb-3 flex items-center gap-1.5 text-sm font-medium text-secondary">
+                <FileText className="size-4" strokeWidth={1.75} />
+                PDFs
+                <span className="text-xs text-faint">({pdfs?.length ?? 0})</span>
+              </h3>
+              {(pdfs ?? []).length === 0 ? (
+                <p className="text-sm text-faint">
+                  Uploaded PDFs filed into this project will appear here.{" "}
+                  <Link href="/pdf-chat" className="text-accent hover:underline">
+                    Open PDF chat
+                  </Link>
+                </p>
+              ) : (
+                <div className="space-y-1">
+                  {(pdfs ?? []).map((pdf) => (
+                    <Link
+                      key={pdf.id}
+                      href="/pdf-chat"
+                      className="flex items-center gap-3 rounded-md border border-default bg-surface px-4 py-2.5 text-sm transition-colors hover:bg-surface-hover"
+                    >
+                      <FileText className="size-4 shrink-0 text-secondary" strokeWidth={1.75} />
+                      <span className="min-w-0 flex-1 truncate">{pdf.title}</span>
+                      <span className="shrink-0 text-xs text-faint">{pdf.char_count.toLocaleString()} chars</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+        </TabsContent>
+
         <TabsContent value="timeline" className="mt-6">
           {datedTasks.length === 0 ? (
             <EmptyState
@@ -349,12 +518,41 @@ export function ProjectPage({ projectId }: { projectId: string }) {
           )}
         </TabsContent>
 
-        <TabsContent value="resources" className="mt-6">
-          <EmptyState
-            icon={Link2}
-            title="Resources coming soon"
-            description="Bookmarks, links, and files for this project will live here."
-          />
+        {/* Sprint 4 — activity feed for the whole project */}
+        <TabsContent value="activity" className="mt-6">
+          {(projectActivity ?? []).length === 0 ? (
+            <EmptyState
+              icon={History}
+              title="No activity yet"
+              description="Task changes, comments, and dependencies in this project will show up here."
+            />
+          ) : (
+            <div className="space-y-1">
+              {(projectActivity ?? []).map((row) => {
+                const Icon = ACTIVITY_ICONS[row.action] ?? History;
+                return (
+                  <div
+                    key={row.id}
+                    className="flex items-center gap-3 rounded-md border border-default bg-surface px-4 py-2.5 text-sm transition-colors hover:bg-surface-hover"
+                  >
+                    <Icon className="size-4 shrink-0 text-secondary" strokeWidth={1.75} />
+                    <div className="min-w-0 flex-1 truncate">
+                      <Link
+                        href={`/tasks?task=${row.task.id}`}
+                        className="font-medium transition-colors hover:text-accent"
+                      >
+                        {row.task.title}
+                      </Link>
+                      <span className="text-secondary"> · {activityText(row, projectQuery.data ?? [])}</span>
+                    </div>
+                    <span className="shrink-0 text-xs text-faint">
+                      {formatDistanceToNow(new Date(row.created_at), { addSuffix: true })}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

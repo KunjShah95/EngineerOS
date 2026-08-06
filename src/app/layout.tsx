@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   title: { default: "EngineerOS", template: "%s · EngineerOS" },
   description:
     "EngineerOS is an AI-native workspace for notes, tasks, projects, and daily work — capture, find, and organize everything with semantic search, knowledge graphs, and AI-powered citations.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://engineeros-delta.vercel.app"),
   applicationName: "EngineerOS",
   keywords: [
     "notes",
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     images: [
       {
-        url: "/icon.svg",
+        url: "/og.png",
         width: 1200,
         height: 630,
         alt: "EngineerOS — AI-native workspace",
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     title: "EngineerOS — AI-native workspace for notes, tasks, and projects",
     description:
       "One connected system for notes, tasks, projects, and daily work. Semantic search, AI assistant with citations, knowledge graph, and automation rules.",
-    images: ["/icon.svg"],
+    images: ["/og.png"],
   },
   robots: {
     index: true,
@@ -78,9 +78,6 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/icon.svg",
-  },
-  other: {
-    "ai-seo": "true",
   },
 };
 

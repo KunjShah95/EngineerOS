@@ -1,6 +1,15 @@
+"use client";
+
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import {
+  AlertOctagon,
+  AlertTriangle,
+  Info,
+  Lightbulb,
+} from "lucide-react";
 
+import { MermaidBlock } from "@/components/note/MermaidBlock";
 import { cn, slugify } from "@/lib/utils";
 
 function childrenText(children: React.ReactNode): string {
@@ -11,6 +20,12 @@ function childrenText(children: React.ReactNode): string {
     return childrenText(((children as React.ReactElement).props as { children?: React.ReactNode })?.children ?? "");
   }
   return "";
+}
+
+/** Like childrenText, but joins block children with newlines (for blockquotes). */
+function blockChildrenText(children: React.ReactNode): string {
+  if (Array.isArray(children)) return children.map(blockChildrenText).join("\n");
+  return childrenText(children);
 }
 
 /**
@@ -27,27 +42,61 @@ function renderWikilinks(content: string, resolve: (title: string) => string | n
   });
 }
 
+// Obsidian-style callouts: > [!NOTE] / [!TIP] / [!IMPORTANT] / [!WARNING] / [!DANGER]
+const CALLOUTS: Record<string, { label: string; icon: typeof Info; box: string; title: string }> = {
+  note: {
+    label: "Note",
+    icon: Info,
+    box: "border-info/30 bg-info/5",
+    title: "text-info",
+  },
+  tip: {
+    label: "Tip",
+    icon: Lightbulb,
+    box: "border-success/30 bg-success/5",
+    title: "text-success",
+  },
+  important: {
+    label: "Important",
+    icon: AlertTriangle,
+    box: "border-warning/30 bg-warning/5",
+    title: "text-warning",
+  },
+  warning: {
+    label: "Warning",
+    icon: AlertTriangle,
+    box: "border-warning/30 bg-warning/5",
+    title: "text-warning",
+  },
+  danger: {
+    label: "Danger",
+    icon: AlertOctagon,
+    box: "border-danger/30 bg-danger/5",
+    title: "text-danger",
+  },
+};
+
 const components: Parameters<typeof ReactMarkdown>[0]["components"] = {
   h1: ({ children }) => (
-    <h1 id={slugify(childrenText(children))} className="mt-6 mb-2 text-2xl font-semibold text-foreground scroll-mt-4">{children}</h1>
+    <h1 id={slugify(childrenText(children))} className="mt-6 mb-2 text-2xl font-semibold tracking-tight text-foreground scroll-mt-4">{children}</h1>
   ),
   h2: ({ children }) => (
-    <h2 id={slugify(childrenText(children))} className="mt-6 mb-2 text-xl font-semibold text-foreground scroll-mt-4">{children}</h2>
+    <h2 id={slugify(childrenText(children))} className="mt-6 mb-2 text-xl font-semibold tracking-tight text-foreground scroll-mt-4">{children}</h2>
   ),
   h3: ({ children }) => (
-    <h3 id={slugify(childrenText(children))} className="mt-6 mb-2 text-base font-semibold text-foreground scroll-mt-4">{children}</h3>
+    <h3 id={slugify(childrenText(children))} className="mt-6 mb-2 text-base font-semibold tracking-tight text-foreground scroll-mt-4">{children}</h3>
   ),
   h4: ({ children }) => (
-    <h4 id={slugify(childrenText(children))} className="mt-5 mb-2 text-sm font-semibold text-foreground scroll-mt-4">{children}</h4>
+    <h4 id={slugify(childrenText(children))} className="mt-5 mb-2 text-sm font-semibold tracking-tight text-foreground scroll-mt-4">{children}</h4>
   ),
-  p: ({ children }) => <p className="my-3 leading-relaxed text-foreground">{children}</p>,
+  p: ({ children }) => <p className="my-3 leading-7 text-foreground">{children}</p>,
   ul: ({ children }) => (
     <ul className="my-3 list-disc space-y-1 pl-6 text-foreground">{children}</ul>
   ),
   ol: ({ children }) => (
     <ol className="my-3 list-decimal space-y-1 pl-6 text-foreground">{children}</ol>
   ),
-  li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+  li: ({ children }) => <li className="leading-7">{children}</li>,
   a: ({ children, href }) => (
     <a
       href={href}
@@ -58,11 +107,38 @@ const components: Parameters<typeof ReactMarkdown>[0]["components"] = {
       {children}
     </a>
   ),
-  blockquote: ({ children }) => (
-    <blockquote className="my-4 border-l-2 border-accent/50 pl-4 text-secondary">
-      {children}
-    </blockquote>
-  ),
+  blockquote: ({ children }) => {
+    const text = blockChildrenText(children).trim();
+    const firstLine = text.split("\n")[0] ?? "";
+    const match = firstLine.match(/^\[!(\w+)\]/i);
+    const meta = match ? CALLOUTS[match[1].toLowerCase()] : null;
+
+    if (!meta) {
+      return (
+        <blockquote className="my-4 border-l-2 border-accent/50 pl-4 text-secondary">
+          {children}
+        </blockquote>
+      );
+    }
+
+    const Icon = meta.icon;
+    const body = text.split("\n").slice(1).join("\n").trim();
+    return (
+      <div className={cn("my-4 rounded-lg border px-4 py-3", meta.box)}>
+        <p className={cn("mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide", meta.title)}>
+          <Icon className="size-3.5" strokeWidth={1.75} />
+          {meta.label}
+        </p>
+        {body ? (
+          <div className="text-sm leading-7 text-foreground">
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+              {body}
+            </ReactMarkdown>
+          </div>
+        ) : null}
+      </div>
+    );
+  },
   hr: () => <hr className="my-6 border-border-subtle" />,
   strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
   em: ({ children }) => <em className="text-foreground">{children}</em>,
@@ -88,11 +164,24 @@ const components: Parameters<typeof ReactMarkdown>[0]["components"] = {
       </code>
     );
   },
-  pre: ({ children }) => (
-    <pre className="my-4 overflow-x-auto rounded-lg border border-border-subtle bg-base p-4 font-mono text-[13px] leading-5">
-      {children}
-    </pre>
-  ),
+  pre: ({ children, node }) => {
+    // Mermaid blocks are fenced code (```mermaid) — react-markdown wraps them
+    // in <pre><code>, but we want just the rendered diagram, not the code
+    // chrome on top of it. Detect via the raw hast node and return the block.
+    const codeChild = node?.children?.[0] as
+      | { properties?: { className?: string[] }; children?: { value?: string }[] }
+      | undefined;
+    const isMermaid = (codeChild?.properties?.className ?? []).includes("language-mermaid");
+    if (isMermaid) {
+      const raw = (codeChild?.children ?? []).map((c) => c.value ?? "").join("");
+      return <MermaidBlock code={raw.replace(/\n$/, "")} />;
+    }
+    return (
+      <pre className="my-4 overflow-x-auto rounded-lg border border-border-subtle bg-base p-4 font-mono text-[13px] leading-5">
+        {children}
+      </pre>
+    );
+  },
   table: ({ children }) => (
     <div className="my-4 overflow-x-auto">
       <table className="w-full border-collapse text-sm">{children}</table>
@@ -133,7 +222,7 @@ export function MarkdownRenderer({
 }) {
   const body = resolveWikilink ? renderWikilinks(content, resolveWikilink) : content;
   return (
-    <div className="markdown text-sm">
+    <div className="markdown text-[15px] leading-7">
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
         {body}
       </ReactMarkdown>

@@ -110,12 +110,10 @@ export function LandingFeatures() {
 
         {/* AI Layer */}
         <Reveal className="mt-12 text-center md:mt-20">
-          <div className="flex items-center gap-4">
-            <div className="h-px flex-1 bg-border-subtle" />
+          <div className="flex items-center justify-center">
             <span className="font-mono text-[11px] tracking-widest text-accent uppercase">
               AI Layer
             </span>
-            <div className="h-px flex-1 bg-border-subtle" />
           </div>
           <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-secondary">
             Every note and task is indexed automatically. Ask questions in plain

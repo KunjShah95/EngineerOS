@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDown, FileText, Hash, Layout, Pin, Plus } from "lucide-react";
@@ -78,6 +78,34 @@ export function NotesList() {
     params.delete("tag");
     router.replace(`/notes?${params.toString()}`);
   };
+
+  // Deep link ?new=1 (⌘N / command palette) — create a note and open it, then
+  // clear the param so a refresh doesn't spawn duplicates. The flag is adjusted
+  // during render so it also fires when the user is already on /notes (the URL
+  // changes but the component stays mounted); the mutation runs in an effect.
+  const newNotePending = searchParams.get("new") === "1";
+  const [newNoteHandled, setNewNoteHandled] = useState(false);
+  if (newNotePending && !newNoteHandled) {
+    setNewNoteHandled(true);
+  } else if (!newNotePending && newNoteHandled) {
+    setNewNoteHandled(false);
+  }
+
+  useEffect(() => {
+    if (!newNotePending) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("new");
+    router.replace(`/notes?${params.toString()}`);
+  }, [newNotePending, searchParams, router]);
+
+  useEffect(() => {
+    if (!newNotePending || !newNoteHandled) return;
+    void createNote
+      .mutateAsync({})
+      .then((note) => router.push(`/notes/${note.id}`))
+      .catch(() => toast.error("Failed to create note. Please try again."));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newNotePending, newNoteHandled]);
 
   const newNote = async (template?: { title: string; body_markdown: string }) => {
     try {

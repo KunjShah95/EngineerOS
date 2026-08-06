@@ -15,6 +15,7 @@ import {
 import { motion, useReducedMotion } from "motion/react";
 
 import { Button } from "@/components/ui/button";
+import { ShaderCanvas } from "@/components/marketing/shader-canvas";
 
 const EASE: [number, number, number, number] = [0.21, 0.47, 0.32, 0.98];
 
@@ -24,8 +25,6 @@ export function LandingHero() {
 
   const animate = prefersReducedMotion ? undefined : "show";
 
-  // Spotlight via CSS custom properties: pointer moves update two variables,
-  // so the overlay re-renders without touching React state (no re-renders).
   const handleSpotlight = (e: React.MouseEvent) => {
     const el = frameRef.current;
     if (!el) return;
@@ -41,15 +40,19 @@ export function LandingHero() {
 
   return (
     <section className="relative overflow-hidden pt-24 pb-16 md:pt-36 md:pb-24">
-      {/* Grid backdrop with a radial mask that fades it out. */}
+      {/* Shader canvas — fills the whole section */}
+      <ShaderCanvas className="pointer-events-none absolute inset-0 -z-20 h-full w-full" />
+
+      {/* Bottom fade — blends shader into the page content below */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,var(--border-subtle)_1px,transparent_1px),linear-gradient(to_bottom,var(--border-subtle)_1px,transparent_1px)] bg-[size:56px_56px] [mask-image:radial-gradient(ellipse_75%_60%_at_50%_0%,black,transparent)]"
+        className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-40 bg-gradient-to-t from-[var(--bg-base)] to-transparent"
       />
-      {/* Blurred glow behind the mockup. */}
+
+      {/* Subtle center darkening so text stays crisp */}
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/2 top-[55%] -z-10 h-[420px] w-[720px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(79,70,229,0.18),rgba(30,64,175,0.12)_55%,transparent_75%)] blur-3xl"
+        className="pointer-events-none absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_55%_60%_at_50%_30%,black,transparent)] bg-[rgba(8,10,18,0.45)]"
       />
 
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
@@ -62,7 +65,8 @@ export function LandingHero() {
           }}
           className="mx-auto max-w-3xl text-center"
         >
-          <span className="inline-flex items-center gap-2 rounded-full border border-border-subtle bg-surface px-3 py-1 font-mono text-[11px] tracking-widest text-secondary uppercase">
+          {/* Glass pill badge */}
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 font-mono text-[11px] tracking-widest text-secondary uppercase backdrop-blur-sm">
             <span className="relative flex size-1.5">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60 motion-reduce:animate-none motion-reduce:opacity-40" />
               <span className="relative inline-flex size-1.5 rounded-full bg-success" />
@@ -73,7 +77,12 @@ export function LandingHero() {
           <h1 className="mt-7 font-display text-[clamp(2.2rem,5.5vw,3.75rem)] font-semibold leading-[1.08] tracking-tight text-foreground">
             Notes, tasks, projects and an AI
             that understands all of it.{" "}
-            <span className="bg-gradient-to-r from-[#a5b4fc] via-accent to-[#1e40af] bg-clip-text text-transparent">
+            <span
+              className="bg-clip-text text-transparent"
+              style={{
+                backgroundImage: "linear-gradient(135deg, #a5b4fc 0%, #818cf8 30%, #4f46e5 60%, #7c3aed 100%)",
+              }}
+            >
               One system.
             </span>
           </h1>
@@ -88,13 +97,16 @@ export function LandingHero() {
 
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link href="/register" className="w-full sm:w-auto">
-              <Button size="lg" className="w-full sm:w-auto">
+              <Button
+                size="lg"
+                className="w-full shadow-[0_0_32px_-6px_var(--accent)] sm:w-auto"
+              >
                 Get started
                 <ArrowRight className="size-4" strokeWidth={1.75} />
               </Button>
             </Link>
             <Link href="/login" className="w-full sm:w-auto">
-              <Button variant="secondary" size="lg" className="w-full sm:w-auto">
+              <Button variant="secondary" size="lg" className="w-full border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 sm:w-auto">
                 Log in
               </Button>
             </Link>
@@ -105,8 +117,7 @@ export function LandingHero() {
           </p>
         </motion.div>
 
-        {/* Product mockup with the page's one signature effect: a spotlight
-            that follows the cursor across the frame. */}
+        {/* Mockup — gradient border frame */}
         <motion.div
           initial={animate ? "hidden" : false}
           animate={animate ? "show" : undefined}
@@ -121,30 +132,38 @@ export function LandingHero() {
           }}
           className="relative mx-auto mt-10 max-w-4xl md:mt-16"
         >
+          {/* Gradient border wrapper — bright at top, fades out at bottom */}
           <div
-            ref={frameRef}
-            onMouseMove={handleSpotlight}
-            onMouseLeave={clearSpotlight}
-            className="relative overflow-hidden rounded-xl border border-default bg-elevated shadow-[0_24px_80px_-24px_rgba(0,0,0,0.6)]"
+            className="rounded-xl p-px"
+            style={{
+              background: "linear-gradient(180deg, rgba(79,70,229,0.55) 0%, rgba(124,58,237,0.20) 40%, rgba(79,70,229,0.04) 100%)",
+            }}
           >
-            {/* Spotlight overlay (the signature effect) — driven by CSS vars. */}
             <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0 z-10 transition-opacity duration-300"
-              style={{
-                opacity: "var(--spot-opacity, 0)",
-                background:
-                  "radial-gradient(560px circle at var(--spot-x, 50%) var(--spot-y, 50%), rgba(79,70,229,0.16), transparent 55%)",
-              }}
-            />
+              ref={frameRef}
+              onMouseMove={handleSpotlight}
+              onMouseLeave={clearSpotlight}
+              className="relative overflow-hidden rounded-xl bg-elevated shadow-[0_24px_80px_-24px_rgba(0,0,0,0.75)]"
+            >
+              {/* Spotlight overlay */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 z-10 transition-opacity duration-300"
+                style={{
+                  opacity: "var(--spot-opacity, 0)",
+                  background:
+                    "radial-gradient(560px circle at var(--spot-x, 50%) var(--spot-y, 50%), rgba(79,70,229,0.16), transparent 55%)",
+                }}
+              />
 
-            <DashboardMockup />
+              <DashboardMockup />
+            </div>
           </div>
 
-          {/* Soft reflection glow beneath the frame. */}
+          {/* Reflection glow beneath the frame */}
           <div
             aria-hidden
-            className="pointer-events-none absolute -inset-x-8 -bottom-10 -z-10 h-24 bg-gradient-to-t from-accent/10 to-transparent blur-2xl"
+            className="pointer-events-none absolute -inset-x-8 -bottom-10 -z-10 h-28 bg-gradient-to-t from-[rgba(79,70,229,0.12)] to-transparent blur-2xl"
           />
         </motion.div>
       </div>
@@ -172,7 +191,7 @@ function DashboardMockup() {
         {/* Mini sidebar */}
         <div className="hidden flex-col border-r border-border-subtle bg-surface/40 p-3 sm:flex">
           <div className="mb-4 flex items-center gap-1.5 px-1">
-            <span className="flex size-4 items-center justify-center rounded bg-gradient-to-br from-[#4f46e5] to-[#1e40af]">
+            <span className="flex size-4 items-center justify-center rounded bg-gradient-to-br from-[#4f46e5] to-[#7c3aed]">
               <Terminal className="size-2.5 text-white" strokeWidth={2} />
             </span>
             <span className="text-[10px] font-semibold text-foreground">EngineerOS</span>

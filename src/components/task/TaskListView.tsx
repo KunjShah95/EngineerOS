@@ -1,13 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { toast } from "sonner";
-import { CalendarDays, CheckCircle2, Circle, Timer } from "lucide-react";
+import { CalendarDays, CheckCircle2, Circle, GitBranch, Timer } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useUpdateTask, useTasks, type TaskFilters } from "@/hooks/useTasks";
+import {
+  useBlockedTaskIds,
+  useUpdateTask,
+  useTasks,
+  type TaskFilters,
+} from "@/hooks/useTasks";
 import { priorityColor, TASK_STATUS_META } from "@/lib/task-meta";
 import { projectColorStyle } from "@/lib/project-colors";
 import { cn } from "@/lib/utils";
@@ -22,6 +26,7 @@ interface TaskListViewProps {
 export function TaskListView({ workspaceId, filters, onOpenTask }: TaskListViewProps) {
   const { data: tasks, isLoading } = useTasks(workspaceId, filters);
   const updateTask = useUpdateTask(workspaceId);
+  const { data: blockedIds } = useBlockedTaskIds(workspaceId);
   const today = new Date().toISOString().split("T")[0];
 
   const [groupBy, setGroupBy] = useState<"status" | "priority">("status");
@@ -71,6 +76,7 @@ export function TaskListView({ workspaceId, filters, onOpenTask }: TaskListViewP
                     isLast={i === group.length - 1}
                     onOpen={onOpenTask}
                     onToggleDone={toggleDone}
+                    blocked={blockedIds?.has(task.id)}
                   />
                 ))}
               </div>
@@ -106,6 +112,7 @@ export function TaskListView({ workspaceId, filters, onOpenTask }: TaskListViewP
                   isLast={i === group.length - 1}
                   onOpen={onOpenTask}
                   onToggleDone={toggleDone}
+                  blocked={blockedIds?.has(task.id)}
                 />
               ))}
             </div>
@@ -122,12 +129,14 @@ function TaskRow({
   isLast,
   onOpen,
   onToggleDone,
+  blocked = false,
 }: {
   task: TaskWithProject;
   today: string;
   isLast: boolean;
   onOpen: (id: string) => void;
   onToggleDone: (task: TaskWithProject) => void;
+  blocked?: boolean;
 }) {
   const isOverdue = task.due_date && task.due_date < today && task.status !== "done";
   const isDone = task.status === "done";
@@ -181,6 +190,16 @@ function TaskRow({
           <span className="hidden items-center gap-1 md:inline-flex">
             <Timer className="size-3.5" strokeWidth={1.75} />
             {task.estimate}h
+          </span>
+        )}
+
+        {blocked && !isDone && (
+          <span
+            className="inline-flex items-center gap-1 text-warning"
+            title="Blocked by an open dependency"
+          >
+            <GitBranch className="size-3.5" strokeWidth={1.75} />
+            Blocked
           </span>
         )}
 

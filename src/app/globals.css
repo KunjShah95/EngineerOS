@@ -116,6 +116,21 @@
   --shadow-popover-token: 0 16px 40px -12px rgb(23 23 32 / 0.2);
 }
 
+@theme inline {
+  --animate-aurora: aurora 22s linear infinite;
+  --animate-lamp-expand: lamp-expand 1.2s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+
+@keyframes aurora {
+  from { background-position: 50% 50%, 50% 50%; }
+  to   { background-position: 350% 50%, 350% 50%; }
+}
+
+@keyframes lamp-expand {
+  from { opacity: 0; width: 8rem; }
+  to   { opacity: 1; width: 32rem; }
+}
+
 @layer base {
   * {
     border-color: var(--border-default);
@@ -132,6 +147,10 @@
     background-color: var(--bg-base);
     color: var(--text-primary);
     font-family: var(--font-sans);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "kern", "liga", "calt";
   }
   ::selection {
     background-color: color-mix(in srgb, var(--accent) 85%, transparent);
@@ -169,6 +188,7 @@
   h2,
   h3 {
     text-wrap: balance;
+    letter-spacing: -0.015em;
   }
   p {
     text-wrap: pretty;

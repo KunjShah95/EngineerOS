@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LogIn, PanelLeftClose, PanelLeftOpen, Terminal, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -20,6 +20,8 @@ import { useProactiveNudges } from "@/hooks/useProactiveNudges";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { Button } from "@/components/ui/button";
 import { useUiStore, getStoredSidebarCollapsed } from "@/lib/store/ui";
+import { useKeyboardShortcuts, type ShortcutDef } from "@/hooks/useKeyboardShortcuts";
+import { ShortcutsDialog } from "@/components/shell/ShortcutsDialog";
 import { cn } from "@/lib/utils";
 
 function SidebarHeader({
@@ -39,7 +41,7 @@ function SidebarHeader({
         className
       )}
     >
-      <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#6366f1] to-[#1e40af] shadow-[0_0_16px_-4px_var(--accent)]">
+      <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-accent shadow-[0_0_16px_-6px_var(--accent)]">
         <Terminal className="size-4 text-white" strokeWidth={2} />
       </span>
       {!collapsed && (
@@ -65,16 +67,177 @@ function SidebarHeader({
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data: workspace, isLoading, isError } = useWorkspace();
+  const router = useRouter();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [prevPathname, setPrevPathname] = useState(pathname);
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const focusMode = useUiStore((s) => s.focusMode);
+  const toggleFocusMode = useUiStore((s) => s.toggleFocusMode);
 
   // Hydrate the persisted collapsed state once on mount.
   useEffect(() => {
     useUiStore.setState({ sidebarCollapsed: getStoredSidebarCollapsed() });
   }, []);
+
+  const setCommandPaletteOpen = useUiStore((s) => s.setCommandPaletteOpen);
+  const setQuickCaptureOpen = useUiStore((s) => s.setQuickCaptureOpen);
+
+  // Global keyboard shortcuts — the core of the keyboard-first workflow.
+  const shortcuts: ShortcutDef[] = [
+    {
+      id: "shortcuts",
+      group: "Actions",
+      label: "Keyboard shortcuts",
+      combo: "⌘/",
+      key: "/",
+      mod: true,
+      handler: () => setShortcutsOpen((v) => !v),
+    },
+    {
+      id: "new-note",
+      group: "Actions",
+      label: "New note",
+      combo: "⌘N",
+      key: "n",
+      mod: true,
+      handler: () => router.push("/notes?new=1"),
+    },
+    {
+      id: "new-task",
+      group: "Actions",
+      label: "New task",
+      combo: "⇧⌘N",
+      key: "n",
+      mod: true,
+      shift: true,
+      handler: () => router.push("/tasks?new=1"),
+    },
+    {
+      id: "quick-capture",
+      group: "Actions",
+      label: "Quick capture",
+      combo: "⌘G",
+      key: "g",
+      mod: true,
+      handler: () => setQuickCaptureOpen(true),
+    },
+    {
+      id: "focus-mode",
+      group: "View",
+      label: "Toggle focus mode",
+      combo: "⇧⌘F",
+      key: "f",
+      mod: true,
+      shift: true,
+      handler: toggleFocusMode,
+    },
+    {
+      id: "sidebar",
+      group: "View",
+      label: "Toggle sidebar",
+      combo: "⌘B",
+      key: "b",
+      mod: true,
+      handler: toggleSidebar,
+    },
+    {
+      id: "nav-dashboard",
+      group: "Navigate",
+      label: "Go to Dashboard",
+      combo: "⌘1",
+      key: "1",
+      mod: true,
+      handler: () => router.push("/dashboard"),
+    },
+    {
+      id: "nav-projects",
+      group: "Navigate",
+      label: "Go to Projects",
+      combo: "⌘2",
+      key: "2",
+      mod: true,
+      handler: () => router.push("/projects"),
+    },
+    {
+      id: "nav-tasks",
+      group: "Navigate",
+      label: "Go to Tasks",
+      combo: "⌘3",
+      key: "3",
+      mod: true,
+      handler: () => router.push("/tasks"),
+    },
+    {
+      id: "nav-calendar",
+      group: "Navigate",
+      label: "Go to Calendar",
+      combo: "⌘4",
+      key: "4",
+      mod: true,
+      handler: () => router.push("/calendar"),
+    },
+    {
+      id: "nav-notes",
+      group: "Navigate",
+      label: "Go to Notes",
+      combo: "⌘5",
+      key: "5",
+      mod: true,
+      handler: () => router.push("/notes"),
+    },
+    {
+      id: "nav-daily",
+      group: "Navigate",
+      label: "Go to Daily",
+      combo: "⌘6",
+      key: "6",
+      mod: true,
+      handler: () => router.push("/daily"),
+    },
+    {
+      id: "nav-assistant",
+      group: "Navigate",
+      label: "Go to Assistant",
+      combo: "⌘7",
+      key: "7",
+      mod: true,
+      handler: () => router.push("/assistant"),
+    },
+    {
+      id: "nav-settings",
+      group: "Navigate",
+      label: "Go to Settings",
+      combo: "⌘8",
+      key: "8",
+      mod: true,
+      handler: () => router.push("/settings"),
+    },
+    {
+      id: "nav-graph",
+      group: "Navigate",
+      label: "Go to Knowledge Graph",
+      combo: "⌘9",
+      key: "9",
+      mod: true,
+      handler: () => router.push("/graph"),
+    },
+    {
+      id: "search",
+      group: "Actions",
+      label: "Search / commands",
+      combo: "⌘K",
+      key: "k",
+      mod: true,
+      handler: () => setCommandPaletteOpen(true),
+      allowInInput: true,
+    },
+  ];
+
+  // ⌘K is owned by CommandPalette (toggle + Escape semantics); we keep it in
+  // the list only so the help dialog documents it.
+  useKeyboardShortcuts(shortcuts.filter((s) => s.id !== "search"));
 
   // Keep the embeddings index fresh in the background (silent, non-blocking).
   useAutoIndex(workspace?.id ?? null);
@@ -227,6 +390,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <CommandPalette workspaceId={workspace.id} />
       <QuickCaptureModal workspaceId={workspace.id} />
       <VoiceAgent />
+      <ShortcutsDialog
+        open={shortcutsOpen}
+        onOpenChange={setShortcutsOpen}
+        shortcuts={shortcuts}
+      />
     </div>
   );
 }
