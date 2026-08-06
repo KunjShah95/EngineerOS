@@ -103,65 +103,67 @@ export function AppNav({ collapsed = false }: { collapsed?: boolean }) {
 
   return (
     <nav
-      className="flex flex-1 flex-col gap-6 p-3"
+      className="flex flex-1 flex-col overflow-hidden"
       aria-label="Primary"
     >
-      <motion.div
-        className="flex flex-col gap-6"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        {NAV_GROUPS.map((group) => (
-          <div key={group.label} className="flex flex-col gap-1">
-            {!collapsed && (
-              <span className="px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-faint">
-                {group.label}
-              </span>
-            )}
-            <div className="flex flex-col gap-0.5">
-              {group.items.map((item) => {
-                const Icon = item.icon;
-                const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-                return (
-                  <motion.div key={item.href} variants={itemVariants}>
-                    <Link
-                      href={item.href}
-                      title={collapsed ? item.label : undefined}
-                      className={cn(
-                        "group relative flex items-center rounded-lg py-2 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
-                        collapsed ? "justify-center px-0" : "gap-2.5 px-3",
-                        active
-                          ? "bg-accent-muted/60 text-foreground"
-                          : "text-secondary hover:bg-surface-hover hover:text-foreground"
-                      )}
-                    >
-                      {/* Active indicator rail */}
-                      <span
-                        aria-hidden
+      <div className="flex-1 overflow-y-auto p-3">
+        <motion.div
+          className="flex flex-col gap-6"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          {NAV_GROUPS.map((group) => (
+            <div key={group.label} className="flex flex-col gap-1">
+              {!collapsed && (
+                <span className="px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-faint">
+                  {group.label}
+                </span>
+              )}
+              <div className="flex flex-col gap-0.5">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                  return (
+                    <motion.div key={item.href} variants={itemVariants}>
+                      <Link
+                        href={item.href}
+                        title={collapsed ? item.label : undefined}
                         className={cn(
-                          "absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-accent transition-all duration-200",
-                          active ? "opacity-100" : "opacity-0 group-hover:opacity-40"
+                          "group relative flex items-center rounded-lg py-2 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+                          collapsed ? "justify-center px-0" : "gap-2.5 px-3",
+                          active
+                            ? "bg-accent-muted/60 text-foreground"
+                            : "text-secondary hover:bg-surface-hover hover:text-foreground"
                         )}
-                      />
-                      <Icon
-                        className={cn(
-                          "size-4 shrink-0 transition-colors duration-150",
-                          active ? "text-accent" : "text-secondary group-hover:text-foreground"
-                        )}
-                        strokeWidth={1.75}
-                      />
-                      {!collapsed && item.label}
-                    </Link>
-                  </motion.div>
-                );
-              })}
+                      >
+                        {/* Active indicator rail */}
+                        <span
+                          aria-hidden
+                          className={cn(
+                            "absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-accent transition-all duration-200",
+                            active ? "opacity-100" : "opacity-0 group-hover:opacity-40"
+                          )}
+                        />
+                        <Icon
+                          className={cn(
+                            "size-4 shrink-0 transition-colors duration-150",
+                            active ? "text-accent" : "text-secondary group-hover:text-foreground"
+                          )}
+                          strokeWidth={1.75}
+                        />
+                        {!collapsed && item.label}
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
-      </motion.div>
+          ))}
+        </motion.div>
+      </div>
 
-      <div className="mt-auto pt-4 border-t border-border-subtle">
+      <div className="shrink-0 border-t border-border-subtle p-3">
         <motion.button
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
