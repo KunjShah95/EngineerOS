@@ -11,10 +11,12 @@ import { TopBar } from "@/components/shell/TopBar";
 import { PageLoader } from "@/components/shell/PageLoader";
 import { CommandPalette } from "@/components/search/CommandPalette";
 import { QuickCaptureModal } from "@/components/quick-capture/QuickCaptureModal";
+import { VoiceAgent } from "@/components/voice-agent/VoiceAgent";
 import { SetupNotice } from "@/components/supabase/SetupNotice";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useAutoIndex } from "@/hooks/useAutoIndex";
 import { useAutoAutomation } from "@/hooks/useAutoAutomation";
+import { useProactiveNudges } from "@/hooks/useProactiveNudges";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { Button } from "@/components/ui/button";
 import { useUiStore, getStoredSidebarCollapsed } from "@/lib/store/ui";
@@ -78,6 +80,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useAutoIndex(workspace?.id ?? null);
   // Phase 10 — evaluate automation rules + drain the job queue in the background.
   useAutoAutomation(workspace?.id ?? null);
+  // Surface overdue tasks as a toast nudge on load.
+  useProactiveNudges(workspace?.id ?? null);
 
   // Close the mobile drawer on navigation — adjust state during render (the
   // React-recommended pattern, no effect cascade).
@@ -222,6 +226,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <CommandPalette workspaceId={workspace.id} />
       <QuickCaptureModal workspaceId={workspace.id} />
+      <VoiceAgent />
     </div>
   );
 }

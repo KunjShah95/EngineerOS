@@ -12,6 +12,7 @@ import {
   Link2,
   LogOut,
   Mail,
+  Mic,
   Moon,
   Palette,
   Settings,
@@ -53,6 +54,7 @@ type SettingsSection =
   | "workspace"
   | "notifications"
   | "ai"
+  | "voice"
   | "integrations"
   | "appearance"
   | "data"
@@ -63,6 +65,7 @@ const SECTIONS: { id: SettingsSection; label: string; icon: LucideIcon }[] = [
   { id: "workspace", label: "Workspace", icon: Building2 },
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "ai", label: "AI Provider", icon: Brain },
+  { id: "voice", label: "Voice Agent", icon: Mic },
   { id: "integrations", label: "Integrations", icon: Link2 },
   { id: "appearance", label: "Appearance", icon: Palette },
   { id: "data", label: "Data", icon: Database },
@@ -92,6 +95,16 @@ export function SettingsPage() {
   const [aiBaseUrl, setAiBaseUrl] = useState("");
   const [savingAi, setSavingAi] = useState(false);
   const { data: aiConfigData } = useAiConfig();
+
+  // Voice TTS — multi-provider BYOK
+  type VoiceRow = { provider: string; apiKey: string; speaker: string; languageCode: string; isDefault: boolean };
+  const [voiceRows, setVoiceRows] = useState<VoiceRow[]>([]);
+  const [voiceRowsLoaded, setVoiceRowsLoaded] = useState(false);
+  const [savingVoice, setSavingVoice] = useState<string | null>(null);
+  const [newVoiceProvider, setNewVoiceProvider] = useState("openai");
+  const [newVoiceKey, setNewVoiceKey] = useState("");
+  const [newVoiceSpeaker, setNewVoiceSpeaker] = useState("nova");
+  const [newVoiceLang, setNewVoiceLang] = useState("en-IN");
 
   const [prevProvider, setPrevProvider] = useState(aiConfigData?.provider ?? null);
   if (aiConfigData?.provider && aiConfigData.provider !== prevProvider) {
@@ -203,6 +216,64 @@ export function SettingsPage() {
     } finally {
       setSavingAi(false);
     }
+  };
+
+  // Load voice configs when entering the voice section
+  const loadVoiceRows = async () => {
+    if (!workspace) return;
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("voice_tts_configs")
+      .select("provider, api_key, speaker, language_code, is_default")
+      .eq("workspace_id", workspace.id)
+      .order("is_default", { ascending: false });
+    setVoiceRows(
+      (data ?? []).map((r: Record<string, unknown>) => ({
+        provider: r.provider as string,
+        apiKey: "",
+        speaker: (r as Record<string, unknown>).speaker as string ?? "nova",
+        languageCode: (r as Record<string, unknown>).language_code as string ?? "en-IN",
+        isDefault: (r as Record<string, unknown>).is_default as boolean ?? false,
+      }))
+    );
+    setVoiceRowsLoaded(true);
+  };
+
+  const saveVoiceProvider = async () => {
+    if (!workspace || !newVoiceKey.trim() || !newVoiceProvider) return;
+    setSavingVoice("new");
+    try {
+      const supabase = createClient();
+      await supabase.from("voice_tts_configs").upsert({
+        workspace_id: workspace.id,
+        provider: newVoiceProvider,
+        api_key: newVoiceKey.trim(),
+        speaker: newVoiceSpeaker,
+        language_code: newVoiceLang,
+        is_default: voiceRows.length === 0,
+      }, { onConflict: "workspace_id,provider" });
+      setNewVoiceKey("");
+      await loadVoiceRows();
+      toast.success(`${newVoiceProvider} voice provider saved`);
+    } catch { toast.error("Failed to save voice provider"); }
+    finally { setSavingVoice(null); }
+  };
+
+  const setVoiceDefault = async (provider: string) => {
+    if (!workspace) return;
+    const supabase = createClient();
+    await supabase.from("voice_tts_configs").update({ is_default: false }).eq("workspace_id", workspace.id);
+    await supabase.from("voice_tts_configs").update({ is_default: true }).eq("workspace_id", workspace.id).eq("provider", provider);
+    await loadVoiceRows();
+    toast.success(`${provider} set as default voice`);
+  };
+
+  const removeVoiceProvider = async (provider: string) => {
+    if (!workspace) return;
+    const supabase = createClient();
+    await supabase.from("voice_tts_configs").delete().eq("workspace_id", workspace.id).eq("provider", provider);
+    await loadVoiceRows();
+    toast.success(`${provider} removed`);
   };
 
   const logout = async () => {
@@ -484,6 +555,115 @@ export function SettingsPage() {
                   </p>
                 </div>
               </div>
+            </section>
+          )}
+
+          {/* Voice Agent */}
+          {activeSection === "voice" && (
+            <section className="rounded-lg border border-default bg-surface p-5 space-y-5">
+              <h2 className="flex items-center gap-2 text-sm font-semibold">
+                <Mic className="size-4 text-accent" strokeWidth={1.75} />
+                Voice Agent — BYOK TTS
+              </h2>
+              <p className="text-xs text-faint">Configure one or more voice providers. Switch between them live from the floating mic button. Keys stored securely per workspace.</p>
+
+              {/* Load on first open */}
+              {!voiceRowsLoaded && (
+                <button type="button" onClick={() => void loadVoiceRows()} className="text-sm text-accent underline">
+                  Load configured providers
+                </button>
+              )}
+
+              {/* Configured provider cards */}
+              {voiceRows.length > 0 && (
+                <div className="space-y-2">
+                  {voiceRows.map((row) => (
+                    <div key={row.provider} className="flex items-center justify-between rounded-lg border border-border-subtle bg-elevated px-4 py-3">
+                      <div>
+                        <p className="text-sm font-medium text-foreground capitalize">{row.provider} {row.isDefault && <span className="ml-1 rounded-full bg-accent/15 px-2 py-0.5 text-[10px] text-accent">default</span>}</p>
+                        <p className="text-xs text-faint">Speaker: {row.speaker} · {row.languageCode}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        {!row.isDefault && (
+                          <Button variant="ghost" size="sm" onClick={() => void setVoiceDefault(row.provider)}>Set default</Button>
+                        )}
+                        <Button variant="ghost" size="sm" onClick={() => void removeVoiceProvider(row.provider)} className="text-danger hover:text-danger">Remove</Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add / update provider */}
+              <div className="space-y-3 rounded-lg border border-border-subtle p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-secondary">Add / update provider</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="vp-provider">Provider</Label>
+                    <select id="vp-provider" value={newVoiceProvider} onChange={(e) => setNewVoiceProvider(e.target.value)}
+                      className="w-full rounded-md border border-border-default bg-base px-3 py-2 text-sm text-foreground outline-none focus:border-accent/60">
+                      <option value="openai">OpenAI TTS (nova, alloy, echo…)</option>
+                      <option value="sarvam">Sarvam AI 🇮🇳 (Hindi/Gujarati/Tamil…)</option>
+                      <option value="elevenlabs">ElevenLabs (ultra-realistic)</option>
+                      <option value="kokoro">Kokoro via HuggingFace (open-source)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="vp-speaker">
+                      {newVoiceProvider === "openai" ? "Voice" : newVoiceProvider === "sarvam" ? "Speaker" : newVoiceProvider === "elevenlabs" ? "Voice ID" : "Model"}
+                    </Label>
+                    {newVoiceProvider === "openai" ? (
+                      <select id="vp-speaker" value={newVoiceSpeaker} onChange={(e) => setNewVoiceSpeaker(e.target.value)}
+                        className="w-full rounded-md border border-border-default bg-base px-3 py-2 text-sm text-foreground outline-none focus:border-accent/60">
+                        {["nova","alloy","echo","fable","onyx","shimmer"].map((v) => <option key={v} value={v}>{v}</option>)}
+                      </select>
+                    ) : newVoiceProvider === "sarvam" ? (
+                      <select id="vp-speaker" value={newVoiceSpeaker} onChange={(e) => setNewVoiceSpeaker(e.target.value)}
+                        className="w-full rounded-md border border-border-default bg-base px-3 py-2 text-sm text-foreground outline-none focus:border-accent/60">
+                        {["meera","pavithra","maitreyi","arvind","amol","arjun","siya"].map((v) => <option key={v} value={v}>{v}</option>)}
+                      </select>
+                    ) : (
+                      <Input id="vp-speaker" value={newVoiceSpeaker} onChange={(e) => setNewVoiceSpeaker(e.target.value)} placeholder={newVoiceProvider === "elevenlabs" ? "Voice ID or name" : "Kokoro-82M"} />
+                    )}
+                  </div>
+                </div>
+                {newVoiceProvider === "sarvam" && (
+                  <div className="space-y-1">
+                    <Label htmlFor="vp-lang">Language</Label>
+                    <select id="vp-lang" value={newVoiceLang} onChange={(e) => setNewVoiceLang(e.target.value)}
+                      className="w-full rounded-md border border-border-default bg-base px-3 py-2 text-sm text-foreground outline-none focus:border-accent/60">
+                      <option value="en-IN">English (India)</option>
+                      <option value="hi-IN">Hindi</option>
+                      <option value="gu-IN">Gujarati</option>
+                      <option value="ta-IN">Tamil</option>
+                      <option value="te-IN">Telugu</option>
+                      <option value="mr-IN">Marathi</option>
+                      <option value="bn-IN">Bengali</option>
+                      <option value="kn-IN">Kannada</option>
+                      <option value="ml-IN">Malayalam</option>
+                      <option value="pa-IN">Punjabi</option>
+                    </select>
+                  </div>
+                )}
+                <div className="space-y-1">
+                  <Label htmlFor="vp-key">API Key</Label>
+                  <div className="flex gap-2">
+                    <Input id="vp-key" type="password" value={newVoiceKey} onChange={(e) => setNewVoiceKey(e.target.value)}
+                      placeholder={newVoiceProvider === "sarvam" ? "sarvam_..." : newVoiceProvider === "elevenlabs" ? "sk_..." : newVoiceProvider === "kokoro" ? "hf_..." : "sk-..."} />
+                    <Button onClick={() => void saveVoiceProvider()} disabled={savingVoice === "new" || !newVoiceKey.trim()}>
+                      {savingVoice === "new" ? "Saving…" : "Save"}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-faint">
+                    {newVoiceProvider === "sarvam" && "Get key at sarvam.ai — supports 10 Indian languages, very natural voices"}
+                    {newVoiceProvider === "openai" && "Uses tts-1 model — 6 voices, fast, high quality"}
+                    {newVoiceProvider === "elevenlabs" && "Most realistic voice cloning — get key at elevenlabs.io"}
+                    {newVoiceProvider === "kokoro" && "Open-source Kokoro-82M via HuggingFace — get key at huggingface.co"}
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-xs text-faint">Priority order when speaking: your default provider → Sarvam env var → OpenAI env var → Kokoro env var → browser TTS.</p>
             </section>
           )}
 
