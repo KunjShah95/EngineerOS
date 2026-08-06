@@ -8,7 +8,7 @@ function childrenText(children: React.ReactNode): string {
   if (typeof children === "number") return String(children);
   if (Array.isArray(children)) return children.map(childrenText).join("");
   if (children && typeof children === "object" && "props" in (children as React.ReactElement)) {
-    return childrenText((children as React.ReactElement).props?.children ?? "");
+    return childrenText(((children as React.ReactElement).props as { children?: React.ReactNode })?.children ?? "");
   }
   return "";
 }
