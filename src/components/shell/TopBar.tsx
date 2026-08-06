@@ -1,18 +1,30 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, Plus, Search, Settings } from "lucide-react";
+import { Bell, Focus, Menu, Plus, Search, Settings } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
+import { NotificationPanel } from "@/components/shell/NotificationPanel";
 import { useProfile } from "@/hooks/useProfile";
+import { useReminders } from "@/hooks/useAutomation";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { useUiStore } from "@/lib/store/ui";
+import { cn } from "@/lib/utils";
 
 export function TopBar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
   const setCommandPaletteOpen = useUiStore((s) => s.setCommandPaletteOpen);
   const setQuickCaptureOpen = useUiStore((s) => s.setQuickCaptureOpen);
+  const focusMode = useUiStore((s) => s.focusMode);
+  const toggleFocusMode = useUiStore((s) => s.toggleFocusMode);
+  const notificationPanelOpen = useUiStore((s) => s.notificationPanelOpen);
+  const setNotificationPanelOpen = useUiStore((s) => s.setNotificationPanelOpen);
   const { data: profile } = useProfile();
+  const { data: workspace } = useWorkspace();
+  const { data: reminders } = useReminders(workspace?.id ?? null);
+
+  const unreadCount = (reminders ?? []).filter((r) => !r.read_at).length;
 
   const initials = (profile?.display_name || profile?.email || "?")
     .split(/[\s@]+/)
@@ -24,7 +36,6 @@ export function TopBar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
   return (
     <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center justify-between gap-3 border-b border-default bg-surface/80 px-4 backdrop-blur-md">
       <div className="flex min-w-0 items-center gap-2">
-        {/* Mobile nav trigger */}
         <Button
           variant="ghost"
           size="icon"
@@ -58,6 +69,38 @@ export function TopBar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
           <Plus className="size-4" strokeWidth={1.75} />
           <span className="hidden lg:inline">Quick Capture</span>
         </Button>
+
+        {/* Focus mode toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleFocusMode}
+          aria-label={focusMode ? "Exit focus mode" : "Enter focus mode"}
+          title={focusMode ? "Exit focus mode" : "Focus mode"}
+          className={cn(focusMode && "text-accent")}
+        >
+          <Focus className="size-4" strokeWidth={1.75} />
+        </Button>
+
+        {/* Notification bell */}
+        <div className="relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setNotificationPanelOpen(!notificationPanelOpen)}
+            aria-label="Notifications"
+            className={cn(notificationPanelOpen && "text-accent")}
+          >
+            <Bell className="size-4" strokeWidth={1.75} />
+          </Button>
+          {unreadCount > 0 && (
+            <span className="pointer-events-none absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-accent-foreground">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+          <NotificationPanel />
+        </div>
+
         <ThemeToggle />
 
         <Link

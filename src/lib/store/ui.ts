@@ -10,6 +10,10 @@ interface UiState {
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (collapsed: boolean) => void;
   toggleSidebar: () => void;
+  focusMode: boolean;
+  toggleFocusMode: () => void;
+  notificationPanelOpen: boolean;
+  setNotificationPanelOpen: (open: boolean) => void;
 }
 
 export const useUiStore = create<UiState>()((set) => ({
@@ -29,6 +33,10 @@ export const useUiStore = create<UiState>()((set) => ({
       }
       return { sidebarCollapsed: next };
     }),
+  focusMode: false,
+  toggleFocusMode: () => set((s) => ({ focusMode: !s.focusMode })),
+  notificationPanelOpen: false,
+  setNotificationPanelOpen: (notificationPanelOpen) => set({ notificationPanelOpen }),
 }));
 
 export function getStoredSidebarCollapsed(): boolean {

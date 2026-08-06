@@ -26,7 +26,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/shell/EmptyState";
 import { ProjectForm } from "@/components/project/ProjectForm";
-import { useDeleteProject, useProjects } from "@/hooks/useProjects";
+import { useDeleteProject, useProjects, useUpdateProject } from "@/hooks/useProjects";
 import { useNotes } from "@/hooks/useNotes";
 import { useTasks } from "@/hooks/useTasks";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -62,6 +62,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
   const { data: notes } = useNotes(workspaceId, { projectId });
   const { data: tasks } = useTasks(workspaceId, { projectId });
   const deleteProject = useDeleteProject(workspaceId);
+  const updateProject = useUpdateProject(workspaceId);
 
   const activeProject = projectQuery.data?.find((p) => p.id === projectId);
   const isLoading = projectQuery.isLoading || !workspace;
@@ -112,8 +113,13 @@ export function ProjectPage({ projectId }: { projectId: string }) {
     .sort((a, b) => (a.due_date! < b.due_date! ? -1 : 1));
 
   const archiveProject = async () => {
-    await deleteProject.mutateAsync(projectId);
+    await updateProject.mutateAsync({ id: projectId, patch: { status: "archived" } });
     toast.success("Project archived");
+  };
+
+  const deleteProjectPermanently = async () => {
+    await deleteProject.mutateAsync(projectId);
+    toast.success("Project deleted");
     router.push("/projects");
   };
 
@@ -171,8 +177,17 @@ export function ProjectPage({ projectId }: { projectId: string }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem variant="destructive" onSelect={() => void archiveProject()}>
-                Archive project
+              {activeProject.status !== "archived" ? (
+                <DropdownMenuItem onSelect={() => void archiveProject()}>
+                  Archive project
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onSelect={() => updateProject.mutate({ id: projectId, patch: { status: "active" } }, { onSuccess: () => toast.success("Project restored") })}>
+                  Restore project
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem variant="destructive" onSelect={() => void deleteProjectPermanently()}>
+                Delete project
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

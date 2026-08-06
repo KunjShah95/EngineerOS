@@ -67,6 +67,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [prevPathname, setPrevPathname] = useState(pathname);
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
+  const focusMode = useUiStore((s) => s.focusMode);
 
   // Hydrate the persisted collapsed state once on mount.
   useEffect(() => {
@@ -160,7 +161,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <aside
         className={cn(
           "hidden shrink-0 flex-col border-r border-default bg-surface transition-[width] duration-200 md:flex",
-          sidebarCollapsed ? "w-16" : "w-56"
+          focusMode ? "w-0 overflow-hidden border-0" : sidebarCollapsed ? "w-16" : "w-56"
         )}
       >
         <SidebarHeader collapsed={sidebarCollapsed} onToggle={toggleSidebar} />

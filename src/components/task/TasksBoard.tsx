@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { CheckSquare, Plus } from "lucide-react";
+import { CheckSquare, Kanban, List, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shell/PageHeader";
@@ -14,13 +14,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { KanbanBoard } from "@/components/task/KanbanBoard";
+import { TaskListView } from "@/components/task/TaskListView";
 import { TaskDetailPanel } from "@/components/task/TaskDetailPanel";
 import { TaskForm } from "@/components/task/TaskForm";
 import { useProjects } from "@/hooks/useProjects";
 import { useTasksRealtime } from "@/hooks/useRealtime";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { PRIORITY_META } from "@/lib/task-meta";
+import { cn } from "@/lib/utils";
 import type { TaskPriority, TaskStatus } from "@/types/database";
+
+type ViewMode = "kanban" | "list";
 
 export function TasksBoard() {
   const router = useRouter();
@@ -37,6 +41,7 @@ export function TasksBoard() {
   const openTaskId = searchParams.get("task");
 
   const [addStatus, setAddStatus] = useState<TaskStatus | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("kanban");
 
   const updateFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -57,13 +62,18 @@ export function TasksBoard() {
     router.replace(`${pathname}?${params.toString()}`);
   };
 
+  const filters = {
+    projectId: projectFilter === "all" ? null : projectFilter,
+    priority: (priorityFilter === "all" ? null : priorityFilter) as TaskPriority | null,
+  };
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-default px-6 py-4">
         <PageHeader
           icon={CheckSquare}
           title="Tasks"
-          description="Drag cards between columns to update status."
+          description={viewMode === "kanban" ? "Drag cards between columns to update status." : "All tasks in a flat list."}
           className="mb-0"
           actions={
             <div className="flex flex-wrap items-center gap-2">
@@ -95,6 +105,36 @@ export function TasksBoard() {
                 </SelectContent>
               </Select>
 
+              {/* View toggle */}
+              <div className="flex items-center rounded-lg border border-default bg-surface p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("kanban")}
+                  aria-label="Kanban view"
+                  className={cn(
+                    "rounded-md p-1.5 transition-colors",
+                    viewMode === "kanban"
+                      ? "bg-accent-muted text-accent"
+                      : "text-secondary hover:text-foreground"
+                  )}
+                >
+                  <Kanban className="size-3.5" strokeWidth={1.75} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("list")}
+                  aria-label="List view"
+                  className={cn(
+                    "rounded-md p-1.5 transition-colors",
+                    viewMode === "list"
+                      ? "bg-accent-muted text-accent"
+                      : "text-secondary hover:text-foreground"
+                  )}
+                >
+                  <List className="size-3.5" strokeWidth={1.75} />
+                </button>
+              </div>
+
               <Button size="sm" onClick={() => setAddStatus("todo")}>
                 <Plus className="size-4" strokeWidth={1.75} />
                 New Task
@@ -105,15 +145,20 @@ export function TasksBoard() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-6">
-        <KanbanBoard
-          workspaceId={workspaceId ?? ""}
-          filters={{
-            projectId: projectFilter === "all" ? null : projectFilter,
-            priority: (priorityFilter === "all" ? null : priorityFilter) as TaskPriority | null,
-          }}
-          onOpenTask={openTask}
-          onAddTask={setAddStatus}
-        />
+        {viewMode === "kanban" ? (
+          <KanbanBoard
+            workspaceId={workspaceId ?? ""}
+            filters={filters}
+            onOpenTask={openTask}
+            onAddTask={setAddStatus}
+          />
+        ) : (
+          <TaskListView
+            workspaceId={workspaceId ?? ""}
+            filters={filters}
+            onOpenTask={openTask}
+          />
+        )}
       </div>
 
       {openTaskId ? (
@@ -127,10 +172,7 @@ export function TasksBoard() {
 
       <TaskForm
         workspaceId={workspaceId ?? ""}
-        filters={{
-          projectId: projectFilter === "all" ? null : projectFilter,
-          priority: (priorityFilter === "all" ? null : priorityFilter) as TaskPriority | null,
-        }}
+        filters={filters}
         defaultStatus={addStatus ?? "todo"}
         open={addStatus !== null}
         onOpenChange={(o) => {
