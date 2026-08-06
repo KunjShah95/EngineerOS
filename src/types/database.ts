@@ -40,6 +40,12 @@ export interface Project {
   deleted_at: string | null;
 }
 
+export interface Subtask {
+  id: string;
+  title: string;
+  done: boolean;
+}
+
 export interface Task {
   id: string;
   workspace_id: string;
@@ -51,12 +57,104 @@ export interface Task {
   due_date: string | null;
   estimate: number | null;
   position: number;
+  subtasks: Subtask[];
   created_at: string;
   updated_at: string;
   completed_at: string | null;
   deleted_at: string | null;
   /** URL of the GitHub issue this task was imported from, if any. */
   source_url: string | null;
+  time_spent: number | null;
+}
+
+export interface TaskComment {
+  id: string;
+  task_id: string;
+  workspace_id: string;
+  body: string;
+  created_at: string;
+}
+
+export interface Snippet {
+  id: string;
+  workspace_id: string;
+  title: string;
+  body: string;
+  language: string;
+  tags: string[];
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface Contact {
+  id: string;
+  workspace_id: string;
+  name: string;
+  email: string | null;
+  role: string | null;
+  company: string | null;
+  notes_markdown: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface NoteVersion {
+  id: string;
+  note_id: string;
+  workspace_id: string;
+  title: string;
+  body_markdown: string;
+  created_at: string;
+}
+
+// ---------------------------------------------------------------------------
+// Habits
+// ---------------------------------------------------------------------------
+export type HabitFrequency = "daily" | "weekly";
+
+export interface Habit {
+  id: string;
+  workspace_id: string;
+  name: string;
+  description: string | null;
+  color: string | null;
+  frequency: HabitFrequency;
+  target_days: number[] | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface HabitEntry {
+  id: string;
+  habit_id: string;
+  date: string;
+  completed: boolean;
+  note: string | null;
+  created_at: string;
+}
+
+// ---------------------------------------------------------------------------
+// Goals / OKRs
+// ---------------------------------------------------------------------------
+export type GoalStatus = "active" | "achieved" | "abandoned";
+
+export interface Goal {
+  id: string;
+  workspace_id: string;
+  project_id: string | null;
+  title: string;
+  description: string | null;
+  target_value: number | null;
+  current_value: number;
+  unit: string | null;
+  due_date: string | null;
+  status: GoalStatus;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
 }
 
 export interface Note {

@@ -9,11 +9,13 @@ import {
   Check,
   CheckCircle2,
   FileText,
+  Flame,
   FolderKanban,
   LayoutDashboard,
   ListTodo,
   Pin,
   Plus,
+  TrendingUp,
   Zap,
 } from "lucide-react";
 
@@ -70,6 +72,42 @@ export function DashboardPage() {
 
   const recentNotes = (notes ?? []).slice(0, 5);
   const doneToday = (todayTasks ?? []).filter((t) => t.status === "done").length;
+
+  // Streak: consecutive days (ending today) with ≥1 completed task
+  const allDoneTasks = (allTasks ?? []).filter((t) => t.status === "done");
+  const doneDates = new Set<string>(
+    allDoneTasks.map((t) => (t.completed_at ?? t.updated_at).split("T")[0])
+  );
+  let streak = 0;
+  const streakCursor = new Date();
+  streakCursor.setHours(0, 0, 0, 0);
+  while (doneDates.has(streakCursor.toISOString().split("T")[0])) {
+    streak++;
+    streakCursor.setDate(streakCursor.getDate() - 1);
+  }
+
+  // Weekly comparison (Mon–Sun weeks)
+  const dayOfWeek = new Date().getDay();
+  const daysFromMon = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const thisMon = new Date();
+  thisMon.setDate(thisMon.getDate() - daysFromMon);
+  thisMon.setHours(0, 0, 0, 0);
+  const thisMondayStr = thisMon.toISOString().split("T")[0];
+  const lastMon = new Date(thisMon);
+  lastMon.setDate(thisMon.getDate() - 7);
+  const lastMondayStr = lastMon.toISOString().split("T")[0];
+  const lastSun = new Date(thisMon);
+  lastSun.setDate(thisMon.getDate() - 1);
+  const lastSundayStr = lastSun.toISOString().split("T")[0];
+  const thisWeekDone = allDoneTasks.filter((t) => {
+    const d = (t.completed_at ?? t.updated_at).split("T")[0];
+    return d >= thisMondayStr && d <= today;
+  }).length;
+  const lastWeekDone = allDoneTasks.filter((t) => {
+    const d = (t.completed_at ?? t.updated_at).split("T")[0];
+    return d >= lastMondayStr && d <= lastSundayStr;
+  }).length;
+  const weekDiff = thisWeekDone - lastWeekDone;
 
   const greeting = (() => {
     const h = new Date().getHours();
@@ -145,7 +183,7 @@ export function DashboardPage() {
       ) : (
         <>
           {/* Stat strip */}
-          <section aria-label="Overview" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <section aria-label="Overview" className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <StatCard
               icon={CheckCircle2}
               label="Done today"
@@ -170,6 +208,40 @@ export function DashboardPage() {
               value={projects?.length ?? 0}
               tone="text-info"
             />
+            <StatCard
+              icon={Flame}
+              label="Streak"
+              value={streak === 0 ? "—" : `${streak}d`}
+              tone="text-orange-500"
+            />
+          </section>
+
+          {/* Weekly summary */}
+          <section aria-label="Weekly summary">
+            <div className="flex items-center gap-4 rounded-lg border border-default bg-surface px-5 py-3">
+              <TrendingUp className="size-5 shrink-0 text-accent" strokeWidth={1.75} />
+              <div className="flex flex-1 flex-wrap items-center gap-x-6 gap-y-1 text-sm">
+                <span>
+                  <span className="font-semibold text-foreground">{thisWeekDone}</span>
+                  <span className="ml-1 text-secondary">tasks done this week</span>
+                </span>
+                <span className="text-faint">vs</span>
+                <span>
+                  <span className="font-semibold text-foreground">{lastWeekDone}</span>
+                  <span className="ml-1 text-secondary">last week</span>
+                </span>
+                {weekDiff !== 0 && (
+                  <span
+                    className={cn(
+                      "text-xs font-medium",
+                      weekDiff > 0 ? "text-success" : "text-danger"
+                    )}
+                  >
+                    {weekDiff > 0 ? "+" : ""}{weekDiff} vs last week
+                  </span>
+                )}
+              </div>
+            </div>
           </section>
 
           {overdue.length > 0 && (

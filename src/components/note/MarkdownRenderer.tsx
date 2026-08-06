@@ -1,7 +1,17 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-import { cn } from "@/lib/utils";
+import { cn, slugify } from "@/lib/utils";
+
+function childrenText(children: React.ReactNode): string {
+  if (typeof children === "string") return children;
+  if (typeof children === "number") return String(children);
+  if (Array.isArray(children)) return children.map(childrenText).join("");
+  if (children && typeof children === "object" && "props" in (children as React.ReactElement)) {
+    return childrenText((children as React.ReactElement).props?.children ?? "");
+  }
+  return "";
+}
 
 /**
  * Convert [[Some Title]] wikilink tokens into markdown links. Passed a
@@ -19,16 +29,16 @@ function renderWikilinks(content: string, resolve: (title: string) => string | n
 
 const components: Parameters<typeof ReactMarkdown>[0]["components"] = {
   h1: ({ children }) => (
-    <h1 className="mt-6 mb-2 text-2xl font-semibold text-foreground">{children}</h1>
+    <h1 id={slugify(childrenText(children))} className="mt-6 mb-2 text-2xl font-semibold text-foreground scroll-mt-4">{children}</h1>
   ),
   h2: ({ children }) => (
-    <h2 className="mt-6 mb-2 text-xl font-semibold text-foreground">{children}</h2>
+    <h2 id={slugify(childrenText(children))} className="mt-6 mb-2 text-xl font-semibold text-foreground scroll-mt-4">{children}</h2>
   ),
   h3: ({ children }) => (
-    <h3 className="mt-6 mb-2 text-base font-semibold text-foreground">{children}</h3>
+    <h3 id={slugify(childrenText(children))} className="mt-6 mb-2 text-base font-semibold text-foreground scroll-mt-4">{children}</h3>
   ),
   h4: ({ children }) => (
-    <h4 className="mt-5 mb-2 text-sm font-semibold text-foreground">{children}</h4>
+    <h4 id={slugify(childrenText(children))} className="mt-5 mb-2 text-sm font-semibold text-foreground scroll-mt-4">{children}</h4>
   ),
   p: ({ children }) => <p className="my-3 leading-relaxed text-foreground">{children}</p>,
   ul: ({ children }) => (

@@ -7,6 +7,8 @@ import {
   Bell,
   Brain,
   Building2,
+  Database,
+  Download,
   Link2,
   LogOut,
   Mail,
@@ -53,6 +55,7 @@ type SettingsSection =
   | "ai"
   | "integrations"
   | "appearance"
+  | "data"
   | "account";
 
 const SECTIONS: { id: SettingsSection; label: string; icon: LucideIcon }[] = [
@@ -62,6 +65,7 @@ const SECTIONS: { id: SettingsSection; label: string; icon: LucideIcon }[] = [
   { id: "ai", label: "AI Provider", icon: Brain },
   { id: "integrations", label: "Integrations", icon: Link2 },
   { id: "appearance", label: "Appearance", icon: Palette },
+  { id: "data", label: "Data", icon: Database },
   { id: "account", label: "Account", icon: ShieldAlert },
 ];
 
@@ -518,6 +522,141 @@ export function SettingsPage() {
                     </>
                   )}
                 </Button>
+              </div>
+            </section>
+          )}
+
+          {/* Data */}
+          {activeSection === "data" && (
+            <section className="rounded-lg border border-default bg-surface p-5 space-y-6">
+              <h2 className="text-sm font-semibold">Data</h2>
+
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-secondary">Export</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      const supabase = createClient();
+                      const { data } = await supabase
+                        .from("notes")
+                        .select("title, body_markdown")
+                        .eq("workspace_id", workspace.id)
+                        .is("deleted_at", null);
+                      if (!data?.length) { toast.error("No notes to export"); return; }
+                      const content = data.map((n) => `# ${n.title}\n\n${n.body_markdown}`).join("\n\n---\n\n");
+                      const a = Object.assign(document.createElement("a"), {
+                        href: URL.createObjectURL(new Blob([content], { type: "text/markdown" })),
+                        download: "notes-export.md",
+                      });
+                      a.click();
+                      toast.success(`Exported ${data.length} notes`);
+                    }}
+                  >
+                    <Download className="size-4" strokeWidth={1.75} />
+                    Export notes (.md)
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      const supabase = createClient();
+                      const { data } = await supabase
+                        .from("tasks")
+                        .select("title, status, priority, due_date, description")
+                        .eq("workspace_id", workspace.id)
+                        .is("deleted_at", null);
+                      if (!data?.length) { toast.error("No tasks to export"); return; }
+                      const header = "title,status,priority,due_date,description";
+                      const rows = data.map((t) =>
+                        [t.title, t.status, t.priority, t.due_date ?? "", (t.description ?? "").replace(/"/g, '""')]
+                          .map((v) => `"${v}"`).join(",")
+                      );
+                      const a = Object.assign(document.createElement("a"), {
+                        href: URL.createObjectURL(new Blob([[header, ...rows].join("\n")], { type: "text/csv" })),
+                        download: "tasks.csv",
+                      });
+                      a.click();
+                      toast.success(`Exported ${data.length} tasks`);
+                    }}
+                  >
+                    <Download className="size-4" strokeWidth={1.75} />
+                    Export tasks (.csv)
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-secondary">Import</p>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="import-tasks">Import tasks from CSV</Label>
+                  <p className="text-xs text-faint">Columns: title (required), status, priority, due_date</p>
+                  <input
+                    id="import-tasks"
+                    type="file"
+                    accept=".csv"
+                    className="block text-sm text-secondary file:mr-3 file:rounded file:border file:border-border-subtle file:bg-surface file:px-2 file:py-1 file:text-xs file:font-medium"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const text = await file.text();
+                      const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+                      if (lines.length < 2) { toast.error("CSV needs header + at least one row"); return; }
+                      const headers = lines[0].split(",").map((h) => h.replace(/"/g, "").trim());
+                      const ti = headers.indexOf("title");
+                      const si = headers.indexOf("status");
+                      const pi = headers.indexOf("priority");
+                      const di = headers.indexOf("due_date");
+                      if (ti === -1) { toast.error("No 'title' column found"); return; }
+                      const supabase = createClient();
+                      let count = 0;
+                      for (const line of lines.slice(1)) {
+                        const cols = line.split(",").map((c) => c.replace(/^"|"$/g, "").trim());
+                        const title = cols[ti];
+                        if (!title) continue;
+                        await supabase.from("tasks").insert({
+                          workspace_id: workspace.id,
+                          title,
+                          status: si >= 0 ? cols[si] || "todo" : "todo",
+                          priority: pi >= 0 ? cols[pi] || "none" : "none",
+                          due_date: di >= 0 ? cols[di] || null : null,
+                          position: count,
+                        });
+                        count++;
+                      }
+                      toast.success(`Imported ${count} tasks`);
+                      e.target.value = "";
+                    }}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="import-note">Import note from markdown (.md)</Label>
+                  <input
+                    id="import-note"
+                    type="file"
+                    accept=".md,.txt"
+                    className="block text-sm text-secondary file:mr-3 file:rounded file:border file:border-border-subtle file:bg-surface file:px-2 file:py-1 file:text-xs file:font-medium"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const text = await file.text();
+                      const firstLine = text.split("\n")[0] ?? "";
+                      const title = firstLine.startsWith("# ")
+                        ? firstLine.slice(2).trim()
+                        : file.name.replace(/\.md$/, "").replace(/-/g, " ");
+                      const body = firstLine.startsWith("# ")
+                        ? text.split("\n").slice(1).join("\n").trim()
+                        : text;
+                      const supabase = createClient();
+                      await supabase.from("notes").insert({ workspace_id: workspace.id, title, body_markdown: body });
+                      toast.success("Note imported");
+                      e.target.value = "";
+                    }}
+                  />
+                </div>
               </div>
             </section>
           )}

@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FileText, Hash, Pin, Plus } from "lucide-react";
+import { ChevronDown, FileText, Hash, Layout, Pin, Plus } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -21,6 +21,12 @@ import {
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/shell/EmptyState";
 import { useCreateNote, useNotes } from "@/hooks/useNotes";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useProjects } from "@/hooks/useProjects";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { projectColorStyle } from "@/lib/project-colors";
@@ -73,14 +79,22 @@ export function NotesList() {
     router.replace(`/notes?${params.toString()}`);
   };
 
-  const newNote = async () => {
+  const newNote = async (template?: { title: string; body_markdown: string }) => {
     try {
-      const note = await createNote.mutateAsync({});
+      const note = await createNote.mutateAsync(
+        template
+          ? { title: `${template.title} (copy)`, body_markdown: template.body_markdown }
+          : {}
+      );
       router.push(`/notes/${note.id}`);
     } catch {
       toast.error("Failed to create note. Please try again.");
     }
   };
+
+  const templateNotes = (notes ?? []).filter((n) =>
+    n.note_tags.some((nt) => nt.tag.name === "template")
+  );
 
   return (
     <div className="p-6">
@@ -104,6 +118,27 @@ export function NotesList() {
               </SelectContent>
             </Select>
 
+            {templateNotes.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    <Layout className="size-4" strokeWidth={1.75} />
+                    From template
+                    <ChevronDown className="size-3.5" strokeWidth={1.75} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {templateNotes.map((t) => (
+                    <DropdownMenuItem
+                      key={t.id}
+                      onClick={() => void newNote({ title: t.title, body_markdown: t.body_markdown })}
+                    >
+                      {t.title}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <Button size="sm" onClick={() => void newNote()} disabled={createNote.isPending}>
               <Plus className="size-4" strokeWidth={1.75} />
               New Note

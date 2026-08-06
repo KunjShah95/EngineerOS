@@ -6,13 +6,18 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Check,
+  ChevronDown,
+  ChevronRight,
+  Download,
   Eye,
   FileText,
+  History,
   Loader2,
   Pencil,
   Pin,
   PinOff,
   RefreshCw,
+  RotateCcw,
   Sparkles,
   Trash2,
 } from "lucide-react";
@@ -38,8 +43,9 @@ import { useTags } from "@/hooks/useTags";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useDebouncedCallback } from "@/lib/use-debounced-callback";
 import { useSyncedState } from "@/lib/use-synced-state";
-import { cn } from "@/lib/utils";
+import { cn, slugify } from "@/lib/utils";
 import { useAiSummary, useGenerateSummary } from "@/hooks/useAiSummary";
+import { useNoteVersions, useSaveNoteVersion } from "@/hooks/useNoteVersions";
 import { VoiceRecorder } from "@/components/voice/VoiceRecorder";
 import { VoiceNotesList } from "@/components/voice/VoiceNotesList";
 import { BacklinksPanel } from "@/components/graph/BacklinksPanel";
@@ -79,6 +85,22 @@ export function NoteDetail({ noteId }: { noteId: string }) {
   const [body, setBody] = useSyncedState(note?.body_markdown ?? "");
   const [justSaved, setJustSaved] = useState(false);
   const [summaryExpanded, setSummaryExpanded] = useState(false);
+  const [showVersions, setShowVersions] = useState(false);
+
+  const { data: versions } = useNoteVersions(noteId);
+  const saveVersion = useSaveNoteVersion(noteId, workspaceId);
+
+  const tocItems = useMemo(() => {
+    const regex = /^(#{1,4})\s+(.+)$/gm;
+    const items: { level: number; text: string; slug: string }[] = [];
+    let match;
+    while ((match = regex.exec(body)) !== null) {
+      const text = match[2].trim();
+      items.push({ level: match[1].length, text, slug: slugify(text) });
+    }
+    return items;
+  }, [body]);
+  const showToc = tocItems.length >= 2;
 
   useEffect(() => {
     if (justSaved) {
@@ -123,7 +145,9 @@ export function NoteDetail({ noteId }: { noteId: string }) {
   };
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-6 py-6">
+    <div className={cn("mx-auto w-full px-6 py-6", showToc ? "max-w-5xl" : "max-w-3xl")}>
+      <div className={cn(showToc && "flex gap-8 items-start")}>
+      <div className={cn(showToc ? "flex-1 min-w-0 max-w-3xl" : "w-full")}>
       <div className="mb-4 flex items-center justify-between">
         <Link
           href="/notes"
@@ -176,6 +200,48 @@ export function NoteDetail({ noteId }: { noteId: string }) {
             ) : (
               <PinOff className="size-4" strokeWidth={1.75} />
             )}
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              const blob = new Blob([`# ${note.title}\n\n${note.body_markdown}`], { type: "text/markdown" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `${note.title.replace(/[^a-z0-9]/gi, "-").toLowerCase()}.md`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            aria-label="Export as markdown"
+            title="Export .md"
+          >
+            <Download className="size-4" strokeWidth={1.75} />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={async () => {
+              await saveVersion.mutateAsync({ title, body_markdown: body });
+              toast.success("Version saved");
+            }}
+            disabled={saveVersion.isPending}
+            title="Save version"
+          >
+            <History className="size-4" strokeWidth={1.75} />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowVersions((v) => !v)}
+            title="Version history"
+            className={cn(showVersions && "text-accent")}
+          >
+            {showVersions ? <ChevronDown className="size-4" strokeWidth={1.75} /> : <ChevronRight className="size-4" strokeWidth={1.75} />}
+            History
           </Button>
 
           <Button
@@ -292,6 +358,47 @@ export function NoteDetail({ noteId }: { noteId: string }) {
         <BacklinksPanel noteId={noteId} />
       </div>
 
+      {/* Version history */}
+      {showVersions && (
+        <div className="mb-6 rounded-lg border border-border-subtle bg-surface p-4">
+          <p className="mb-3 text-xs font-semibold text-secondary uppercase tracking-wide">
+            Version history ({versions?.length ?? 0})
+          </p>
+          {(versions ?? []).length === 0 ? (
+            <p className="text-sm text-faint">No saved versions yet. Click History → Save to snapshot.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {(versions ?? []).map((v) => (
+                <div
+                  key={v.id}
+                  className="flex items-center justify-between gap-3 rounded-md border border-border-subtle px-3 py-2 text-sm"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{v.title}</p>
+                    <p className="text-xs text-faint">{new Date(v.created_at).toLocaleString()}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBody(v.body_markdown);
+                      setTitle(v.title);
+                      updateNote.mutate(
+                        { title: v.title, body_markdown: v.body_markdown },
+                        { onSuccess: () => toast.success("Version restored") }
+                      );
+                    }}
+                    className="shrink-0 inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-accent transition-colors hover:bg-accent-muted"
+                  >
+                    <RotateCcw className="size-3" strokeWidth={1.75} />
+                    Restore
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {mode === "edit" ? (
         <textarea
           value={body}
@@ -320,6 +427,32 @@ export function NoteDetail({ noteId }: { noteId: string }) {
           description="Flip to edit mode and write your first markdown note."
         />
       )}
+      </div>
+      {showToc && (
+        <aside className="hidden xl:block w-44 shrink-0 sticky top-6 self-start">
+          <p className="mb-2 text-[11px] font-semibold tracking-wide text-faint uppercase">On this page</p>
+          <nav className="space-y-0.5">
+            {tocItems.map((item, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() =>
+                  document.getElementById(item.slug)?.scrollIntoView({ behavior: "smooth", block: "start" })
+                }
+                className={cn(
+                  "block w-full text-left text-xs leading-5 text-secondary transition-colors hover:text-foreground truncate",
+                  item.level === 1 && "font-semibold",
+                  item.level === 3 && "pl-3",
+                  item.level === 4 && "pl-6",
+                )}
+              >
+                {item.text}
+              </button>
+            ))}
+          </nav>
+        </aside>
+      )}
+      </div>
     </div>
   );
 }

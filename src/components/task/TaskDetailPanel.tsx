@@ -3,12 +3,18 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
-  Check,
+  AlertCircle,
+  CheckCircle2,
   CheckSquare,
+  Circle,
+  Clock,
+  Copy,
   FileText,
-  Loader2,
   Link2,
+  ListChecks,
+  MessageCircle,
   Plus,
+  Save,
   Trash2,
   X,
 } from "lucide-react";
@@ -25,10 +31,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import {
+  useCreateTask,
+  useCreateTaskComment,
   useDeleteTask,
+  useDeleteTaskComment,
   useLinkNoteToTask,
   useTask,
+  useTaskComments,
   useTaskLinkedNotes,
   useUnlinkNoteFromTask,
   useUpdateTask,
@@ -36,8 +47,8 @@ import {
 import { useNotes } from "@/hooks/useNotes";
 import { useProjects } from "@/hooks/useProjects";
 import { PRIORITY_META, TASK_STATUS_META } from "@/lib/task-meta";
-import { useDebouncedCallback } from "@/lib/use-debounced-callback";
 import { useSyncedState } from "@/lib/use-synced-state";
+import { cn } from "@/lib/utils";
 import type { TaskPriority, TaskStatus } from "@/types/database";
 
 interface TaskDetailPanelProps {
@@ -50,6 +61,7 @@ export function TaskDetailPanel({ workspaceId, taskId, onClose }: TaskDetailPane
   const { data: task, isLoading } = useTask(taskId);
   const updateTask = useUpdateTask(workspaceId);
   const deleteTask = useDeleteTask(workspaceId);
+  const createTask = useCreateTask(workspaceId);
 
   const { data: projects } = useProjects(workspaceId);
   const { data: notes } = useNotes(workspaceId);
@@ -57,31 +69,25 @@ export function TaskDetailPanel({ workspaceId, taskId, onClose }: TaskDetailPane
   const linkNote = useLinkNoteToTask(taskId);
   const unlinkNote = useUnlinkNoteFromTask(taskId);
 
+  const { data: comments } = useTaskComments(taskId);
+  const createComment = useCreateTaskComment(taskId, workspaceId);
+  const deleteComment = useDeleteTaskComment(taskId);
+
   const [title, setTitle] = useSyncedState(task?.title ?? "");
   const [description, setDescription] = useSyncedState(task?.description ?? "");
   const [noteToAdd, setNoteToAdd] = useState<string>("none");
-  const [justSaved, setJustSaved] = useState(false);
+  const [newSubtask, setNewSubtask] = useState("");
+  const [newComment, setNewComment] = useState("");
+  const [logHours, setLogHours] = useState("");
 
+  // Escape key to close
   useEffect(() => {
-    if (justSaved) {
-      const t = setTimeout(() => setJustSaved(false), 1500);
-      return () => clearTimeout(t);
-    }
-  }, [justSaved]);
-
-  const saveTitle = useDebouncedCallback((value: string) => {
-    updateTask.mutate(
-      { id: taskId, patch: { title: value } },
-      { onSuccess: () => setJustSaved(true) }
-    );
-  }, 600);
-
-  const saveDescription = useDebouncedCallback((value: string) => {
-    updateTask.mutate(
-      { id: taskId, patch: { description: value || null } },
-      { onSuccess: () => setJustSaved(true) }
-    );
-  }, 600);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   if (isLoading) {
     return (
@@ -97,12 +103,41 @@ export function TaskDetailPanel({ workspaceId, taskId, onClose }: TaskDetailPane
     );
   }
 
-  if (!task) {
-    return null;
-  }
+  if (!task) return null;
+
+  const today = new Date().toISOString().split("T")[0];
+  const isOverdue = task.due_date && task.due_date < today && task.status !== "done";
+  const isDone = task.status === "done";
 
   const patch = (p: Parameters<typeof updateTask.mutate>[0]["patch"]) =>
-    updateTask.mutate({ id: taskId, patch: p }, { onSuccess: () => setJustSaved(true) });
+    updateTask.mutate(
+      { id: taskId, patch: p },
+      { onSuccess: () => toast.success("Task updated") }
+    );
+
+  const handleSave = () => {
+    updateTask.mutate(
+      { id: taskId, patch: { title, description: description || null } },
+      { onSuccess: () => toast.success("Task saved") }
+    );
+  };
+
+  const handleToggleDone = () => {
+    patch({ status: isDone ? "todo" : "done" });
+  };
+
+  const handleDuplicate = async () => {
+    await createTask.mutateAsync({
+      title: `${task.title} (copy)`,
+      description: task.description,
+      status: task.status,
+      priority: task.priority,
+      project_id: task.project_id,
+      due_date: task.due_date,
+      estimate: task.estimate,
+    });
+    toast.success("Task duplicated");
+  };
 
   const handleDelete = async () => {
     await deleteTask.mutateAsync(taskId);
@@ -127,23 +162,34 @@ export function TaskDetailPanel({ workspaceId, taskId, onClose }: TaskDetailPane
         role="dialog"
         aria-modal="true"
         aria-label="Task details"
-        className="absolute top-0 right-0 flex h-full w-[440px] max-w-full flex-col border-l border-default bg-popover shadow-xl data-open:animate-in data-open:slide-in-from-right-4"
+        className="absolute top-0 right-0 flex h-full w-[440px] max-w-full flex-col border-l border-default bg-popover shadow-xl"
       >
+        {/* Header */}
         <div className="flex items-center justify-between border-b border-border-subtle px-5 py-4">
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium tracking-wide text-secondary uppercase">
-            <CheckSquare className="size-4" strokeWidth={1.75} />
-            Task
-            {updateTask.isPending || justSaved ? (
-              <span className="ml-1 inline-flex items-center gap-1 normal-case text-faint">
-                {updateTask.isPending ? (
-                  <Loader2 className="size-3 animate-spin" strokeWidth={1.75} />
-                ) : (
-                  <Check className="size-3 text-success" strokeWidth={1.75} />
-                )}
-                {updateTask.isPending ? "Saving…" : "Saved"}
-              </span>
-            ) : null}
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleToggleDone}
+              aria-label={isDone ? "Mark as not done" : "Mark as done"}
+              className="rounded p-0.5 text-secondary transition-colors hover:text-foreground"
+            >
+              {isDone ? (
+                <CheckCircle2 className="size-5 text-success" strokeWidth={1.75} />
+              ) : (
+                <Circle className="size-5" strokeWidth={1.75} />
+              )}
+            </button>
+            <span className="text-xs font-medium tracking-wide text-secondary uppercase">
+              <CheckSquare className="inline size-3.5 mr-1" strokeWidth={1.75} />
+              Task
+            </span>
+            {isOverdue && (
+              <Badge variant="destructive" className="gap-1 text-[10px] px-1.5 py-0">
+                <AlertCircle className="size-2.5" strokeWidth={1.75} />
+                Overdue
+              </Badge>
+            )}
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -154,22 +200,15 @@ export function TaskDetailPanel({ workspaceId, taskId, onClose }: TaskDetailPane
           </button>
         </div>
 
+        {/* Body */}
         <div className="flex-1 space-y-5 overflow-y-auto p-5">
           <div className="space-y-1.5">
             <Label htmlFor="task-panel-title">Title</Label>
             <Input
               id="task-panel-title"
               value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                saveTitle(e.target.value);
-              }}
-              onBlur={() =>
-                updateTask.mutate(
-                  { id: taskId, patch: { title } },
-                  { onSuccess: () => setJustSaved(true) }
-                )
-              }
+              onChange={(e) => setTitle(e.target.value)}
+              className={cn(isDone && "line-through text-faint")}
             />
           </div>
 
@@ -242,12 +281,18 @@ export function TaskDetailPanel({ workspaceId, taskId, onClose }: TaskDetailPane
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="task-panel-due">Due date</Label>
+              <Label htmlFor="task-panel-due">
+                Due date
+                {isOverdue && (
+                  <span className="ml-1 text-[10px] font-medium text-danger">overdue</span>
+                )}
+              </Label>
               <Input
                 id="task-panel-due"
                 type="date"
                 value={task.due_date ?? ""}
                 onChange={(e) => patch({ due_date: e.target.value || null })}
+                className={cn(isOverdue && "border-danger/50 text-danger")}
               />
             </div>
           </div>
@@ -273,19 +318,123 @@ export function TaskDetailPanel({ workspaceId, taskId, onClose }: TaskDetailPane
             <Textarea
               id="task-panel-desc"
               value={description}
-              onChange={(e) => {
-                setDescription(e.target.value);
-                saveDescription(e.target.value);
-              }}
-              onBlur={() =>
-                updateTask.mutate(
-                  { id: taskId, patch: { description: description || null } },
-                  { onSuccess: () => setJustSaved(true) }
-                )
-              }
+              onChange={(e) => setDescription(e.target.value)}
               rows={5}
               placeholder="Add context, links, or notes…"
             />
+          </div>
+
+          {/* Subtasks */}
+          <div className="space-y-2">
+            <Label className="inline-flex items-center gap-1.5">
+              <ListChecks className="size-4" strokeWidth={1.75} />
+              Subtasks
+              {task.subtasks?.length > 0 && (
+                <span className="text-xs text-faint">
+                  ({task.subtasks.filter((s) => s.done).length}/{task.subtasks.length})
+                </span>
+              )}
+            </Label>
+            {(task.subtasks ?? []).map((sub) => (
+              <div key={sub.id} className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = task.subtasks.map((s) =>
+                      s.id === sub.id ? { ...s, done: !s.done } : s
+                    );
+                    patch({ subtasks: updated });
+                  }}
+                  className="shrink-0 text-secondary hover:text-foreground"
+                >
+                  {sub.done ? (
+                    <CheckCircle2 className="size-4 text-success" strokeWidth={1.75} />
+                  ) : (
+                    <Circle className="size-4" strokeWidth={1.75} />
+                  )}
+                </button>
+                <span className={cn("flex-1 text-sm", sub.done && "line-through text-faint")}>
+                  {sub.title}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => patch({ subtasks: task.subtasks.filter((s) => s.id !== sub.id) })}
+                  className="shrink-0 rounded p-0.5 text-faint hover:text-danger"
+                >
+                  <X className="size-3" strokeWidth={1.75} />
+                </button>
+              </div>
+            ))}
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Add subtask…"
+                value={newSubtask}
+                onChange={(e) => setNewSubtask(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && newSubtask.trim()) {
+                    patch({
+                      subtasks: [
+                        ...(task.subtasks ?? []),
+                        { id: crypto.randomUUID(), title: newSubtask.trim(), done: false },
+                      ],
+                    });
+                    setNewSubtask("");
+                  }
+                }}
+                className="flex-1"
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                disabled={!newSubtask.trim()}
+                onClick={() => {
+                  patch({
+                    subtasks: [
+                      ...(task.subtasks ?? []),
+                      { id: crypto.randomUUID(), title: newSubtask.trim(), done: false },
+                    ],
+                  });
+                  setNewSubtask("");
+                }}
+              >
+                <Plus className="size-4" strokeWidth={1.75} />
+              </Button>
+            </div>
+          </div>
+
+          {/* Time tracking */}
+          <div className="space-y-2">
+            <Label className="inline-flex items-center gap-1.5">
+              <Clock className="size-4" strokeWidth={1.75} />
+              Time logged
+              {task.time_spent ? (
+                <span className="text-xs text-faint">{task.time_spent} hrs total</span>
+              ) : null}
+            </Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={0}
+                step={0.25}
+                placeholder="Add hours…"
+                value={logHours}
+                onChange={(e) => setLogHours(e.target.value)}
+                className="flex-1"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!logHours || Number(logHours) <= 0}
+                onClick={() => {
+                  const delta = Number(logHours);
+                  if (!delta) return;
+                  patch({ time_spent: (task.time_spent ?? 0) + delta });
+                  setLogHours("");
+                }}
+              >
+                Log
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -346,16 +495,98 @@ export function TaskDetailPanel({ workspaceId, taskId, onClose }: TaskDetailPane
               </div>
             ) : null}
           </div>
+
+          {/* Comments */}
+          <div className="space-y-2">
+            <Label className="inline-flex items-center gap-1.5">
+              <MessageCircle className="size-4" strokeWidth={1.75} />
+              Comments
+              {comments && comments.length > 0 && (
+                <span className="text-xs text-faint">({comments.length})</span>
+              )}
+            </Label>
+            {(comments ?? []).length === 0 ? (
+              <p className="text-sm text-faint">No comments yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {(comments ?? []).map((c) => (
+                  <div
+                    key={c.id}
+                    className="group flex gap-2 rounded-md border border-border-subtle bg-surface px-3 py-2"
+                  >
+                    <p className="flex-1 text-sm leading-relaxed whitespace-pre-wrap break-words">{c.body}</p>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <span className="text-[10px] text-faint">
+                        {new Date(c.created_at).toLocaleDateString()}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => void deleteComment.mutateAsync(c.id)}
+                        className="rounded p-0.5 text-faint opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
+                        aria-label="Delete comment"
+                      >
+                        <X className="size-3" strokeWidth={1.75} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <Textarea
+                placeholder="Add a comment…"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                rows={2}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                disabled={!newComment.trim() || createComment.isPending}
+                onClick={async () => {
+                  if (!newComment.trim()) return;
+                  await createComment.mutateAsync(newComment.trim());
+                  setNewComment("");
+                  toast.success("Comment added");
+                }}
+              >
+                <Plus className="size-3.5" strokeWidth={1.75} />
+                Post comment
+              </Button>
+            </div>
+          </div>
         </div>
 
-        <div className="border-t border-border-subtle px-5 py-4">
+        {/* Footer */}
+        <div className="space-y-2 border-t border-border-subtle px-5 py-4">
+          <div className="flex gap-2">
+            <Button
+              className="flex-1"
+              onClick={handleSave}
+              disabled={updateTask.isPending}
+            >
+              <Save className="size-4" strokeWidth={1.75} />
+              {updateTask.isPending ? "Saving…" : "Save"}
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => void handleDuplicate()}
+              disabled={createTask.isPending}
+              aria-label="Duplicate task"
+              title="Duplicate"
+            >
+              <Copy className="size-4" strokeWidth={1.75} />
+            </Button>
+          </div>
           <Button
             variant="ghost"
             className="w-full text-danger hover:bg-danger/10 hover:text-danger"
             onClick={() => void handleDelete()}
           >
             <Trash2 className="size-4" strokeWidth={1.75} />
-            Delete task
+            Delete
           </Button>
         </div>
       </div>

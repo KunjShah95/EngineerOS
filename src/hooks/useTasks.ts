@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { createClient } from "@/lib/supabase/client";
-import type { Task, TaskPriority, TaskStatus, TaskWithProject } from "@/types/database";
+import type { Task, TaskComment, TaskPriority, TaskStatus, TaskWithProject } from "@/types/database";
 
 export const TASK_STATUSES: TaskStatus[] = ["backlog", "todo", "in_progress", "done"];
 
@@ -126,7 +126,7 @@ export function useCreateTask(workspaceId: string | null, filters?: TaskFilters 
 export type TaskPatch = Partial<
   Pick<
     Task,
-    "title" | "description" | "project_id" | "priority" | "due_date" | "estimate" | "status"
+    "title" | "description" | "project_id" | "priority" | "due_date" | "estimate" | "status" | "subtasks" | "time_spent"
   >
 >;
 
@@ -301,6 +301,63 @@ export function useUnlinkNoteFromTask(taskId: string | null) {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["task_notes", taskId ?? ""] });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Task comments
+// ---------------------------------------------------------------------------
+
+export function useTaskComments(taskId: string | null) {
+  return useQuery({
+    queryKey: ["task_comments", taskId ?? ""],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("task_comments")
+        .select("*")
+        .eq("task_id", taskId!)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as TaskComment[];
+    },
+    enabled: Boolean(taskId),
+  });
+}
+
+export function useCreateTaskComment(taskId: string | null, workspaceId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: string) => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("task_comments")
+        .insert({ task_id: taskId, workspace_id: workspaceId, body })
+        .select()
+        .single();
+      if (error) throw error;
+      return data as TaskComment;
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["task_comments", taskId ?? ""] });
+    },
+  });
+}
+
+export function useDeleteTaskComment(taskId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (commentId: string) => {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("task_comments")
+        .delete()
+        .eq("id", commentId);
+      if (error) throw error;
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["task_comments", taskId ?? ""] });
     },
   });
 }

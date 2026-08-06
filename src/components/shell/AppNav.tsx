@@ -10,6 +10,7 @@ import {
   CalendarDays,
   CheckSquare,
   Code2,
+  Scissors,
   FileText,
   FolderKanban,
   LayoutDashboard,
@@ -17,6 +18,9 @@ import {
   Search,
   Settings,
   Sparkles,
+  Target,
+  Timer,
+  TrendingUp,
   Users,
   MessageSquareText,
   Mic,
@@ -60,8 +64,18 @@ const NAV_GROUPS = [
     ],
   },
   {
+    label: "Productivity",
+    items: [
+      { href: "/habits", label: "Habits", icon: TrendingUp },
+      { href: "/goals", label: "Goals", icon: Target },
+      { href: "/pomodoro", label: "Pomodoro", icon: Timer },
+    ],
+  },
+  {
     label: "System",
     items: [
+      { href: "/snippets", label: "Snippets", icon: Scissors },
+      { href: "/contacts", label: "Contacts", icon: Users },
       { href: "/meetings", label: "Meetings", icon: Users },
       { href: "/settings", label: "Settings", icon: Settings },
     ],
