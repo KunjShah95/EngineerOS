@@ -243,6 +243,51 @@ async function runReminderJob(
   job: AutomationJob,
   notif: NotificationSettings | null,
 ): Promise<boolean> {
+  // Idempotency guard: a partial run may have created the row already.
+  const { data: existing } = await supabase
+    .from("reminders")
+    .select("id")
+    .eq("job_id", job.id)
+    .maybeSingle();
+  if (existing) return false;
+
+  // Event reminder — enqueued by the calendar (payload.event_id). Verify the
+  // event still exists, then materialize with the event link; a reminder for a
+  // deleted series is dropped silently, like the task path below.
+  const eventId = job.payload.event_id as string | undefined;
+  if (eventId) {
+    const { data: event } = await supabase
+      .from("events")
+      .select("id, title")
+      .eq("id", eventId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (!event) return false;
+
+    const { error } = await supabase
+      .from("reminders")
+      .insert({
+        workspace_id: workspaceId,
+        job_id: job.id,
+        event_id: eventId,
+        title: event.title,
+        fire_at: job.run_at,
+      })
+      .select("id")
+      .single();
+    if (error) throw error; // Let the drain retry this job.
+
+    // Mirror to email when the workspace has one configured (best-effort).
+    if (notif?.email && isEmailConfigured()) {
+      await sendEmail({
+        to: notif.email,
+        subject: `Reminder: ${event.title}`,
+        html: renderReminderEmail(event.title, `/calendar?event=${eventId}`, job.run_at),
+      });
+    }
+    return true;
+  }
+
   const taskId = job.payload.task_id as string | undefined;
   const ruleId = job.payload.rule_id as string | undefined;
   const title = job.payload.title as string | undefined;
@@ -256,14 +301,6 @@ async function runReminderJob(
     .is("deleted_at", null)
     .maybeSingle();
   if (!task) return false;
-
-  // Idempotency guard: a partial run may have created the row already.
-  const { data: existing } = await supabase
-    .from("reminders")
-    .select("id")
-    .eq("job_id", job.id)
-    .maybeSingle();
-  if (existing) return false;
 
   const { error } = await supabase
     .from("reminders")

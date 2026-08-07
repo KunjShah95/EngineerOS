@@ -861,6 +861,48 @@ describe("drainAutomation", () => {
     expect(db.rows("reminders")).toHaveLength(1);
   });
 
+  // --- event reminders (calendar events, Phase 4) -------------------------
+
+  it("materializes due event reminder jobs into the reminders feed", async () => {
+    const db = new FakeDatabase();
+    db.seed("events", [{ id: "event-1", workspace_id: WS, title: "Sprint planning", deleted_at: null }]);
+    db.seed("jobs", [reminderJob({ payload: { event_id: "event-1" } })]);
+    const summary = await run(db);
+    expect(summary.reminders_created).toBe(1);
+    const rows = db.rows("reminders");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      workspace_id: WS,
+      job_id: "job-1",
+      event_id: "event-1",
+      title: "Sprint planning",
+    });
+    // rule_id/task_id default to NULL in the schema — the engine doesn't set them.
+    expect(db.rows("jobs")[0].status).toBe("done");
+  });
+
+  it("drops event reminder jobs whose event has been deleted", async () => {
+    const db = new FakeDatabase();
+    // No events seeded — the referenced event is gone.
+    db.seed("jobs", [reminderJob({ payload: { event_id: "event-1" } })]);
+    const summary = await run(db);
+    expect(summary.reminders_created).toBe(0);
+    expect(db.rows("reminders")).toHaveLength(0);
+    expect(db.rows("jobs")[0].status).toBe("done");
+  });
+
+  it("drops event reminder jobs whose event has been soft-deleted", async () => {
+    const db = new FakeDatabase();
+    db.seed("events", [
+      { id: "event-1", workspace_id: WS, title: "Sprint planning", deleted_at: new Date().toISOString() },
+    ]);
+    db.seed("jobs", [reminderJob({ payload: { event_id: "event-1" } })]);
+    const summary = await run(db);
+    expect(summary.reminders_created).toBe(0);
+    expect(db.rows("reminders")).toHaveLength(0);
+    expect(db.rows("jobs")[0].status).toBe("done");
+  });
+
   // --- weekly digest ------------------------------------------------------
 
   it("sends a due digest and re-enqueues the next one a week out", async () => {
