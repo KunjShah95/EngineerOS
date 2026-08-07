@@ -35,7 +35,7 @@
 - **Drag-to-move:** dnd-kit `useDraggable` per `EventBlock` + a `useDroppable` day column per day. On drop, the new start time is computed from the pointer position inside the target column, snapped to 30 minutes; duration is preserved.
 - **Drag-to-create:** native `pointerdown/move/up` with pointer capture on the timed area. A selection overlay renders the dragged range; releasing opens the editor prefilled. A sub-30-minute drag is treated as a click → 1-hour event.
 - **"Now" line:** a `bg-destructive` line at the current time, only in the today column.
-- **Resize is deferred** (explicit non-goal this phase); **month view stays a pill grid** (no drag/drop in month view).
+- **Resize was deferred** at the time (explicit non-goal; shipped later as a follow-up — see the Self-Review note); **month view stays a pill grid** (no drag/drop in month view).
 - **Recurrence/reminders** remain dormant (Phases 3–4).
 
 ---
@@ -1332,7 +1332,7 @@ Month view still renders the pill grid with events; clicking an event opens the 
 
 ## Self-Review Notes
 
-- **Spec coverage:** Day view ✓ (Tasks 3–4); hourly Week view ✓ (Tasks 3–4); events positioned by time ✓ (Task 1 `clipEventToDay`/`layoutEventColumns`); click-empty-slot create ✓ (Task 3 `handleSelectEnd` 1h default); drag-to-create ✓ (Task 3 selection overlay); drag-to-move ✓ (Task 3 dnd-kit drop math). Resize explicitly deferred (non-goal). Tasks keep rendering alongside (all-day strips) per the spec's "tasks continue to render unchanged."
+- **Spec coverage:** Day view ✓ (Tasks 3–4); hourly Week view ✓ (Tasks 3–4); events positioned by time ✓ (Task 1 `clipEventToDay`/`layoutEventColumns`); click-empty-slot create ✓ (Task 3 `handleSelectEnd` 1h default); drag-to-create ✓ (Task 3 selection overlay); drag-to-move ✓ (Task 3 dnd-kit drop math). Resize was explicitly deferred at the time, then **shipped as a follow-up**: `resizeEventOnDay` pure helper in `calendar-grid.ts` (+6 tests), native-pointer resize handles on `EventBlock` (stopPropagation keeps dnd-kit's move-drag and the column's create-select out of the way, live preview + live time label), wired through `HourGrid` reusing the `onMoveEvent` persist path so `CalendarPage` is unchanged. Resize keeps the opposite boundary fixed, snaps to `MINUTE_SNAP`, clamps to the visible day, and no-ops below min duration. Tasks keep rendering alongside (all-day strips) per the spec's "tasks continue to render unchanged."
 - **Consistency:** dnd-kit usage mirrors `KanbanBoard` (`PointerSensor` 6px, `pointerWithin` collision fallback, `CSS.Transform`, `touch-none`). Pure helpers + vitest matches the repo's no-RTL convention. `useEvents`/`useUpdateEvent`/`EventEditorModal`/`EventPill`/`TaskPill`/`EVENT_COLORS` are reused, not duplicated.
 - **Known intentional intermediate failures:** typecheck fails after Task 2 (CalendarPage still passes `initialDate`) and during Task 3/4 transitions; the plan calls these out so the executor doesn't treat them as defects. Final state (after Task 4) typechecks, lints, builds, and passes all tests.
 - **Time-zone handling:** all grid math uses local time (same as Phase 1 bucketing); `starts_at` stays UTC in the DB via `toISOString()`.
