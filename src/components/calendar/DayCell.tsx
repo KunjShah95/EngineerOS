@@ -1,19 +1,29 @@
 import Link from "next/link";
 
 import { TaskPill } from "@/components/calendar/TaskPill";
+import { EventPill } from "@/components/calendar/EventPill";
 import { cn } from "@/lib/utils";
-import type { TaskWithProject } from "@/types/database";
+import type { CalendarEvent, TaskWithProject } from "@/types/database";
 import { weekdayName } from "@/lib/calendar";
 
 export interface DayCellData {
   iso: string;
   date: Date;
   tasks: TaskWithProject[];
+  events: CalendarEvent[];
   hasNote: boolean;
   isToday: boolean;
 }
 
-export function DayCell({ iso, date, tasks, hasNote, isToday }: DayCellData) {
+export function DayCell({
+  iso,
+  date,
+  tasks,
+  events,
+  hasNote,
+  isToday,
+  onOpenEvent,
+}: DayCellData & { onOpenEvent: (id: string) => void }) {
   return (
     <div
       className={cn(
@@ -29,6 +39,9 @@ export function DayCell({ iso, date, tasks, hasNote, isToday }: DayCellData) {
       </div>
 
       <div className="mt-1.5 flex flex-1 flex-col gap-1.5">
+        {events.map((event) => (
+          <EventPill key={event.id} event={event} onOpen={onOpenEvent} />
+        ))}
         {tasks.map((task) => (
           <TaskPill key={task.id} task={task} />
         ))}
