@@ -35,6 +35,40 @@ export function localDateOf(iso: string): string {
   return toISODate(new Date(iso));
 }
 
+/**
+ * New starts_at/ends_at after resizing `edge` of an event to `newMinutes`
+ * (local minutes since midnight) on `dayIso`. The opposite boundary stays
+ * fixed, so extending the bottom edge keeps the start and vice versa.
+ * Returns null when the result would be shorter than MINUTE_SNAP — resizing
+ * is a no-op rather than collapsing the event. Minutes are clamped to the
+ * visible day (23:30 max), so an event cannot be dragged past midnight in the
+ * day grid (same as Google Calendar's day view).
+ */
+export function resizeEventOnDay(
+  event: CalendarEvent,
+  dayIso: string,
+  edge: "start" | "end",
+  newMinutes: number
+): { starts_at: string; ends_at: string } | null {
+  const clamped = Math.max(0, Math.min(DAY_MINUTES - MINUTE_SNAP, Math.round(newMinutes)));
+  // "YYYY-MM-DDT00:00:00" parses as LOCAL time (no zone suffix), so the
+  // resized boundary lands on the visible day in the user's timezone.
+  const local = new Date(`${dayIso}T00:00:00`);
+  const atMinutes = (min: number) => {
+    const d = new Date(local);
+    d.setHours(Math.floor(min / 60), min % 60, 0, 0);
+    return d;
+  };
+  if (edge === "end") {
+    const end = atMinutes(clamped);
+    if (end.getTime() - new Date(event.starts_at).getTime() < MINUTE_SNAP * 60_000) return null;
+    return { starts_at: event.starts_at, ends_at: end.toISOString() };
+  }
+  const start = atMinutes(clamped);
+  if (new Date(event.ends_at).getTime() - start.getTime() < MINUTE_SNAP * 60_000) return null;
+  return { starts_at: start.toISOString(), ends_at: event.ends_at };
+}
+
 /** Position + overlap-column info for one timed event on one day. */
 export interface TimedLayout {
   topPx: number;

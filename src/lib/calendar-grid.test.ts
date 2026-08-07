@@ -10,6 +10,7 @@ import {
   localDateOf,
   minutesSinceMidnight,
   minutesToLocalInput,
+  resizeEventOnDay,
   snapMinutes,
 } from "./calendar-grid";
 
@@ -140,5 +141,44 @@ describe("layoutEventColumns", () => {
   it("ignores all-day events", () => {
     const allDay = evt({ id: "ad", all_day: true, starts_at: "2026-08-07T00:00:00", ends_at: "2026-08-07T00:00:00" });
     expect(layoutEventColumns("2026-08-07", [allDay]).size).toBe(0);
+  });
+});
+
+describe("resizeEventOnDay", () => {
+  const sameDay = () =>
+    evt({ starts_at: "2026-08-07T09:00:00", ends_at: "2026-08-07T10:00:00" });
+
+  it("extends the end edge, keeping start fixed", () => {
+    const out = resizeEventOnDay(sameDay(), "2026-08-07", "end", 11 * 60);
+    expect(out).not.toBeNull();
+    expect(out!.starts_at).toBe("2026-08-07T09:00:00");
+    expect(out!.ends_at).toBe(new Date("2026-08-07T11:00:00").toISOString());
+  });
+
+  it("shrinks the end edge, keeping start fixed", () => {
+    const out = resizeEventOnDay(sameDay(), "2026-08-07", "end", 9 * 60 + 30);
+    expect(out?.ends_at).toBe(new Date("2026-08-07T09:30:00").toISOString());
+  });
+
+  it("moves the start edge, keeping end fixed", () => {
+    const out = resizeEventOnDay(sameDay(), "2026-08-07", "start", 9 * 60 + 30);
+    expect(out?.starts_at).toBe(new Date("2026-08-07T09:30:00").toISOString());
+    expect(out?.ends_at).toBe("2026-08-07T10:00:00");
+  });
+
+  it("returns null below the minimum duration (30m)", () => {
+    expect(resizeEventOnDay(sameDay(), "2026-08-07", "end", 9 * 60 + 15)).toBeNull();
+    expect(resizeEventOnDay(sameDay(), "2026-08-07", "start", 9 * 60 + 45)).toBeNull();
+  });
+
+  it("clamps past-day values to 23:30", () => {
+    const out = resizeEventOnDay(sameDay(), "2026-08-07", "end", DAY_MINUTES);
+    expect(out?.ends_at).toBe(new Date("2026-08-07T23:30:00").toISOString());
+  });
+
+  it("preserves the opposite edge of a midnight-spanning event", () => {
+    const span = evt({ starts_at: "2026-08-07T23:00:00", ends_at: "2026-08-08T01:00:00" });
+    const out = resizeEventOnDay(span, "2026-08-07", "start", 23 * 60 + 30);
+    expect(out?.ends_at).toBe("2026-08-08T01:00:00");
   });
 });
