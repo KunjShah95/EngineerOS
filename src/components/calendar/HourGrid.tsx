@@ -43,7 +43,7 @@ interface HourGridProps {
   onOpenEvent: (id: string) => void;
   /** Called with a snapped range when an empty slot is clicked or dragged. */
   onCreateEvent: (iso: string, startMinutes: number, endMinutes: number) => void;
-  /** Persist a move (duration already preserved). */
+  /** Persist new start/end times — used by drag-to-move and drag-to-resize. */
   onMoveEvent: (id: string, startsAt: string, endsAt: string) => void;
   hourHeight?: number;
 }
@@ -263,7 +263,9 @@ export function HourGrid({
                       event={e}
                       layout={layout}
                       hourHeight={hourHeight}
+                      dayIso={day.iso}
                       onOpen={guardedOpen}
+                      onResize={onMoveEvent}
                     />
                   );
                 })}
