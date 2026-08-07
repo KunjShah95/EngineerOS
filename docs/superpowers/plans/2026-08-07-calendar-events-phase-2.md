@@ -1,6 +1,6 @@
 # Calendar Events — Phase 2 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Add a Google-Calendar-style **day/time grid** to EngineerOS: an hourly **Day view** and an **hourly Week view** where timed events are positioned on a time axis. Users can **click an empty slot** to create an event prefilled with that time, **drag across empty space** to create an event covering the dragged range, and **drag events** to move them to a new time/day. Tasks and all-day events stay visible in an all-day strip above the timed area.
 
@@ -48,7 +48,7 @@
 
 All geometry is pure so it can be unit-tested: hour geometry from `HOUR_HEIGHT`, clipping an event to a single local day, side-by-side overlap layout, minute snapping, and the datetime-local string used to prefill the editor.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `src/lib/calendar-grid.test.ts`:
 
@@ -199,12 +199,12 @@ describe("layoutEventColumns", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/lib/calendar-grid.test.ts`
 Expected: FAIL — cannot resolve `./calendar-grid`.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Create `src/lib/calendar-grid.ts`:
 
@@ -347,12 +347,12 @@ export function layoutEventColumns(
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run src/lib/calendar-grid.test.ts`
 Expected: PASS (all cases). Tests use local-time ISO strings without `Z`, parsing in the runner's local timezone — same convention as `calendar-events.test.ts`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/calendar-grid.ts src/lib/calendar-grid.test.ts
@@ -368,7 +368,7 @@ git commit -m "feat: add time-grid helpers with tests"
 
 Phase 1's modal prefilled creation from an `initialDate` (always 09:00). Phase 2 creation flows know the **exact** time, so replace `initialDate` with `initialStart` / `initialEnd` (datetime-local values). Editing still takes precedence over both.
 
-- [ ] **Step 1: Change the props**
+- [x] **Step 1: Change the props**
 
 Replace the props block:
 
@@ -406,7 +406,7 @@ export function EventEditorModal({
 }) {
 ```
 
-- [ ] **Step 2: Update the default values**
+- [x] **Step 2: Update the default values**
 
 Replace the `defaultStart`/`defaultEnd` block:
 
@@ -429,7 +429,7 @@ with:
     : (initialEnd ?? (initialStart ? addMinutesLocal(initialStart, 30) : `${today}T10:00`));
 ```
 
-- [ ] **Step 3: Add the `addMinutesLocal` helper**
+- [x] **Step 3: Add the `addMinutesLocal` helper**
 
 Add next to `fromLocalInput`:
 
@@ -442,12 +442,12 @@ function addMinutesLocal(v: string, minutes: number): string {
 }
 ```
 
-- [ ] **Step 4: Typecheck**
+- [x] **Step 4: Typecheck**
 
 Run: `npm run typecheck`
 Expected: FAIL — `CalendarPage.tsx` still passes `initialDate`. That's expected; Task 4 fixes it. (The modal itself compiles.)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/calendar/EventEditorModal.tsx
@@ -470,7 +470,7 @@ Key interaction details implemented here:
 - **Drag-move** uses dnd-kit: each block is a `useDraggable`, each timed area a `useDroppable` (`day:<iso>`). On drop, the new start is `snapMinutes(pointer position in the target column)` and duration is preserved; no-op when unchanged.
 - **Post-drag click suppression:** a click immediately after a drop must not open the editor. `draggingRef` is set on drag start and cleared via `setTimeout(0)` on drag end — the browser dispatches `click` synchronously after `pointerup` (same task), so the flag is still set when the click fires.
 
-- [ ] **Step 1: Write EventBlock**
+- [x] **Step 1: Write EventBlock**
 
 Create `src/components/calendar/EventBlock.tsx`:
 
@@ -495,10 +495,12 @@ export function EventBlock({
   hourHeight: number;
   onOpen: (id: string) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `event:${event.id}`,
     data: { event },
   });
+  // Note: `useDraggable` does not return a `transition` (unlike `useSortable`),
+  // so the block animates via the CSS `transition-shadow` class only.
   const hex = EVENT_COLORS[event.color];
   const width = `calc(${100 / layout.columns}% - 2px)`;
   const left = `calc(${(layout.column / layout.columns) * 100}% + 1px)`;
@@ -528,7 +530,6 @@ export function EventBlock({
         backgroundColor: `${hex}26`,
         borderLeft: `3px solid ${hex}`,
         transform: CSS.Transform.toString(transform),
-        transition,
       }}
     >
       <p className="line-clamp-1 font-medium">{event.title}</p>
@@ -544,7 +545,7 @@ export function EventBlock({
 }
 ```
 
-- [ ] **Step 2: Write HourGrid**
+- [x] **Step 2: Write HourGrid**
 
 Create `src/components/calendar/HourGrid.tsx`:
 
@@ -563,7 +564,6 @@ import {
   useSensors,
   type CollisionDetection,
   type DragEndEvent,
-  type DragStartEvent,
 } from "@dnd-kit/core";
 import { format } from "date-fns";
 
@@ -679,7 +679,7 @@ export function HourGrid({
     onOpenEvent(id);
   };
 
-  const handleDragStart = (_event: DragStartEvent) => {
+  const handleDragStart = () => {
     draggingRef.current = true;
   };
 
@@ -869,12 +869,12 @@ function TimedColumn({
 }
 ```
 
-- [ ] **Step 3: Typecheck**
+- [x] **Step 3: Typecheck**
 
 Run: `npm run typecheck`
 Expected: FAIL only at `CalendarPage.tsx` (still passes `initialDate`, still uses `WeekGrid`). `EventBlock`/`HourGrid` themselves compile.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/components/calendar/EventBlock.tsx src/components/calendar/HourGrid.tsx
@@ -891,7 +891,7 @@ git commit -m "feat: add HourGrid with click/drag-create and drag-to-move"
 
 Adds a "day" view, swaps the pill week grid for the hourly `HourGrid`, wires slot/drag creation into the editor, and removes the now-dead `WeekGrid`/`DayCell`.
 
-- [ ] **Step 1: Update imports**
+- [x] **Step 1: Update imports**
 
 Replace the calendar imports block in `CalendarPage.tsx`:
 
@@ -930,7 +930,7 @@ And add `format` from date-fns (new import line after the lucide import):
 import { format } from "date-fns";
 ```
 
-- [ ] **Step 2: Add the day view to the view type + state**
+- [x] **Step 2: Add the day view to the view type + state**
 
 Change `type CalendarView = "week" | "month";` to:
 
@@ -955,7 +955,7 @@ with:
   const [createEnd, setCreateEnd] = useState<string | null>(null);
 ```
 
-- [ ] **Step 3: Compute the visible range for all three views**
+- [x] **Step 3: Compute the visible range for all three views**
 
 Replace:
 
@@ -972,7 +972,7 @@ with:
   const to = view === "week" ? weekDates[6] : view === "day" ? dayISO : monthDays[41].iso;
 ```
 
-- [ ] **Step 4: Build the hourly-grid day list**
+- [x] **Step 4: Build the hourly-grid day list**
 
 `hourDays` reads `byDate` and `eventsByDate`, so add it **after** the `byDate` memo block (which sits after `eventsByDate` in the file) — e.g. directly after the `const { byDate, unscheduled } = useMemo(...)` block:
 
@@ -986,7 +986,7 @@ with:
   }, [view, anchor, weekDates, weekStart, byDate, eventsByDate]);
 ```
 
-- [ ] **Step 5: Replace the open/close handlers**
+- [x] **Step 5: Replace the open/close handlers**
 
 Replace:
 
@@ -1044,7 +1044,7 @@ with:
   };
 ```
 
-- [ ] **Step 6: Day-view navigation**
+- [x] **Step 6: Day-view navigation**
 
 Replace `goBack`/`goForward`/`goToday`:
 
@@ -1065,7 +1065,7 @@ Replace `goBack`/`goForward`/`goToday`:
     setAnchor(view === "week" ? startOfWeek(new Date()) : new Date());
 ```
 
-- [ ] **Step 7: Remove the old cell builders**
+- [x] **Step 7: Remove the old cell builders**
 
 Delete the `weekDayCells` and `monthDayCells` builders (the month grid now gets its cells from `buildMonthGrid` directly; day/week use `hourDays`). Replace:
 
@@ -1100,7 +1100,7 @@ with:
   }));
 ```
 
-- [ ] **Step 8: Day heading + move-event handler**
+- [x] **Step 8: Day heading + move-event handler**
 
 Replace:
 
@@ -1133,7 +1133,7 @@ After `goToday`, add the move handler (uses the existing `useUpdateEvent` patter
 
 > **Note:** `updateEvent` comes from the existing `useUpdateEvent(workspaceId)` hook — add `const updateEvent = useUpdateEvent(workspaceId);` next to the other hook calls (after `const { data: events } = useEvents(...)`), and add `import { toast } from "sonner";` to the imports. The grid needs the event in the cache to compute the move; `useEvents` already fetched it.
 
-- [ ] **Step 9: View toggle — add the Day button**
+- [x] **Step 9: View toggle — add the Day button**
 
 In the view-toggle `div`, add a day button before the week button:
 
@@ -1151,7 +1151,7 @@ In the view-toggle `div`, add a day button before the week button:
               </button>
 ```
 
-- [ ] **Step 10: Render HourGrid for day/week, keep MonthGrid**
+- [x] **Step 10: Render HourGrid for day/week, keep MonthGrid**
 
 Replace the view render block:
 
@@ -1208,7 +1208,7 @@ with:
       )}
 ```
 
-- [ ] **Step 11: Update the modal props**
+- [x] **Step 11: Update the modal props**
 
 Replace:
 
@@ -1237,27 +1237,27 @@ with:
       )}
 ```
 
-- [ ] **Step 12: Verify the HourGrid props**
+- [x] **Step 12: Verify the HourGrid props**
 
 `onMoveEvent` was already added as a required prop in Task 3 — confirm `CalendarPage` passes it (Step 10) and `HourGrid` destructures it. No code change needed here.
 
-- [ ] **Step 13: Delete the dead grid components**
+- [x] **Step 13: Delete the dead grid components**
 
 ```bash
 git rm src/components/calendar/WeekGrid.tsx src/components/calendar/DayCell.tsx
 ```
 
-- [ ] **Step 14: Typecheck + lint**
+- [x] **Step 14: Typecheck + lint**
 
 Run: `npm run typecheck && npm run lint`
 Expected: PASS. (`DayCell.tsx` and `WeekGrid.tsx` are gone; `TaskPill`/`EventPill` are still imported by `HourGrid`, so nothing is orphaned.)
 
-- [ ] **Step 15: Build**
+- [x] **Step 15: Build**
 
 Run: `npm run build`
 Expected: build succeeds.
 
-- [ ] **Step 16: Commit**
+- [x] **Step 16: Commit**
 
 ```bash
 git add src/components/calendar/CalendarPage.tsx src/components/calendar/HourGrid.tsx
@@ -1270,22 +1270,22 @@ git commit -m "feat: hourly day and week views with create and move"
 
 **Files:** none (verification only).
 
-- [ ] **Step 1: Unit tests**
+- [x] **Step 1: Unit tests**
 
 Run: `npx vitest run`
 Expected: all suites pass (existing 99 + `calendar-grid.test.ts`).
 
-- [ ] **Step 2: Typecheck**
+- [x] **Step 2: Typecheck**
 
 Run: `npm run typecheck`
 Expected: PASS.
 
-- [ ] **Step 3: Lint**
+- [x] **Step 3: Lint**
 
 Run: `npm run lint`
 Expected: no new errors (2 pre-existing errors live in `src/components/voice-agent/VoiceAgent.tsx`, untouched).
 
-- [ ] **Step 4: Build**
+- [x] **Step 4: Build**
 
 Run: `npm run build`
 Expected: build succeeds.
