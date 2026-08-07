@@ -24,7 +24,11 @@ export function useEvents(workspaceId: string | null, fromISO: string, toISO: st
         .order("starts_at", { ascending: true });
       if (error) throw error;
       const rows = (data ?? []) as CalendarEvent[];
-      return rows.flatMap((event) => expandEvent(event, fromISO, toISO));
+      return rows
+        .flatMap((event) => expandEvent(event, fromISO, toISO))
+        // Instances inherit the series' ordering; re-sort by occurrence time
+        // so pills within a day render chronologically.
+        .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
     },
     enabled: Boolean(workspaceId),
   });
@@ -62,13 +66,16 @@ async function syncEventReminder(
 ): Promise<void> {
   // Pending jobs only: a fired job's reminder row is already materialized and
   // can't be unsent. The delete uses the jsonb accessor on the payload, which
-  // PostgREST resolves to `payload->>event_id = <id>`.
-  await supabase
+  // PostgREST resolves to `payload->>event_id = <id>`. If the delete fails,
+  // bail WITHOUT inserting: a stale job firing once at the old time is better
+  // than two pending jobs materializing duplicate reminders.
+  const { error: deleteError } = await supabase
     .from("jobs")
     .delete()
     .eq("kind", "reminder")
     .eq("status", "pending")
     .eq("payload->>event_id", event.id);
+  if (deleteError) return;
 
   const remind = event.remind_minutes;
   if (!remind || remind <= 0) return;

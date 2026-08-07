@@ -10,6 +10,15 @@ export type RecurrenceFreq = "daily" | "weekly" | "monthly";
 export interface EventInstance extends CalendarEvent {
   /** Local YYYY-MM-DD of this occurrence. */
   instanceDate: string;
+  /**
+   * The series' original start/end (its first occurrence). Editing an
+   * occurrence edits the whole series, so the editor prefills from these
+   * rather than the occurrence's own starts_at — otherwise saving would
+   * silently move the recurrence base. Equal to starts_at/ends_at for
+   * non-recurring events (harmless fallback).
+   */
+  seriesStartsAt: string;
+  seriesEndsAt: string;
 }
 
 /** Weekday codes shown in the editor, in JS `getDay()` order (Sun=0 … Sat=6). */
@@ -70,6 +79,8 @@ export function expandEvent(
       starts_at: start.toISOString(),
       ends_at: new Date(start.getTime() + durationMs).toISOString(),
       instanceDate: toISODate(date),
+      seriesStartsAt: event.starts_at,
+      seriesEndsAt: event.ends_at,
     };
   };
 

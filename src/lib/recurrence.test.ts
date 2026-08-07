@@ -123,3 +123,30 @@ describe("expandEvent — monthly", () => {
     ]);
   });
 });
+
+describe("expandEvent — series identity", () => {
+  it("carries the series' original start/end on every instance", () => {
+    const daily = evt({
+      rrule_freq: "daily",
+      rrule_interval: 1,
+      starts_at: "2026-08-07T09:05:00",
+      ends_at: "2026-08-07T10:00:00",
+    });
+    const out = expandEvent(daily, "2026-08-07", "2026-08-09");
+    expect(out).toHaveLength(3);
+    for (const inst of out) {
+      // Occurrence times advance per day…
+      expect(inst.instanceDate).toMatch(/^2026-08-0[789]$/);
+      // …but the series base is preserved so the editor can edit the series.
+      expect(inst.seriesStartsAt).toBe("2026-08-07T09:05:00");
+      expect(inst.seriesEndsAt).toBe("2026-08-07T10:00:00");
+    }
+  });
+
+  it("non-recurring instances mirror their own times", () => {
+    const e = evt({ starts_at: "2026-08-07T09:00:00", ends_at: "2026-08-07T10:00:00" });
+    const out = expandEvent(e, "2026-08-03", "2026-08-09");
+    expect(out[0].seriesStartsAt).toBe("2026-08-07T09:00:00");
+    expect(out[0].seriesEndsAt).toBe("2026-08-07T10:00:00");
+  });
+});

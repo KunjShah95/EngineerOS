@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { WEEKDAY_OPTIONS, type RecurrenceFreq } from "@/lib/recurrence";
+import { WEEKDAY_OPTIONS, type EventInstance, type RecurrenceFreq } from "@/lib/recurrence";
 import { useCreateEvent, useUpdateEvent, useDeleteEvent } from "@/hooks/useEvents";
 import { cn } from "@/lib/utils";
 import type { CalendarEvent, EventColor } from "@/types/database";
@@ -66,7 +66,7 @@ export function EventEditorModal({
   onClose,
 }: {
   workspaceId: string;
-  event: CalendarEvent | null;
+  event: (CalendarEvent & Partial<EventInstance>) | null;
   /** datetime-local value ("YYYY-MM-DDTHH:mm") when creating from a grid slot. */
   initialStart?: string | null;
   /** Optional explicit end; defaults to start + 30 minutes. */
@@ -79,9 +79,14 @@ export function EventEditorModal({
   const deleteEvent = useDeleteEvent(workspaceId);
 
   const today = new Date().toISOString().slice(0, 10);
-  const defaultStart = event ? toLocalInput(event.starts_at) : (initialStart ?? `${today}T09:00`);
+  // Editing an occurrence edits the whole series, so prefill from the series'
+  // original start/end (expansion keeps them on instances). For non-recurring
+  // events these equal starts_at/ends_at.
+  const defaultStart = event
+    ? toLocalInput(event.seriesStartsAt ?? event.starts_at)
+    : (initialStart ?? `${today}T09:00`);
   const defaultEnd = event
-    ? toLocalInput(event.ends_at)
+    ? toLocalInput(event.seriesEndsAt ?? event.ends_at)
     : (initialEnd ?? (initialStart ? addMinutesLocal(initialStart, 30) : `${today}T10:00`));
 
   const [title, setTitle] = useState(event?.title ?? "");
@@ -116,6 +121,13 @@ export function EventEditorModal({
       toast.error("End must be after start");
       return;
     }
+    // A reminder before an already-started event can never fire — drop it so
+    // the event doesn't read as "has a reminder" that silently never goes off.
+    let remind = remindMinutes;
+    if (remind && new Date(startsAt).getTime() - remind * 60_000 <= Date.now()) {
+      remind = null;
+      toast.info("Reminder skipped — the event has already started");
+    }
     const payload = {
       title: title.trim(),
       description,
@@ -128,7 +140,7 @@ export function EventEditorModal({
       rrule_interval: repeats === "never" ? null : Math.max(1, Math.floor(intervalN) || 1),
       rrule_byday: repeats === "weekly" ? byday : null,
       rrule_until: until || null,
-      remind_minutes: remindMinutes,
+      remind_minutes: remind,
     };
     if (isEdit) {
       updateEvent.mutate(
