@@ -75,6 +75,29 @@ export interface TaskComment {
   created_at: string;
 }
 
+export type EventColor = 'blue' | 'green' | 'red' | 'amber' | 'purple' | 'gray';
+
+/** A timed calendar event. Named CalendarEvent to avoid clashing with DOM `Event`. */
+export interface CalendarEvent {
+  id: string;
+  workspace_id: string;
+  title: string;
+  description: string;
+  location: string | null;
+  color: EventColor;
+  all_day: boolean;
+  starts_at: string; // ISO timestamptz
+  ends_at: string;   // ISO timestamptz
+  rrule_freq: 'daily' | 'weekly' | 'monthly' | null;
+  rrule_interval: number | null;
+  rrule_byday: string[] | null;
+  rrule_until: string | null;
+  remind_minutes: number | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
 /** "task_id depends on depends_on_task_id" edge. */
 export interface TaskDependency {
   task_id: string;
