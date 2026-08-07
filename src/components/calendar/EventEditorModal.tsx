@@ -23,10 +23,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { WEEKDAY_OPTIONS, type RecurrenceFreq } from "@/lib/recurrence";
 import { useCreateEvent, useUpdateEvent, useDeleteEvent } from "@/hooks/useEvents";
+import { cn } from "@/lib/utils";
 import type { CalendarEvent, EventColor } from "@/types/database";
 
 const COLORS: EventColor[] = ["blue", "green", "red", "amber", "purple", "gray"];
+type Repeats = "never" | RecurrenceFreq;
 
 /** ISO timestamptz -> value for <input type="datetime-local"> (local, no zone). */
 function toLocalInput(iso: string): string {
@@ -81,9 +84,19 @@ export function EventEditorModal({
   const [start, setStart] = useState(defaultStart);
   const [end, setEnd] = useState(defaultEnd);
 
+  // Recurrence (Phase 3)
+  const [repeats, setRepeats] = useState<Repeats>(event?.rrule_freq ?? "never");
+  const [intervalN, setIntervalN] = useState(event?.rrule_interval ?? 1);
+  const [byday, setByday] = useState<string[]>(event?.rrule_byday ?? []);
+  const [until, setUntil] = useState(event?.rrule_until ?? "");
+
   const submit = () => {
     if (!title.trim()) {
       toast.error("Title is required");
+      return;
+    }
+    if (repeats === "weekly" && byday.length === 0) {
+      toast.error("Pick at least one repeat day");
       return;
     }
     const startsAt = fromLocalInput(start);
@@ -100,6 +113,10 @@ export function EventEditorModal({
       all_day: allDay,
       starts_at: startsAt,
       ends_at: endsAt,
+      rrule_freq: repeats === "never" ? null : repeats,
+      rrule_interval: repeats === "never" ? null : Math.max(1, Math.floor(intervalN) || 1),
+      rrule_byday: repeats === "weekly" ? byday : null,
+      rrule_until: until || null,
     };
     if (isEdit) {
       updateEvent.mutate(
@@ -169,6 +186,79 @@ export function EventEditorModal({
               />
             </div>
           </div>
+
+          {/* Repeats */}
+          <div className="space-y-1.5">
+            <Label>Repeats</Label>
+            <Select value={repeats} onValueChange={(v) => setRepeats(v as Repeats)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="never">Never</SelectItem>
+                <SelectItem value="daily">Daily</SelectItem>
+                <SelectItem value="weekly">Weekly</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {repeats !== "never" && (
+            <>
+              <div className="flex items-end gap-2">
+                <div className="w-24 space-y-1.5">
+                  <Label htmlFor="event-interval">Every</Label>
+                  <Input
+                    id="event-interval"
+                    type="number"
+                    min={1}
+                    max={99}
+                    value={intervalN}
+                    onChange={(e) => setIntervalN(Number(e.target.value))}
+                  />
+                </div>
+                <span className="pb-2 text-xs text-faint">
+                  {repeats === "weekly" ? "week(s)" : repeats === "monthly" ? "month(s)" : "day(s)"}
+                </span>
+              </div>
+
+              {repeats === "weekly" && (
+                <div className="flex gap-1.5">
+                  {WEEKDAY_OPTIONS.map((d) => {
+                    const active = byday.includes(d.code);
+                    return (
+                      <button
+                        key={d.code}
+                        type="button"
+                        onClick={() =>
+                          setByday(active ? byday.filter((c) => c !== d.code) : [...byday, d.code])
+                        }
+                        aria-pressed={active}
+                        className={cn(
+                          "size-7 rounded-full text-xs font-medium transition-colors",
+                          active
+                            ? "bg-accent text-accent-foreground"
+                            : "bg-surface-hover text-secondary hover:text-foreground"
+                        )}
+                      >
+                        {d.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <Label htmlFor="event-until">Ends (optional)</Label>
+                <Input
+                  id="event-until"
+                  type="date"
+                  value={until}
+                  onChange={(e) => setUntil(e.target.value)}
+                />
+              </div>
+            </>
+          )}
 
           <div className="space-y-1.5">
             <Label htmlFor="event-location">Location</Label>
