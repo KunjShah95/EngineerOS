@@ -162,7 +162,7 @@ export function useUpdateTask(workspaceId: string | null) {
     onSettled: (_data, _error, variables) => {
       // Keep the open TaskDetailPanel (keyed on ["task", id]) in sync with edits.
       queryClient.invalidateQueries({ queryKey: ["task", variables.id] });
-      queryClient.invalidateQueries({ queryKey: tasksQueryKey(workspaceId) });
+      queryClient.invalidateQueries({ queryKey: ["tasks", workspaceId ?? ""] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
     },
   });
@@ -224,7 +224,7 @@ export function useReorderTasks(workspaceId: string | null) {
       if (firstError) throw (firstError as { error: Error }).error;
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: tasksQueryKey(workspaceId) });
+      queryClient.invalidateQueries({ queryKey: ["tasks", workspaceId ?? ""] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
     },
   });
@@ -245,7 +245,7 @@ export function useDeleteTask(workspaceId: string | null) {
       if (error) throw error;
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: tasksQueryKey(workspaceId) });
+      queryClient.invalidateQueries({ queryKey: ["tasks", workspaceId ?? ""] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
     },
   });

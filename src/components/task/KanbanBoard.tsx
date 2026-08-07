@@ -1,18 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   DndContext,
+  type CollisionDetection,
   type DragOverEvent,
   type DragStartEvent,
   type DragEndEvent,
   PointerSensor,
   closestCorners,
+  pointerWithin,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { arrayMove } from "@dnd-kit/sortable";
-
 import { KanbanColumn } from "@/components/task/KanbanColumn";
 import { TASK_STATUS_META } from "@/lib/task-meta";
 import {
@@ -52,6 +52,9 @@ export function KanbanBoard({ workspaceId, filters, onOpenTask, onAddTask }: Kan
 
   const [columns, setColumns] = useState<Columns>(EMPTY_COLUMNS);
   const draggingRef = useRef(false);
+  /** Column the drag started in — never overwritten mid-drag. */
+  const originStatusRef = useRef<TaskStatus | null>(null);
+  /** Column the dragged card currently sits in (updated on cross-column moves). */
   const activeStatusRef = useRef<TaskStatus | null>(null);
   const columnsRef = useRef(columns);
 
@@ -70,6 +73,20 @@ export function KanbanBoard({ workspaceId, filters, onOpenTask, onAddTask }: Kan
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
   );
 
+  // Resolve the drop target by where the pointer actually is, not by which
+  // droppable has the nearest *corner*. `closestCorners` biases toward tall
+  // columns (e.g. a full "Done") over a short empty one (e.g. "In Progress"),
+  // so hovering an empty column would drop into its taller neighbour instead —
+  // and because our optimistic reorder changes column heights mid-drag, the
+  // corner-based target oscillated every frame, spamming setState until React
+  // threw "Maximum update depth exceeded". Pointer position is layout-stable,
+  // so this both fixes the wrong-column drop and stops the render loop.
+  // Fall back to closestCorners only when the pointer is outside every column.
+  const collisionDetection = useCallback<CollisionDetection>((args) => {
+    const pointerCollisions = pointerWithin(args);
+    return pointerCollisions.length > 0 ? pointerCollisions : closestCorners(args);
+  }, []);
+
   const findColumnOf = (id: string): TaskStatus | null => {
     for (const status of TASK_STATUS_META.map((s) => s.value)) {
       if (columnsRef.current[status].some((t) => t.id === id)) return status;
@@ -86,12 +103,14 @@ export function KanbanBoard({ workspaceId, filters, onOpenTask, onAddTask }: Kan
 
   const handleDragStart = (event: DragStartEvent) => {
     draggingRef.current = true;
-    activeStatusRef.current = findColumnOf(event.active.id as string);
+    const status = findColumnOf(event.active.id as string);
+    originStatusRef.current = status;
+    activeStatusRef.current = status;
   };
 
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
-    if (!over) return;
+    if (!over || active.id === over.id) return;
 
     const activeId = active.id as string;
     const overId = over.id as string;
@@ -101,55 +120,81 @@ export function KanbanBoard({ workspaceId, filters, onOpenTask, onAddTask }: Kan
     const targetStatus = resolveTarget(overId);
     if (!targetStatus) return;
 
-    if (sourceStatus !== targetStatus) {
-      // Cross-column: move the card into the hovered column.
-      setColumns((prev) => {
-        const item = prev[sourceStatus].find((t) => t.id === activeId);
-        if (!item) return prev;
+    // Insert before/after the hovered card based on the pointer's vertical
+    // position. The index is always computed against the column *without* the
+    // dragged card, so consecutive dragOver events settle on one stable layout
+    // instead of flipping the card back and forth around the hovered card.
+    const isBelowOver = () => {
+      const translated = active.rect.current.translated;
+      if (!translated) return false;
+      return translated.top > over.rect.top + over.rect.height / 2;
+    };
 
-        const source = prev[sourceStatus].filter((t) => t.id !== activeId);
+    setColumns((prev) => {
+      const items = prev[sourceStatus];
+      if (!items) return prev;
+      const from = items.findIndex((t) => t.id === activeId);
+      if (from === -1) return prev;
+      const item = items[from];
+      const rest = items.filter((t) => t.id !== activeId);
+
+      if (sourceStatus !== targetStatus) {
+        // Cross-column: drop into the hovered column at the pointer-relative slot.
         const target = [...prev[targetStatus]];
-        const overIndex = overId.startsWith("column:")
+        const overIndex = target.findIndex((t) => t.id === overId);
+        const dest = overId.startsWith("column:")
           ? target.length
-          : target.findIndex((t) => t.id === overId);
-        const insertAt = overIndex === -1 ? target.length : overIndex;
-        target.splice(insertAt, 0, item);
+          : overIndex === -1
+            ? target.length
+            : isBelowOver()
+              ? overIndex + 1
+              : overIndex;
+        target.splice(Math.min(dest, target.length), 0, item);
+        return { ...prev, [sourceStatus]: rest, [targetStatus]: target };
+      }
 
-        return { ...prev, [sourceStatus]: source, [targetStatus]: target };
-      });
+      // Same-column reorder — only when hovering another card.
+      if (overId.startsWith("column:")) return prev;
+      const overIndex = rest.findIndex((t) => t.id === overId);
+      if (overIndex === -1) return prev;
+      const dest = isBelowOver() ? overIndex + 1 : overIndex;
+      // No-op when the card is already in its target slot — avoids re-rendering
+      // the board on every pointermove during a stable hover.
+      if (dest === from) return prev;
+      const next = [...rest];
+      next.splice(Math.min(dest, next.length), 0, item);
+      return { ...prev, [sourceStatus]: next };
+    });
+
+    if (sourceStatus !== targetStatus) {
       activeStatusRef.current = targetStatus;
-    } else if (overId !== activeId && !overId.startsWith("column:")) {
-      // Same-column reorder.
-      setColumns((prev) => {
-        const items = prev[sourceStatus];
-        const from = items.findIndex((t) => t.id === activeId);
-        const to = items.findIndex((t) => t.id === overId);
-        if (from === -1 || to === -1 || from === to) return prev;
-        return { ...prev, [sourceStatus]: arrayMove(items, from, to) };
-      });
     }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
-    const sourceStatus = activeStatusRef.current;
     const { active, over } = event;
+    const originStatus = originStatusRef.current;
+    const currentStatus = activeStatusRef.current;
     draggingRef.current = false;
+    originStatusRef.current = null;
     activeStatusRef.current = null;
 
-    if (!over || !sourceStatus) {
+    if (!over || !originStatus) {
       setColumns(tasks ? groupByStatus(tasks) : EMPTY_COLUMNS);
       return;
     }
 
     const activeId = active.id as string;
     const overId = over.id as string;
-    const targetStatus = resolveTarget(overId) ?? sourceStatus;
+    const targetStatus = resolveTarget(overId) ?? currentStatus ?? originStatus;
 
-    const destIds = columnsRef.current[targetStatus].map((t) => t.id);
+    const destIds = columnsRef.current[targetStatus]?.map((t) => t.id) ?? [];
+    // Only a genuine cross-column move needs the origin column renumbered —
+    // the dragged card has already been removed from it during dragOver.
     const prevIds =
-      sourceStatus === targetStatus
-        ? null
-        : columnsRef.current[sourceStatus].map((t) => t.id);
+      originStatus !== targetStatus
+        ? (columnsRef.current[originStatus]?.map((t) => t.id) ?? null)
+        : null;
 
     reorder.mutate({
       taskId: activeId,
@@ -161,6 +206,7 @@ export function KanbanBoard({ workspaceId, filters, onOpenTask, onAddTask }: Kan
 
   const handleDragCancel = () => {
     draggingRef.current = false;
+    originStatusRef.current = null;
     activeStatusRef.current = null;
     setColumns(tasks ? groupByStatus(tasks) : EMPTY_COLUMNS);
   };
@@ -181,7 +227,7 @@ export function KanbanBoard({ workspaceId, filters, onOpenTask, onAddTask }: Kan
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={collisionDetection}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}

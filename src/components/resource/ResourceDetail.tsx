@@ -42,9 +42,16 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { useDebouncedCallback } from "@/lib/use-debounced-callback";
 import { useSyncedState } from "@/lib/use-synced-state";
 import { cn } from "@/lib/utils";
-import type { ResourceKind } from "@/types/database";
+import type { ResourceKind, ResourceMetadata } from "@/types/database";
 
 type EditorMode = "edit" | "preview";
+
+// Stable fallback so useSyncedState never receives a fresh object identity on
+// every render — `resource?.metadata ?? {}` would create a new `{}` per render
+// while loading (or when metadata is null), making the `source !== prev` sync
+// always true and triggering React's "Maximum update depth exceeded" (error
+// #185) infinite-loop guard.
+const EMPTY_METADATA: ResourceMetadata = {};
 
 export function ResourceDetail({
   resourceId,
@@ -70,7 +77,7 @@ export function ResourceDetail({
   );
   const [title, setTitle] = useSyncedState(resource?.title ?? "");
   const [body, setBody] = useSyncedState(resource?.body_markdown ?? "");
-  const [metadata, setMetadata] = useSyncedState(resource?.metadata ?? {});
+  const [metadata, setMetadata] = useSyncedState(resource?.metadata ?? EMPTY_METADATA);
   const [justSaved, setJustSaved] = useState(false);
 
   useEffect(() => {

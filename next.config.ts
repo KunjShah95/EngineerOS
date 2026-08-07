@@ -10,13 +10,27 @@ const appUrl =
   process.env.NEXT_PUBLIC_APP_URL ??
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined);
 
+// React's development build requires `eval()` (for callstack reconstruction and
+// other debugging features) and Turbopack HMR also relies on it, so allow
+// 'unsafe-eval' in development only — never in production.
+const isDev = process.env.NODE_ENV === "development";
+
+const scriptSrc = [
+  "'self'",
+  "'unsafe-inline'",
+  "https://plausible.io",
+  "https://va.vercel-scripts.com", // Vercel Analytics (`<Analytics />`)
+  ...(isDev ? ["'unsafe-eval'"] : []),
+].join(" ");
+
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://plausible.io",
+  `script-src ${scriptSrc}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src * data: blob:",
   "font-src 'self' data:",
   "connect-src 'self' https: wss:",
+  "worker-src 'self' blob:",
   "frame-ancestors 'none'",
   "object-src 'none'",
   "base-uri 'self'",

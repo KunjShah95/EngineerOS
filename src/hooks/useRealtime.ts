@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { createClient } from "@/lib/supabase/client";
-import { tasksQueryKey } from "@/hooks/useTasks";
 
 /**
  * Subscribes to changes on the `tasks` table so the kanban board stays in sync
@@ -23,7 +22,9 @@ export function useTasksRealtime(workspaceId: string | null) {
         "postgres_changes",
         { event: "*", schema: "public", table: "tasks" },
         () => {
-          queryClient.invalidateQueries({ queryKey: tasksQueryKey(workspaceId) });
+          // Prefix invalidation so both the unfiltered board and any
+          // project/priority-filtered board refresh after a realtime change.
+          queryClient.invalidateQueries({ queryKey: ["tasks", workspaceId ?? ""] });
           queryClient.invalidateQueries({ queryKey: ["projects"] });
         }
       )

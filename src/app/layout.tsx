@@ -87,6 +87,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       data-theme="dark"
       className={`${inter.variable} ${jetBrainsMono.variable} ${spaceGrotesk.variable} antialiased`}
     >
