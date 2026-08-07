@@ -2,11 +2,21 @@
 
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, CalendarRange, Download, LayoutGrid, Plus, Rows3 } from "lucide-react";
+import {
+  CalendarDays,
+  CalendarRange,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  LayoutGrid,
+  Plus,
+  Rows3,
+} from "lucide-react";
+import { format } from "date-fns";
+import { toast } from "sonner";
 
-import type { DayCellData } from "@/components/calendar/DayCell";
+import { HourGrid, type HourGridDay } from "@/components/calendar/HourGrid";
 import { UnscheduledStrip } from "@/components/calendar/UnscheduledStrip";
-import { WeekGrid } from "@/components/calendar/WeekGrid";
 import { MonthGrid } from "@/components/calendar/MonthGrid";
 import { EventEditorModal } from "@/components/calendar/EventEditorModal";
 import { TaskDetailPanel } from "@/components/task/TaskDetailPanel";
@@ -17,7 +27,7 @@ import { Button } from "@/components/ui/button";
 import { useDailyNotesInRange } from "@/hooks/useDailyNotes";
 import { useTasks } from "@/hooks/useTasks";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useEvents } from "@/hooks/useEvents";
+import { useEvents, useUpdateEvent } from "@/hooks/useEvents";
 import {
   addDays,
   buildMonthGrid,
@@ -28,10 +38,11 @@ import {
   toISODate,
 } from "@/lib/calendar";
 import { bucketEventsByDate } from "@/lib/calendar-events";
+import { minutesToLocalInput } from "@/lib/calendar-grid";
 import { cn } from "@/lib/utils";
 import type { CalendarEvent, TaskWithProject } from "@/types/database";
 
-type CalendarView = "week" | "month";
+type CalendarView = "day" | "week" | "month";
 
 export function CalendarPage() {
   const router = useRouter();
@@ -45,7 +56,8 @@ export function CalendarPage() {
   const openTaskId = searchParams.get("task");
   const [editorEvent, setEditorEvent] = useState<CalendarEvent | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
-  const [createDate, setCreateDate] = useState<string | null>(null);
+  const [createStart, setCreateStart] = useState<string | null>(null);
+  const [createEnd, setCreateEnd] = useState<string | null>(null);
 
   // Week view state
   const weekStart = startOfWeek(anchor);
@@ -59,8 +71,9 @@ export function CalendarPage() {
     [monthYear, monthMonth]
   );
 
-  const from = view === "week" ? weekDates[0] : monthDays[0].iso;
-  const to = view === "week" ? weekDates[6] : monthDays[41].iso;
+  const dayISO = toISODate(anchor);
+  const from = view === "week" ? weekDates[0] : view === "day" ? dayISO : monthDays[0].iso;
+  const to = view === "week" ? weekDates[6] : view === "day" ? dayISO : monthDays[41].iso;
 
   const { data: tasks, isLoading, isError } = useTasks(workspaceId);
   const { data: noteDates } = useDailyNotesInRange(workspaceId, from, to);
@@ -83,8 +96,17 @@ export function CalendarPage() {
     return { byDate: map, unscheduled: rest };
   }, [tasks]);
 
+  const hourDays: HourGridDay[] = useMemo(() => {
+    const dates = view === "day" ? [anchor] : weekDates.map((iso, i) => addDays(weekStart, i));
+    return dates.map((date) => {
+      const iso = toISODate(date);
+      return { iso, date, tasks: byDate.get(iso) ?? [], events: eventsByDate.get(iso) ?? [] };
+    });
+  }, [view, anchor, weekDates, weekStart, byDate, eventsByDate]);
+
   const hasNote = useMemo(() => new Set(noteDates ?? []), [noteDates]);
   const todayISO = toISODate(new Date());
+  const updateEvent = useUpdateEvent(workspaceId);
 
   const openTask = (id: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -101,46 +123,56 @@ export function CalendarPage() {
   const openEvent = (id: string) => {
     const found = (events ?? []).find((e) => e.id === id) ?? null;
     setEditorEvent(found);
-    setCreateDate(null);
+    setCreateStart(null);
+    setCreateEnd(null);
+    setEditorOpen(true);
+  };
+
+  const openCreateAt = (iso: string, startMinutes: number, endMinutes: number) => {
+    setEditorEvent(null);
+    setCreateStart(minutesToLocalInput(iso, startMinutes));
+    setCreateEnd(minutesToLocalInput(iso, endMinutes));
     setEditorOpen(true);
   };
 
   const newEvent = () => {
     setEditorEvent(null);
-    setCreateDate(todayISO);
+    setCreateStart(`${todayISO}T09:00`);
+    setCreateEnd(`${todayISO}T10:00`);
     setEditorOpen(true);
   };
 
   const closeEditor = () => {
     setEditorOpen(false);
     setEditorEvent(null);
-    setCreateDate(null);
+    setCreateStart(null);
+    setCreateEnd(null);
   };
 
   const goBack = () => {
     if (view === "week") setAnchor(addDays(weekStart, -7));
+    else if (view === "day") setAnchor(addDays(anchor, -1));
     else setAnchor(new Date(monthYear, monthMonth - 1, 1));
   };
 
   const goForward = () => {
     if (view === "week") setAnchor(addDays(weekStart, 7));
+    else if (view === "day") setAnchor(addDays(anchor, 1));
     else setAnchor(new Date(monthYear, monthMonth + 1, 1));
   };
 
   const goToday = () => setAnchor(view === "week" ? startOfWeek(new Date()) : new Date());
 
+  const moveEvent = (id: string, startsAt: string, endsAt: string) => {
+    updateEvent.mutate(
+      { id, patch: { starts_at: startsAt, ends_at: endsAt } },
+      { onError: () => toast.error("Couldn't move the event") }
+    );
+  };
+
   if (isLoading || !workspace) return <PageLoader label="Loading calendar…" />;
   if (isError)
     return <EmptyState icon={CalendarRange} title="Couldn't load your calendar" description="Try again in a moment." />;
-
-  const weekDayCells: DayCellData[] = weekDates.map((iso, i) => ({
-    iso,
-    date: addDays(weekStart, i),
-    tasks: byDate.get(iso) ?? [],
-    events: eventsByDate.get(iso) ?? [],
-    hasNote: hasNote.has(iso),
-    isToday: iso === todayISO,
-  }));
 
   const monthDayCells = monthDays.map((d) => ({
     ...d,
@@ -152,7 +184,9 @@ export function CalendarPage() {
 
   const heading = view === "week"
     ? formatWeekRange(weekStart)
-    : formatMonthYear(monthYear, monthMonth);
+    : view === "day"
+      ? format(anchor, "EEEE, MMM d, yyyy")
+      : formatMonthYear(monthYear, monthMonth);
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-6">
@@ -181,6 +215,17 @@ export function CalendarPage() {
 
             {/* View toggle */}
             <div className="flex items-center rounded-lg border border-default bg-surface p-0.5 mr-1">
+              <button
+                type="button"
+                onClick={() => setView("day")}
+                aria-label="Day view"
+                className={cn(
+                  "rounded-md p-1.5 transition-colors",
+                  view === "day" ? "bg-accent-muted text-accent" : "text-secondary hover:text-foreground"
+                )}
+              >
+                <CalendarDays className="size-3.5" strokeWidth={1.75} />
+              </button>
               <button
                 type="button"
                 onClick={() => setView("week")}
@@ -218,21 +263,34 @@ export function CalendarPage() {
         }
       />
 
-      {view === "week" ? (
-        tasks?.length === 0 && (events?.length ?? 0) === 0 ? (
-          <EmptyState
-            icon={CalendarRange}
-            title="Nothing scheduled yet"
-            description="Add an event, or give a task a due date, and it will appear here."
-          />
-        ) : (
-          <>
-            <WeekGrid days={weekDayCells} onOpenEvent={openEvent} />
-            <UnscheduledStrip tasks={unscheduled} />
-          </>
-        )
-      ) : (
+      {view === "month" ? (
         <MonthGrid days={monthDayCells} onOpenTask={openTask} onOpenEvent={openEvent} />
+      ) : view === "day" ? (
+        <>
+          <HourGrid
+            days={hourDays}
+            onOpenEvent={openEvent}
+            onCreateEvent={openCreateAt}
+            onMoveEvent={moveEvent}
+          />
+          <UnscheduledStrip tasks={unscheduled} />
+        </>
+      ) : tasks?.length === 0 && (events?.length ?? 0) === 0 ? (
+        <EmptyState
+          icon={CalendarRange}
+          title="Nothing scheduled yet"
+          description="Add an event, or give a task a due date, and it will appear here."
+        />
+      ) : (
+        <>
+          <HourGrid
+            days={hourDays}
+            onOpenEvent={openEvent}
+            onCreateEvent={openCreateAt}
+            onMoveEvent={moveEvent}
+          />
+          <UnscheduledStrip tasks={unscheduled} />
+        </>
       )}
 
       {openTaskId && (
@@ -248,7 +306,8 @@ export function CalendarPage() {
         <EventEditorModal
           workspaceId={workspace.id}
           event={editorEvent}
-          initialDate={createDate}
+          initialStart={createStart}
+          initialEnd={createEnd}
           onClose={closeEditor}
         />
       )}
