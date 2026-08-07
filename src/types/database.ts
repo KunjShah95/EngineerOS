@@ -526,6 +526,7 @@ export interface ReminderRow {
   job_id: string;
   rule_id: string | null;
   task_id: string | null;
+  event_id: string | null;
   title: string;
   fire_at: string;
   read_at: string | null;
