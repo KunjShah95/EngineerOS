@@ -1,9 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { createClient } from "@/lib/supabase/client";
+import { expandEvent } from "@/lib/recurrence";
 import type { CalendarEvent } from "@/types/database";
 
-/** Non-deleted events overlapping [fromISO, toISO] (both YYYY-MM-DD). */
+/**
+ * Non-deleted events overlapping [fromISO, toISO] (both YYYY-MM-DD).
+ * Recurring rows are expanded client-side into concrete instances for the
+ * range; instances share the series id and carry an `instanceDate`.
+ */
 export function useEvents(workspaceId: string | null, fromISO: string, toISO: string) {
   return useQuery({
     queryKey: ["events", workspaceId ?? "", fromISO, toISO],
@@ -15,10 +20,11 @@ export function useEvents(workspaceId: string | null, fromISO: string, toISO: st
         .eq("workspace_id", workspaceId!)
         .is("deleted_at", null)
         .lte("starts_at", `${toISO}T23:59:59`)
-        .gte("ends_at", `${fromISO}T00:00:00`)
+        .or(`ends_at.gte.${fromISO}T00:00:00,rrule_freq.not.is.null`)
         .order("starts_at", { ascending: true });
       if (error) throw error;
-      return (data ?? []) as CalendarEvent[];
+      const rows = (data ?? []) as CalendarEvent[];
+      return rows.flatMap((event) => expandEvent(event, fromISO, toISO));
     },
     enabled: Boolean(workspaceId),
   });
@@ -27,7 +33,17 @@ export function useEvents(workspaceId: string | null, fromISO: string, toISO: st
 export type EventInput = Partial<
   Pick<
     CalendarEvent,
-    "title" | "description" | "location" | "color" | "all_day" | "starts_at" | "ends_at"
+    | "title"
+    | "description"
+    | "location"
+    | "color"
+    | "all_day"
+    | "starts_at"
+    | "ends_at"
+    | "rrule_freq"
+    | "rrule_interval"
+    | "rrule_byday"
+    | "rrule_until"
   >
 >;
 
@@ -49,6 +65,10 @@ export function useCreateEvent(workspaceId: string | null) {
           all_day: input.all_day ?? false,
           starts_at: input.starts_at ?? now.toISOString(),
           ends_at: input.ends_at ?? oneHour.toISOString(),
+          rrule_freq: input.rrule_freq ?? null,
+          rrule_interval: input.rrule_interval ?? null,
+          rrule_byday: input.rrule_byday ?? null,
+          rrule_until: input.rrule_until ?? null,
         })
         .select()
         .single();

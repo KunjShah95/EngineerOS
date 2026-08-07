@@ -96,6 +96,8 @@ export interface CalendarEvent {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  /** Local YYYY-MM-DD of this expanded occurrence — set only on recurrence instances. */
+  instanceDate?: string;
 }
 
 /** "task_id depends on depends_on_task_id" edge. */
