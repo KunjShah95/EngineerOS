@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { priorityColor } from "@/lib/task-meta";
-import type { TaskWithProject } from "@/types/database";
+import { EVENT_COLORS } from "@/lib/calendar-events";
+import type { CalendarEvent, TaskWithProject } from "@/types/database";
 
 interface MonthDay {
   iso: string;
@@ -11,17 +12,19 @@ interface MonthDay {
   isCurrentMonth: boolean;
   isToday: boolean;
   tasks: TaskWithProject[];
+  events: CalendarEvent[];
   hasNote: boolean;
 }
 
 interface MonthGridProps {
   days: MonthDay[];
   onOpenTask: (id: string) => void;
+  onOpenEvent: (id: string) => void;
 }
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-export function MonthGrid({ days, onOpenTask }: MonthGridProps) {
+export function MonthGrid({ days, onOpenTask, onOpenEvent }: MonthGridProps) {
   return (
     <div className="overflow-hidden rounded-xl border border-default">
       {/* Weekday headers */}
@@ -36,11 +39,11 @@ export function MonthGrid({ days, onOpenTask }: MonthGridProps) {
       {/* Day cells */}
       <div className="grid grid-cols-7">
         {days.map((day, i) => {
-          const overdueTasks = day.tasks.filter(
-            (t) => t.due_date && t.due_date < day.iso && t.status !== "done"
-          );
-          const visible = day.tasks.slice(0, 3);
-          const overflow = day.tasks.length - 3;
+          const visibleEvents = day.events.slice(0, 2);
+          const taskBudget = Math.max(0, 3 - visibleEvents.length);
+          const visibleTasks = day.tasks.slice(0, taskBudget);
+          const overflow =
+            day.events.length + day.tasks.length - visibleEvents.length - visibleTasks.length;
 
           return (
             <div
@@ -70,7 +73,21 @@ export function MonthGrid({ days, onOpenTask }: MonthGridProps) {
               </div>
 
               <div className="space-y-0.5">
-                {visible.map((task) => (
+                {visibleEvents.map((event) => (
+                  <button
+                    key={event.id}
+                    type="button"
+                    onClick={() => onOpenEvent(event.id)}
+                    className="w-full truncate rounded px-1.5 py-0.5 text-left text-[11px] leading-tight text-foreground transition-colors hover:opacity-80"
+                    style={{
+                      backgroundColor: `${EVENT_COLORS[event.color]}22`,
+                      borderLeft: `2px solid ${EVENT_COLORS[event.color]}`,
+                    }}
+                  >
+                    {event.title}
+                  </button>
+                ))}
+                {visibleTasks.map((task) => (
                   <button
                     key={task.id}
                     type="button"
