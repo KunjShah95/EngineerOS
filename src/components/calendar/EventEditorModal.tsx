@@ -40,15 +40,26 @@ function fromLocalInput(v: string): string {
   return new Date(v).toISOString();
 }
 
+/** datetime-local value shifted by `minutes` (local). */
+function addMinutesLocal(v: string, minutes: number): string {
+  const d = new Date(v);
+  d.setMinutes(d.getMinutes() + minutes);
+  return toLocalInput(d.toISOString());
+}
+
 export function EventEditorModal({
   workspaceId,
   event,
-  initialDate,
+  initialStart,
+  initialEnd,
   onClose,
 }: {
   workspaceId: string;
   event: CalendarEvent | null;
-  initialDate: string | null; // YYYY-MM-DD when creating from a day cell
+  /** datetime-local value ("YYYY-MM-DDTHH:mm") when creating from a grid slot. */
+  initialStart?: string | null;
+  /** Optional explicit end; defaults to start + 30 minutes. */
+  initialEnd?: string | null;
   onClose: () => void;
 }) {
   const isEdit = event !== null;
@@ -56,12 +67,11 @@ export function EventEditorModal({
   const updateEvent = useUpdateEvent(workspaceId);
   const deleteEvent = useDeleteEvent(workspaceId);
 
-  const defaultStart = event
-    ? toLocalInput(event.starts_at)
-    : `${initialDate ?? new Date().toISOString().slice(0, 10)}T09:00`;
+  const today = new Date().toISOString().slice(0, 10);
+  const defaultStart = event ? toLocalInput(event.starts_at) : (initialStart ?? `${today}T09:00`);
   const defaultEnd = event
     ? toLocalInput(event.ends_at)
-    : `${initialDate ?? new Date().toISOString().slice(0, 10)}T10:00`;
+    : (initialEnd ?? (initialStart ? addMinutesLocal(initialStart, 30) : `${today}T10:00`));
 
   const [title, setTitle] = useState(event?.title ?? "");
   const [description, setDescription] = useState(event?.description ?? "");
