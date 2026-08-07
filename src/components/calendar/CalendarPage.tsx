@@ -54,6 +54,7 @@ export function CalendarPage() {
   const [anchor, setAnchor] = useState<Date>(() => startOfWeek(new Date()));
 
   const openTaskId = searchParams.get("task");
+  const openEventId = searchParams.get("event");
   const [editorEvent, setEditorEvent] = useState<CalendarEvent | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [createStart, setCreateStart] = useState<string | null>(null);
@@ -80,6 +81,12 @@ export function CalendarPage() {
 
   const { data: events } = useEvents(workspaceId, from, to);
   const eventsByDate = useMemo(() => bucketEventsByDate(events ?? []), [events]);
+
+  // Deep link from a notification: ?event= in the URL drives the editor, so
+  // the modal state is derived from the param rather than mirrored in state.
+  const deepLinkedEvent = openEventId
+    ? (events ?? []).find((e) => e.id === openEventId) ?? null
+    : null;
 
   const { byDate, unscheduled } = useMemo(() => {
     const map = new Map<string, TaskWithProject[]>();
@@ -120,15 +127,22 @@ export function CalendarPage() {
     router.replace(`/calendar?${params.toString()}`);
   };
 
+  const clearEventParam = () => {
+    if (!openEventId) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("event");
+    router.replace(`/calendar${params.toString() ? `?${params.toString()}` : ""}`);
+  };
+
   const openEvent = (id: string) => {
-    const found = (events ?? []).find((e) => e.id === id) ?? null;
-    setEditorEvent(found);
-    setCreateStart(null);
-    setCreateEnd(null);
-    setEditorOpen(true);
+    // The ?event= param drives the editor (see deepLinkedEvent above).
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("event", id);
+    router.replace(`/calendar?${params.toString()}`);
   };
 
   const openCreateAt = (iso: string, startMinutes: number, endMinutes: number) => {
+    clearEventParam();
     setEditorEvent(null);
     setCreateStart(minutesToLocalInput(iso, startMinutes));
     setCreateEnd(minutesToLocalInput(iso, endMinutes));
@@ -136,6 +150,7 @@ export function CalendarPage() {
   };
 
   const newEvent = () => {
+    clearEventParam();
     setEditorEvent(null);
     setCreateStart(`${todayISO}T09:00`);
     setCreateEnd(`${todayISO}T10:00`);
@@ -143,6 +158,7 @@ export function CalendarPage() {
   };
 
   const closeEditor = () => {
+    clearEventParam();
     setEditorOpen(false);
     setEditorEvent(null);
     setCreateStart(null);
@@ -302,10 +318,10 @@ export function CalendarPage() {
         />
       )}
 
-      {editorOpen && (
+      {(deepLinkedEvent !== null || editorOpen) && (
         <EventEditorModal
           workspaceId={workspace.id}
-          event={editorEvent}
+          event={deepLinkedEvent ?? editorEvent}
           initialStart={createStart}
           initialEnd={createEnd}
           onClose={closeEditor}

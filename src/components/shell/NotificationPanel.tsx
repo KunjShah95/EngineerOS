@@ -101,6 +101,14 @@ export function NotificationPanel() {
                   >
                     {r.title}
                   </Link>
+                ) : r.event_id ? (
+                  <Link
+                    href={`/calendar?event=${r.event_id}`}
+                    onClick={() => setOpen(false)}
+                    className="truncate font-medium text-foreground hover:text-accent"
+                  >
+                    {r.title}
+                  </Link>
                 ) : (
                   <span className="truncate font-medium">{r.title}</span>
                 )}

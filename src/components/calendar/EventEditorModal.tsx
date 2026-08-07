@@ -31,6 +31,14 @@ import type { CalendarEvent, EventColor } from "@/types/database";
 const COLORS: EventColor[] = ["blue", "green", "red", "amber", "purple", "gray"];
 type Repeats = "never" | RecurrenceFreq;
 
+const REMINDER_OPTIONS: { label: string; minutes: number | null }[] = [
+  { label: "None", minutes: null },
+  { label: "10 minutes before", minutes: 10 },
+  { label: "30 minutes before", minutes: 30 },
+  { label: "1 hour before", minutes: 60 },
+  { label: "1 day before", minutes: 1440 },
+];
+
 /** ISO timestamptz -> value for <input type="datetime-local"> (local, no zone). */
 function toLocalInput(iso: string): string {
   const d = new Date(iso);
@@ -84,6 +92,9 @@ export function EventEditorModal({
   const [start, setStart] = useState(defaultStart);
   const [end, setEnd] = useState(defaultEnd);
 
+  // Reminder (Phase 4) — minutes before start; enqueued as a job by useEvents.
+  const [remindMinutes, setRemindMinutes] = useState<number | null>(event?.remind_minutes ?? null);
+
   // Recurrence (Phase 3)
   const [repeats, setRepeats] = useState<Repeats>(event?.rrule_freq ?? "never");
   const [intervalN, setIntervalN] = useState(event?.rrule_interval ?? 1);
@@ -117,6 +128,7 @@ export function EventEditorModal({
       rrule_interval: repeats === "never" ? null : Math.max(1, Math.floor(intervalN) || 1),
       rrule_byday: repeats === "weekly" ? byday : null,
       rrule_until: until || null,
+      remind_minutes: remindMinutes,
     };
     if (isEdit) {
       updateEvent.mutate(
@@ -185,6 +197,26 @@ export function EventEditorModal({
                 onChange={(e) => setEnd(e.target.value)}
               />
             </div>
+          </div>
+
+          {/* Reminder */}
+          <div className="space-y-1.5">
+            <Label>Reminder</Label>
+            <Select
+              value={String(remindMinutes ?? 0)}
+              onValueChange={(v) => setRemindMinutes(v === "0" ? null : Number(v))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {REMINDER_OPTIONS.map((o) => (
+                  <SelectItem key={o.minutes ?? 0} value={String(o.minutes ?? 0)}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Repeats */}
