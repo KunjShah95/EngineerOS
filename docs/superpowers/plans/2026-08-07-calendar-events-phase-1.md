@@ -1,6 +1,6 @@
 # Calendar Events — Phase 1 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Add a timed **Events** concept to the EngineerOS calendar — a database table, types, CRUD hooks, an event editor modal, and rendering of events alongside tasks on the existing week and month grids.
 
@@ -34,7 +34,7 @@
 **Files:**
 - Create: `supabase/migrations/20260807000001_calendar_events.sql`
 
-- [ ] **Step 1: Write the migration**
+- [x] **Step 1: Write the migration**
 
 ```sql
 -- Calendar events — timed events shown alongside tasks on the calendar.
@@ -70,17 +70,17 @@ CREATE INDEX IF NOT EXISTS events_workspace_range
   ON events(workspace_id, starts_at);
 ```
 
-- [ ] **Step 2: Apply the migration**
+- [x] **Step 2: Apply the migration**
 
 Run: `supabase db push`
 Expected: applies `20260807000001_calendar_events.sql` with no error. (If Supabase is not running locally, note that the SQL must be applied via the Supabase dashboard SQL editor before the app can read/write events.)
 
-- [ ] **Step 3: Lint the schema**
+- [x] **Step 3: Lint the schema**
 
 Run: `npm run db:lint`
 Expected: no errors.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add supabase/migrations/20260807000001_calendar_events.sql
@@ -94,7 +94,7 @@ git commit -m "feat: add events table for calendar events"
 **Files:**
 - Modify: `src/types/database.ts` (add after the `TaskComment` interface, around line 76)
 
-- [ ] **Step 1: Add the types**
+- [x] **Step 1: Add the types**
 
 Insert into `src/types/database.ts`:
 
@@ -123,12 +123,12 @@ export interface CalendarEvent {
 }
 ```
 
-- [ ] **Step 2: Typecheck**
+- [x] **Step 2: Typecheck**
 
 Run: `npm run typecheck`
 Expected: PASS (no errors).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/types/database.ts
@@ -145,7 +145,7 @@ git commit -m "feat: add CalendarEvent and EventColor types"
 
 The helpers are pure so they can be unit-tested (there is no React Testing Library in this repo). `bucketEventsByDate` maps events to local ISO dates using the existing `toISODate` from `src/lib/calendar.ts`; an event that spans midnight appears on each local day it covers. `eventTimeLabel` formats a compact time range for a pill. `EVENT_COLORS` maps each `EventColor` to a hex value for inline styles (matching how `MonthGrid` styles task pills with hex).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `src/lib/calendar-events.test.ts`:
 
@@ -216,12 +216,12 @@ describe("EVENT_COLORS", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/lib/calendar-events.test.ts`
 Expected: FAIL — cannot resolve `./calendar-events`.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Create `src/lib/calendar-events.ts`:
 
@@ -268,12 +268,12 @@ export function eventTimeLabel(e: CalendarEvent): string {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run src/lib/calendar-events.test.ts`
 Expected: PASS (all cases). Note: tests use local-time ISO strings without a `Z` suffix so they parse in the runner's local timezone, matching how the app stores/reads workspace-local times.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/calendar-events.ts src/lib/calendar-events.test.ts
@@ -289,7 +289,7 @@ git commit -m "feat: add calendar-events helpers with tests"
 
 Mirrors `src/hooks/useSnippets.ts`. `useEvents` takes the visible range and returns non-deleted events overlapping it (`starts_at <= to` AND `ends_at >= from`). `from`/`to` are ISO dates (`YYYY-MM-DD`); comparing them against `timestamptz` works because `'2026-08-07' <= '2026-08-07T09:00:00'` string/timestamp coercion is handled by Postgres. To be safe against the end-of-day boundary, `to` is compared with an appended end-of-day.
 
-- [ ] **Step 1: Write the hooks**
+- [x] **Step 1: Write the hooks**
 
 Create `src/hooks/useEvents.ts`:
 
@@ -395,12 +395,12 @@ export function useDeleteEvent(workspaceId: string | null) {
 }
 ```
 
-- [ ] **Step 2: Typecheck**
+- [x] **Step 2: Typecheck**
 
 Run: `npm run typecheck`
 Expected: PASS.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/hooks/useEvents.ts
@@ -416,7 +416,7 @@ git commit -m "feat: add event CRUD hooks"
 
 Renders one event as a colored pill (mirrors `TaskPill`, but a `button` that calls `onOpen`, not a `Link`). Uses `EVENT_COLORS` + `eventTimeLabel`.
 
-- [ ] **Step 1: Write the component**
+- [x] **Step 1: Write the component**
 
 Create `src/components/calendar/EventPill.tsx`:
 
@@ -449,12 +449,12 @@ export function EventPill({
 }
 ```
 
-- [ ] **Step 2: Typecheck + lint**
+- [x] **Step 2: Typecheck + lint**
 
 Run: `npm run typecheck && npm run lint`
 Expected: PASS.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/components/calendar/EventPill.tsx
@@ -470,7 +470,7 @@ git commit -m "feat: add EventPill component"
 
 A `Dialog`-based create/edit form. Controlled from `CalendarPage`. When `event` is `null` it creates (with `initialDate` prefilling the start); otherwise it edits. Validates `ends_at >= starts_at`. Uses `sonner` toasts and the event hooks. Datetime handling: `<input type="datetime-local">` gives/consumes `YYYY-MM-DDTHH:mm` (local, no zone); helpers convert to/from ISO.
 
-- [ ] **Step 1: Write the component**
+- [x] **Step 1: Write the component**
 
 Create `src/components/calendar/EventEditorModal.tsx`:
 
@@ -685,12 +685,12 @@ export function EventEditorModal({
 }
 ```
 
-- [ ] **Step 2: Typecheck + lint**
+- [x] **Step 2: Typecheck + lint**
 
 Run: `npm run typecheck && npm run lint`
 Expected: PASS. If `Textarea`, `Switch`, or `Select` import paths error, confirm the files exist under `src/components/ui/` (they do: `textarea.tsx`, `switch.tsx`, `select.tsx`) and match the named exports used above.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/components/calendar/EventEditorModal.tsx
@@ -705,7 +705,7 @@ git commit -m "feat: add EventEditorModal"
 - Modify: `src/components/calendar/DayCell.tsx`
 - Modify: `src/components/calendar/WeekGrid.tsx`
 
-- [ ] **Step 1: Update DayCell to accept and render events**
+- [x] **Step 1: Update DayCell to accept and render events**
 
 Replace `src/components/calendar/DayCell.tsx` with:
 
@@ -775,7 +775,7 @@ export function DayCell({
 }
 ```
 
-- [ ] **Step 2: Update WeekGrid to pass onOpenEvent through**
+- [x] **Step 2: Update WeekGrid to pass onOpenEvent through**
 
 Replace `src/components/calendar/WeekGrid.tsx` with:
 
@@ -799,12 +799,12 @@ export function WeekGrid({
 }
 ```
 
-- [ ] **Step 3: Typecheck**
+- [x] **Step 3: Typecheck**
 
 Run: `npm run typecheck`
 Expected: FAIL — `CalendarPage.tsx` does not yet supply `events` / `onOpenEvent`. This is expected; Task 9 wires it. (DayCell/WeekGrid themselves compile.)
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/components/calendar/DayCell.tsx src/components/calendar/WeekGrid.tsx
@@ -820,7 +820,7 @@ git commit -m "feat: render events in DayCell and WeekGrid"
 
 Add events above tasks in each month cell; clicking an event calls `onOpenEvent`. Keep the existing 3-item visible cap applied to the combined list so a busy day doesn't overflow.
 
-- [ ] **Step 1: Update MonthGrid**
+- [x] **Step 1: Update MonthGrid**
 
 Replace `src/components/calendar/MonthGrid.tsx` with:
 
@@ -948,12 +948,12 @@ export function MonthGrid({ days, onOpenTask, onOpenEvent }: MonthGridProps) {
 }
 ```
 
-- [ ] **Step 2: Typecheck**
+- [x] **Step 2: Typecheck**
 
 Run: `npm run typecheck`
 Expected: still FAIL only at `CalendarPage.tsx` (unresolved props) — MonthGrid itself compiles. Fixed in Task 9.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/components/calendar/MonthGrid.tsx
@@ -969,7 +969,7 @@ git commit -m "feat: render events in MonthGrid"
 
 Add event loading for the visible range, bucket events by date, add a "New event" button, and manage editor open state (create vs edit). Pass `events` + `onOpenEvent` into both grids.
 
-- [ ] **Step 1: Add imports**
+- [x] **Step 1: Add imports**
 
 In `src/components/calendar/CalendarPage.tsx`, add to the existing imports:
 
@@ -983,7 +983,7 @@ import type { CalendarEvent, TaskWithProject } from "@/types/database";
 
 (The `TaskWithProject` import already exists — do not duplicate it; add only the new imports.)
 
-- [ ] **Step 2: Add editor state and event data**
+- [x] **Step 2: Add editor state and event data**
 
 After the existing `const openTaskId = searchParams.get("task");` line, add:
 
@@ -1000,7 +1000,7 @@ const { data: events } = useEvents(workspaceId, from, to);
 const eventsByDate = useMemo(() => bucketEventsByDate(events ?? []), [events]);
 ```
 
-- [ ] **Step 3: Add open/close handlers**
+- [x] **Step 3: Add open/close handlers**
 
 After the existing `closeTask` function, add:
 
@@ -1025,7 +1025,7 @@ const closeEditor = () => {
 };
 ```
 
-- [ ] **Step 4: Add events into the day-cell builders**
+- [x] **Step 4: Add events into the day-cell builders**
 
 Change `weekDayCells` and `monthDayCells` to include events. Replace the existing `weekDayCells` mapping with:
 
@@ -1052,7 +1052,7 @@ const monthDayCells = monthDays.map((d) => ({
 }));
 ```
 
-- [ ] **Step 5: Add the "New event" button to the header actions**
+- [x] **Step 5: Add the "New event" button to the header actions**
 
 In the `PageHeader` `actions` prop, add this button as the first child inside the `<div className="flex items-center gap-1">` (before the iCal export `Button`):
 
@@ -1063,7 +1063,7 @@ In the `PageHeader` `actions` prop, add this button as the first child inside th
 </Button>
 ```
 
-- [ ] **Step 6: Pass props into the grids and render the modal**
+- [x] **Step 6: Pass props into the grids and render the modal**
 
 Change the `<WeekGrid days={weekDayCells} />` usage to:
 
@@ -1107,17 +1107,17 @@ Finally, render the modal at the end of the component, next to the existing `Tas
 )}
 ```
 
-- [ ] **Step 7: Typecheck + lint**
+- [x] **Step 7: Typecheck + lint**
 
 Run: `npm run typecheck && npm run lint`
 Expected: PASS (all prior unresolved-prop errors now resolved).
 
-- [ ] **Step 8: Build**
+- [x] **Step 8: Build**
 
 Run: `npm run build`
 Expected: build succeeds.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add src/components/calendar/CalendarPage.tsx
