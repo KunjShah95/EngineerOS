@@ -25,7 +25,7 @@ import { PageLoader } from "@/components/shell/PageLoader";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useDailyNotesInRange } from "@/hooks/useDailyNotes";
-import { useTasks } from "@/hooks/useTasks";
+import { useTasks, useUpdateTask } from "@/hooks/useTasks";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useEvents, useUpdateEvent } from "@/hooks/useEvents";
 import {
@@ -38,7 +38,7 @@ import {
   toISODate,
 } from "@/lib/calendar";
 import { bucketEventsByDate } from "@/lib/calendar-events";
-import { minutesToLocalInput } from "@/lib/calendar-grid";
+import { minutesToLocalInput, timeOfDay } from "@/lib/calendar-grid";
 import { cn } from "@/lib/utils";
 import type { CalendarEvent, TaskWithProject } from "@/types/database";
 
@@ -114,6 +114,7 @@ export function CalendarPage() {
   const hasNote = useMemo(() => new Set(noteDates ?? []), [noteDates]);
   const todayISO = toISODate(new Date());
   const updateEvent = useUpdateEvent(workspaceId);
+  const updateTask = useUpdateTask(workspaceId);
 
   const openTask = (id: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -183,6 +184,19 @@ export function CalendarPage() {
     updateEvent.mutate(
       { id, patch: { starts_at: startsAt, ends_at: endsAt } },
       { onError: () => toast.error("Couldn't move the event") }
+    );
+  };
+
+  // Task resize commits as due_time + duration_minutes (the timed-task model),
+  // converting the resized range back from instants to local wall-clock parts.
+  const resizeTask = (id: string, startsAt: string, endsAt: string) => {
+    const duration = Math.max(
+      30,
+      Math.round((new Date(endsAt).getTime() - new Date(startsAt).getTime()) / 60_000)
+    );
+    updateTask.mutate(
+      { id, patch: { due_time: timeOfDay(startsAt), duration_minutes: duration } },
+      { onError: () => toast.error("Couldn't resize the task") }
     );
   };
 
@@ -288,6 +302,8 @@ export function CalendarPage() {
             onOpenEvent={openEvent}
             onCreateEvent={openCreateAt}
             onMoveEvent={moveEvent}
+            onOpenTask={openTask}
+            onResizeTask={resizeTask}
           />
           <UnscheduledStrip tasks={unscheduled} />
         </>
@@ -304,6 +320,8 @@ export function CalendarPage() {
             onOpenEvent={openEvent}
             onCreateEvent={openCreateAt}
             onMoveEvent={moveEvent}
+            onOpenTask={openTask}
+            onResizeTask={resizeTask}
           />
           <UnscheduledStrip tasks={unscheduled} />
         </>

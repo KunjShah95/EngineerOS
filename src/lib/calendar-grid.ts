@@ -1,5 +1,4 @@
 import { toISODate } from "@/lib/calendar";
-import type { CalendarEvent } from "@/types/database";
 
 /** Pixels per hour row in the time grid. Shared by layout math and inline styles. */
 export const HOUR_HEIGHT = 56;
@@ -36,6 +35,46 @@ export function localDateOf(iso: string): string {
 }
 
 /**
+ * Minimal shape the time-grid layout math needs. Both calendar events and
+ * timed tasks satisfy it structurally (tasks via `taskTimedRange`).
+ */
+export interface GridEventLike {
+  id: string;
+  starts_at: string;
+  ends_at: string;
+  all_day?: boolean;
+}
+
+/** The task fields the grid needs to place a task in time. */
+export interface TimedTaskLike {
+  id: string;
+  due_date: string | null;
+  due_time: string | null;
+  duration_minutes: number | null;
+}
+
+/**
+ * Pseudo-event range for a timed task: starts_at = due date at due_time,
+ * ends_at = start + duration (default 60m). Null when the task has no time
+ * set — untimed tasks stay in the all-day strip. Both times are instants
+ * (UTC ISO), so the grid's local-clock math reads the intended wall times.
+ */
+export function taskTimedRange(task: TimedTaskLike): GridEventLike | null {
+  if (!task.due_date || !task.due_time) return null;
+  const start = new Date(`${task.due_date}T${task.due_time}`);
+  if (Number.isNaN(start.getTime())) return null;
+  const end = new Date(start.getTime() + (task.duration_minutes ?? 60) * 60_000);
+  return { id: task.id, starts_at: start.toISOString(), ends_at: end.toISOString(), all_day: false };
+}
+
+/** Local "HH:MM" time-of-day of an instant (round-trip for task resizes). */
+export function timeOfDay(iso: string): string {
+  const d = new Date(iso);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+/**
  * New starts_at/ends_at after resizing `edge` of an event to `newMinutes`
  * (local minutes since midnight) on `dayIso`. The opposite boundary stays
  * fixed, so extending the bottom edge keeps the start and vice versa.
@@ -45,7 +84,7 @@ export function localDateOf(iso: string): string {
  * day grid (same as Google Calendar's day view).
  */
 export function resizeEventOnDay(
-  event: CalendarEvent,
+  event: GridEventLike,
   dayIso: string,
   edge: "start" | "end",
   newMinutes: number
@@ -87,7 +126,7 @@ export interface TimedLayout {
  * event ending exactly when another day starts) also return null.
  */
 export function clipEventToDay(
-  event: CalendarEvent,
+  event: GridEventLike,
   dayIso: string,
   hourHeight = HOUR_HEIGHT
 ): TimedLayout | null {
@@ -120,7 +159,7 @@ export function clipEventToDay(
  */
 export function layoutEventColumns(
   dayIso: string,
-  events: CalendarEvent[],
+  events: GridEventLike[],
   hourHeight = HOUR_HEIGHT
 ): Map<string, TimedLayout> {
   const result = new Map<string, TimedLayout>();
@@ -131,10 +170,10 @@ export function layoutEventColumns(
 
   const clipped = timed
     .map((e) => ({ e, layout: clipEventToDay(e, dayIso, hourHeight) }))
-    .filter((x): x is { e: CalendarEvent; layout: TimedLayout } => x.layout !== null)
+    .filter((x): x is { e: GridEventLike; layout: TimedLayout } => x.layout !== null)
     .sort((a, b) => a.layout.topPx - b.layout.topPx);
 
-  const assignCluster = (cluster: { e: CalendarEvent; layout: TimedLayout }[]) => {
+  const assignCluster = (cluster: { e: GridEventLike; layout: TimedLayout }[]) => {
     const columnByEvent = new Map<string, number>();
     const endByColumn: number[] = [];
     for (const { e, layout } of cluster) {
@@ -154,7 +193,7 @@ export function layoutEventColumns(
   // earlier member ends later (e.g. A 9-12, B 10-11, C 11:30-13 — C overlaps
   // A but not B). If the next event starts at/after the cluster's max end, it
   // cannot overlap any member and starts a new cluster.
-  let cluster: { e: CalendarEvent; layout: TimedLayout }[] = [];
+  let cluster: { e: GridEventLike; layout: TimedLayout }[] = [];
   let clusterEnd = 0;
   for (const item of clipped) {
     if (cluster.length > 0 && item.layout.topPx >= clusterEnd) {

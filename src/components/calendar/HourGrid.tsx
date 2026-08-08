@@ -17,6 +17,7 @@ import { format } from "date-fns";
 
 import { EventBlock } from "@/components/calendar/EventBlock";
 import { EventPill } from "@/components/calendar/EventPill";
+import { TaskBlock } from "@/components/calendar/TaskBlock";
 import { TaskPill } from "@/components/calendar/TaskPill";
 import { toISODate } from "@/lib/calendar";
 import {
@@ -26,6 +27,8 @@ import {
   layoutEventColumns,
   minutesSinceMidnight,
   snapMinutes,
+  taskTimedRange,
+  type GridEventLike,
   type TimedLayout,
 } from "@/lib/calendar-grid";
 import { cn } from "@/lib/utils";
@@ -45,6 +48,10 @@ interface HourGridProps {
   onCreateEvent: (iso: string, startMinutes: number, endMinutes: number) => void;
   /** Persist new start/end times — used by drag-to-move and drag-to-resize. */
   onMoveEvent: (id: string, startsAt: string, endsAt: string) => void;
+  /** Open a task (deep link / task panel). */
+  onOpenTask: (id: string) => void;
+  /** Persist a task resize — new start/end with the opposite boundary fixed. */
+  onResizeTask: (id: string, startsAt: string, endsAt: string) => void;
   hourHeight?: number;
 }
 
@@ -55,6 +62,8 @@ export function HourGrid({
   onOpenEvent,
   onCreateEvent,
   onMoveEvent,
+  onOpenTask,
+  onResizeTask,
   hourHeight = HOUR_HEIGHT,
 }: HourGridProps) {
   const todayISO = toISODate(new Date());
@@ -81,11 +90,16 @@ export function HourGrid({
   } | null>(null);
   const selectRef = useRef<{ dayIso: string; startMin: number; endMin: number } | null>(null);
 
-  // Per-day side-by-side layout for timed events.
+  // Per-day side-by-side layout for timed events AND timed tasks (they share
+  // the timed axis, so overlaps resolve side-by-side across both kinds).
   const layoutsByDay = useMemo(() => {
     const map = new Map<string, Map<string, TimedLayout>>();
     for (const day of days) {
-      map.set(day.iso, layoutEventColumns(day.iso, day.events.filter((e) => !e.all_day), hourHeight));
+      const timedEvents = day.events.filter((e) => !e.all_day);
+      const timedTasks = day.tasks
+        .map((t) => taskTimedRange(t))
+        .filter((r): r is GridEventLike => r !== null);
+      map.set(day.iso, layoutEventColumns(day.iso, [...timedEvents, ...timedTasks], hourHeight));
     }
     return map;
   }, [days, hourHeight]);
@@ -192,6 +206,10 @@ export function HourGrid({
           const isToday = day.iso === todayISO;
           const timedEvents = day.events.filter((e) => !e.all_day);
           const allDayEvents = day.events.filter((e) => e.all_day);
+          // Tasks with a due_time are timed blocks; the rest stay date-only
+          // pills in the all-day strip.
+          const timedTasks = day.tasks.filter((t) => taskTimedRange(t) !== null);
+          const untimedTasks = day.tasks.filter((t) => taskTimedRange(t) === null);
           const layouts = layoutsByDay.get(day.iso);
           const nowTop = isToday
             ? (minutesSinceMidnight(new Date().toISOString()) / 60) * hourHeight
@@ -223,7 +241,7 @@ export function HourGrid({
                 {allDayEvents.map((e) => (
                   <EventPill key={e.id} event={e} onOpen={guardedOpen} />
                 ))}
-                {day.tasks.map((t) => (
+                {untimedTasks.map((t) => (
                   <TaskPill key={t.id} task={t} />
                 ))}
               </div>
@@ -266,6 +284,22 @@ export function HourGrid({
                       dayIso={day.iso}
                       onOpen={guardedOpen}
                       onResize={onMoveEvent}
+                    />
+                  );
+                })}
+
+                {timedTasks.map((t) => {
+                  const layout = layouts?.get(t.id);
+                  if (!layout) return null;
+                  return (
+                    <TaskBlock
+                      key={t.id}
+                      task={t}
+                      layout={layout}
+                      hourHeight={hourHeight}
+                      dayIso={day.iso}
+                      onOpen={onOpenTask}
+                      onResize={onResizeTask}
                     />
                   );
                 })}

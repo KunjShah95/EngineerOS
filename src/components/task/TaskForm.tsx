@@ -108,6 +108,7 @@ function TaskFormFields({
   const [priority, setPriority] = useState<TaskPriority>("none");
   const [projectId, setProjectId] = useState<string>("none");
   const [dueDate, setDueDate] = useState("");
+  const [dueTime, setDueTime] = useState("");
   const [estimate, setEstimate] = useState("");
 
   const inFlight = useRef(false);
@@ -122,6 +123,7 @@ function TaskFormFields({
         priority,
         project_id: projectId === "none" ? null : projectId,
         due_date: dueDate || null,
+        due_time: dueTime || null,
         estimate: estimate ? Number(estimate) : null,
       });
     } finally {
@@ -209,14 +211,25 @@ function TaskFormFields({
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="task-due">Due date</Label>
-          <Input
-            id="task-due"
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-          />
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="task-due">Due date</Label>
+            <Input
+              id="task-due"
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="task-time">Start time</Label>
+            <Input
+              id="task-time"
+              type="time"
+              value={dueTime}
+              onChange={(e) => setDueTime(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 

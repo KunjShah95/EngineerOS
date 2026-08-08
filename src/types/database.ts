@@ -55,6 +55,10 @@ export interface Task {
   status: TaskStatus;
   priority: TaskPriority;
   due_date: string | null;
+  /** Local "HH:MM" start time on the due date (null = untimed → all-day strip). */
+  due_time: string | null;
+  /** Scheduled block length in minutes when due_time is set (default 60). */
+  duration_minutes: number | null;
   estimate: number | null;
   position: number;
   subtasks: Subtask[];

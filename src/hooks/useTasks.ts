@@ -88,6 +88,10 @@ export interface CreateTaskInput {
   priority?: TaskPriority;
   project_id?: string | null;
   due_date?: string | null;
+  /** Local "HH:MM" start on the due date (null = untimed → all-day strip). */
+  due_time?: string | null;
+  /** Scheduled block length in minutes when due_time is set (default 60). */
+  duration_minutes?: number | null;
   estimate?: number | null;
   position?: number;
   /** GitHub issue URL this task was imported from. */
@@ -119,6 +123,9 @@ export function useCreateTask(workspaceId: string | null, filters?: TaskFilters 
           priority: input.priority ?? "none",
           project_id: input.project_id ?? null,
           due_date: input.due_date ?? null,
+          due_time: input.due_time ?? null,
+          // duration_minutes omitted: the column default (60) applies, so a
+          // newly timed task renders as a 1h block until resized.
           estimate: input.estimate ?? null,
           position: count ?? 0,
           source_url: input.source_url ?? null,
@@ -139,7 +146,7 @@ export function useCreateTask(workspaceId: string | null, filters?: TaskFilters 
 export type TaskPatch = Partial<
   Pick<
     Task,
-    "title" | "description" | "project_id" | "priority" | "due_date" | "estimate" | "status" | "subtasks" | "time_spent"
+    "title" | "description" | "project_id" | "priority" | "due_date" | "due_time" | "duration_minutes" | "estimate" | "status" | "subtasks" | "time_spent"
   >
 >;
 

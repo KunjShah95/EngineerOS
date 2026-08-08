@@ -12,6 +12,8 @@ import {
   minutesToLocalInput,
   resizeEventOnDay,
   snapMinutes,
+  taskTimedRange,
+  timeOfDay,
 } from "./calendar-grid";
 
 function evt(partial: Partial<CalendarEvent> & Pick<CalendarEvent, "starts_at" | "ends_at">): CalendarEvent {
@@ -142,6 +144,20 @@ describe("layoutEventColumns", () => {
     const allDay = evt({ id: "ad", all_day: true, starts_at: "2026-08-07T00:00:00", ends_at: "2026-08-07T00:00:00" });
     expect(layoutEventColumns("2026-08-07", [allDay]).size).toBe(0);
   });
+
+  it("lays an overlapping event and timed task side-by-side", () => {
+    const ev = evt({ id: "e1", starts_at: "2026-08-07T09:00:00", ends_at: "2026-08-07T10:00:00" });
+    const taskPseudo = taskTimedRange({
+      id: "t1",
+      due_date: "2026-08-07",
+      due_time: "09:30",
+      duration_minutes: 60,
+    })!;
+    const map = layoutEventColumns("2026-08-07", [ev, taskPseudo]);
+    expect(map.get("e1")?.columns).toBe(2);
+    expect(map.get("t1")?.columns).toBe(2);
+    expect(map.get("e1")?.column).not.toBe(map.get("t1")?.column);
+  });
 });
 
 describe("resizeEventOnDay", () => {
@@ -180,5 +196,46 @@ describe("resizeEventOnDay", () => {
     const span = evt({ starts_at: "2026-08-07T23:00:00", ends_at: "2026-08-08T01:00:00" });
     const out = resizeEventOnDay(span, "2026-08-07", "start", 23 * 60 + 30);
     expect(out?.ends_at).toBe("2026-08-08T01:00:00");
+  });
+});
+
+describe("taskTimedRange", () => {
+  const task = (over: Partial<Parameters<typeof taskTimedRange>[0]> = {}) => ({
+    id: "t1",
+    due_date: "2026-08-07",
+    due_time: "09:00",
+    duration_minutes: 60,
+    ...over,
+  });
+
+  it("builds a pseudo-event at the due date + time with the default duration", () => {
+    const r = taskTimedRange(task());
+    expect(r).not.toBeNull();
+    expect(r!.id).toBe("t1");
+    expect(r!.starts_at).toBe(new Date("2026-08-07T09:00:00").toISOString());
+    expect(r!.ends_at).toBe(new Date("2026-08-07T10:00:00").toISOString());
+  });
+
+  it("honors a custom duration and crosses midnight", () => {
+    const r = taskTimedRange(task({ due_time: "23:00", duration_minutes: 120 }));
+    expect(r!.ends_at).toBe(new Date("2026-08-08T01:00:00").toISOString());
+  });
+
+  it("defaults to 60 minutes when duration is null", () => {
+    const r = taskTimedRange(task({ duration_minutes: null }));
+    expect(r!.ends_at).toBe(new Date("2026-08-07T10:00:00").toISOString());
+  });
+
+  it("returns null without a due date or time", () => {
+    expect(taskTimedRange(task({ due_time: null }))).toBeNull();
+    expect(taskTimedRange(task({ due_date: null }))).toBeNull();
+  });
+});
+
+describe("timeOfDay", () => {
+  it("returns the local HH:MM of an instant", () => {
+    expect(timeOfDay(new Date("2026-08-07T09:05:00").toISOString())).toBe("09:05");
+    expect(timeOfDay(new Date("2026-08-07T23:30:00").toISOString())).toBe("23:30");
+    expect(timeOfDay(new Date("2026-08-07T00:00:00").toISOString())).toBe("00:00");
   });
 });

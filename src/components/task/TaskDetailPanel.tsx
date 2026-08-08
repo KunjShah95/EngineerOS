@@ -339,6 +339,16 @@ export function TaskDetailPanel({ workspaceId, taskId, onClose }: TaskDetailPane
           </div>
 
           <div className="space-y-1.5">
+            <Label htmlFor="task-panel-time">Start time (optional)</Label>
+            <Input
+              id="task-panel-time"
+              type="time"
+              value={task.due_time ?? ""}
+              onChange={(e) => patch({ due_time: e.target.value || null })}
+            />
+          </div>
+
+          <div className="space-y-1.5">
             <Label htmlFor="task-panel-estimate">Estimate (hours)</Label>
             <Input
               id="task-panel-estimate"
