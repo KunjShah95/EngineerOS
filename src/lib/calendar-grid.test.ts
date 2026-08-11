@@ -212,18 +212,19 @@ describe("taskTimedRange", () => {
     const r = taskTimedRange(task());
     expect(r).not.toBeNull();
     expect(r!.id).toBe("t1");
-    expect(r!.starts_at).toBe(new Date("2026-08-07T09:00:00").toISOString());
-    expect(r!.ends_at).toBe(new Date("2026-08-07T10:00:00").toISOString());
+    // Times preserve local wall-clock time (no UTC conversion)
+    expect(r!.starts_at).toBe("2026-08-07T09:00:00");
+    expect(r!.ends_at).toBe("2026-08-07T10:00:00");
   });
 
   it("honors a custom duration and crosses midnight", () => {
     const r = taskTimedRange(task({ due_time: "23:00", duration_minutes: 120 }));
-    expect(r!.ends_at).toBe(new Date("2026-08-08T01:00:00").toISOString());
+    expect(r!.ends_at).toBe("2026-08-08T01:00:00");
   });
 
   it("defaults to 60 minutes when duration is null", () => {
     const r = taskTimedRange(task({ duration_minutes: null }));
-    expect(r!.ends_at).toBe(new Date("2026-08-07T10:00:00").toISOString());
+    expect(r!.ends_at).toBe("2026-08-07T10:00:00");
   });
 
   it("returns null without a due date or time", () => {

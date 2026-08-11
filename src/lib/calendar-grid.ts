@@ -56,15 +56,29 @@ export interface TimedTaskLike {
 /**
  * Pseudo-event range for a timed task: starts_at = due date at due_time,
  * ends_at = start + duration (default 60m). Null when the task has no time
- * set — untimed tasks stay in the all-day strip. Both times are instants
- * (UTC ISO), so the grid's local-clock math reads the intended wall times.
+ * set — untimed tasks stay in the all-day strip. Times are ISO strings
+ * preserving local wall-clock time (no UTC conversion).
  */
 export function taskTimedRange(task: TimedTaskLike): GridEventLike | null {
   if (!task.due_date || !task.due_time) return null;
   const start = new Date(`${task.due_date}T${task.due_time}`);
   if (Number.isNaN(start.getTime())) return null;
   const end = new Date(start.getTime() + (task.duration_minutes ?? 60) * 60_000);
-  return { id: task.id, starts_at: start.toISOString(), ends_at: end.toISOString(), all_day: false };
+
+  // Manually construct ISO strings to preserve local time (not convert to UTC).
+  // This matches how calendar events are stored and ensures overlap detection works.
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const toLocalISO = (d: Date) => {
+    const y = d.getFullYear();
+    const mo = d.getMonth() + 1;
+    const da = d.getDate();
+    const h = d.getHours();
+    const m = d.getMinutes();
+    const s = d.getSeconds();
+    return `${y}-${pad(mo)}-${pad(da)}T${pad(h)}:${pad(m)}:${pad(s)}`;
+  };
+
+  return { id: task.id, starts_at: toLocalISO(start), ends_at: toLocalISO(end), all_day: false };
 }
 
 /** Local "HH:MM" time-of-day of an instant (round-trip for task resizes). */
