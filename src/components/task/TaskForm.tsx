@@ -109,9 +109,20 @@ function TaskFormFields({
   const [projectId, setProjectId] = useState<string>("none");
   const [dueDate, setDueDate] = useState("");
   const [dueTime, setDueTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [estimate, setEstimate] = useState("");
 
   const inFlight = useRef(false);
+
+  const calcDurationMinutes = (): number | null => {
+    if (!dueTime || !endTime) return null;
+    const [startH, startM] = dueTime.split(":").map(Number);
+    const [endH, endM] = endTime.split(":").map(Number);
+    const startMins = startH * 60 + startM;
+    const endMins = endH * 60 + endM;
+    const duration = endMins - startMins;
+    return duration > 0 ? duration : null;
+  };
 
   const submit = async () => {
     if (!title.trim() || inFlight.current) return;
@@ -124,6 +135,7 @@ function TaskFormFields({
         project_id: projectId === "none" ? null : projectId,
         due_date: dueDate || null,
         due_time: dueTime || null,
+        duration_minutes: calcDurationMinutes(),
         estimate: estimate ? Number(estimate) : null,
       });
     } finally {
@@ -221,16 +233,31 @@ function TaskFormFields({
               onChange={(e) => setDueDate(e.target.value)}
             />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="task-time">Start time</Label>
-            <Input
-              id="task-time"
-              type="time"
-              value={dueTime}
-              onChange={(e) => setDueTime(e.target.value)}
-            />
-          </div>
         </div>
+
+        {dueDate && (
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="task-start-time">Start time</Label>
+              <Input
+                id="task-start-time"
+                type="time"
+                value={dueTime}
+                onChange={(e) => setDueTime(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="task-end-time">End time</Label>
+              <Input
+                id="task-end-time"
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                disabled={!dueTime}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       <DialogFooter>
