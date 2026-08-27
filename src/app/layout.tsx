@@ -24,7 +24,7 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: { default: "EngineerOS", template: "%s · EngineerOS" },
   description:
-    "EngineerOS is an AI-native workspace for notes, tasks, projects, and daily work — capture, find, and organize everything with semantic search, knowledge graphs, and AI-powered citations.",
+    "AI-native workspace for notes, tasks and projects — capture and organize everything with semantic search, knowledge graph and cited AI answers.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://engineeros-delta.vercel.app"),
   applicationName: "EngineerOS",
   keywords: [
@@ -43,18 +43,28 @@ export const metadata: Metadata = {
     "automation",
   ],
   openGraph: {
-    title: "EngineerOS — AI-native workspace for notes, tasks, and projects",
+    title: "EngineerOS — AI workspace for notes, tasks & projects",
     description:
-      "One connected system for notes, tasks, projects, and daily work. Semantic search, AI assistant with citations, knowledge graph, and automation rules.",
+      "One workspace for notes, tasks & projects. Semantic search, knowledge graph & cited AI answers.",
     type: "website",
     siteName: "EngineerOS",
     locale: "en_US",
+    url: "https://engineeros-delta.vercel.app",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "EngineerOS — AI Workspace for Notes, Tasks & Projects",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "EngineerOS — AI-native workspace for notes, tasks, and projects",
+    title: "EngineerOS — AI workspace for notes, tasks & projects",
     description:
-      "One connected system for notes, tasks, projects, and daily work. Semantic search, AI assistant with citations, knowledge graph, and automation rules.",
+      "One workspace for notes, tasks & projects. Semantic search, knowledge graph & cited AI answers.",
+    images: ["/og-image.png"],
   },
   robots: {
     index: true,

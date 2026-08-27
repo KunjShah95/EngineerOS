@@ -168,17 +168,18 @@ describe("resizeEventOnDay", () => {
     const out = resizeEventOnDay(sameDay(), "2026-08-07", "end", 11 * 60);
     expect(out).not.toBeNull();
     expect(out!.starts_at).toBe("2026-08-07T09:00:00");
-    expect(out!.ends_at).toBe(new Date("2026-08-07T11:00:00").toISOString());
+    // Input has no Z, so output is also local time format (no Z)
+    expect(out!.ends_at).toBe("2026-08-07T11:00:00");
   });
 
   it("shrinks the end edge, keeping start fixed", () => {
     const out = resizeEventOnDay(sameDay(), "2026-08-07", "end", 9 * 60 + 30);
-    expect(out?.ends_at).toBe(new Date("2026-08-07T09:30:00").toISOString());
+    expect(out?.ends_at).toBe("2026-08-07T09:30:00");
   });
 
   it("moves the start edge, keeping end fixed", () => {
     const out = resizeEventOnDay(sameDay(), "2026-08-07", "start", 9 * 60 + 30);
-    expect(out?.starts_at).toBe(new Date("2026-08-07T09:30:00").toISOString());
+    expect(out?.starts_at).toBe("2026-08-07T09:30:00");
     expect(out?.ends_at).toBe("2026-08-07T10:00:00");
   });
 
@@ -189,7 +190,7 @@ describe("resizeEventOnDay", () => {
 
   it("clamps past-day values to 23:30", () => {
     const out = resizeEventOnDay(sameDay(), "2026-08-07", "end", DAY_MINUTES);
-    expect(out?.ends_at).toBe(new Date("2026-08-07T23:30:00").toISOString());
+    expect(out?.ends_at).toBe("2026-08-07T23:30:00");
   });
 
   it("preserves the opposite edge of a midnight-spanning event", () => {

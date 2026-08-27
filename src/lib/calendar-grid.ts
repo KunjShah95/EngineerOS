@@ -64,11 +64,12 @@ export function taskTimedRange(task: TimedTaskLike): GridEventLike | null {
   const start = new Date(`${task.due_date}T${task.due_time}`);
   if (Number.isNaN(start.getTime())) return null;
   const end = new Date(start.getTime() + (task.duration_minutes ?? 60) * 60_000);
+  if (Number.isNaN(end.getTime())) return null;
 
   // Manually construct ISO strings to preserve local time (not convert to UTC).
   // This matches how calendar events are stored and ensures overlap detection works.
   const pad = (n: number) => String(n).padStart(2, "0");
-  const toLocalISO = (d: Date) => {
+  const toLocalISO = (d: Date): string => {
     const y = d.getFullYear();
     const mo = d.getMonth() + 1;
     const da = d.getDate();
@@ -112,14 +113,31 @@ export function resizeEventOnDay(
     d.setHours(Math.floor(min / 60), min % 60, 0, 0);
     return d;
   };
+
+  // Determine if input uses UTC (has Z suffix) or local time (no Z).
+  // Preserve the format in output to maintain consistency.
+  const isUTC = event.starts_at.endsWith("Z");
+  const toISO = (d: Date): string => {
+    if (isUTC) return d.toISOString();
+    // For local time format, build ISO string without UTC conversion
+    const p = (n: number) => String(n).padStart(2, "0");
+    const y = d.getFullYear();
+    const mo = d.getMonth() + 1;
+    const da = d.getDate();
+    const h = d.getHours();
+    const m = d.getMinutes();
+    const s = d.getSeconds();
+    return `${y}-${p(mo)}-${p(da)}T${p(h)}:${p(m)}:${p(s)}`;
+  };
+
   if (edge === "end") {
     const end = atMinutes(clamped);
     if (end.getTime() - new Date(event.starts_at).getTime() < MINUTE_SNAP * 60_000) return null;
-    return { starts_at: event.starts_at, ends_at: end.toISOString() };
+    return { starts_at: event.starts_at, ends_at: toISO(end) };
   }
   const start = atMinutes(clamped);
   if (new Date(event.ends_at).getTime() - start.getTime() < MINUTE_SNAP * 60_000) return null;
-  return { starts_at: start.toISOString(), ends_at: event.ends_at };
+  return { starts_at: toISO(start), ends_at: event.ends_at };
 }
 
 /** Position + overlap-column info for one timed event on one day. */
