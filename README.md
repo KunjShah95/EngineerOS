@@ -65,7 +65,7 @@ One dialog (`⌘K` or the Quick Capture button), two keystrokes, and whatever's 
 ### Find
 
 - **⌘K command palette** — instant search across notes, tasks, projects, tags
-- **Semantic search** — toggle to meaning-based search; the index finds the right note even when you don't remember the exact words. Falls back to local keyword scoring without an API key.
+- **Semantic search** — toggle to meaning-based search; the index finds the right note even when you don't remember the exact words. Falls back to local keyword scoring without an API key. See [Retrieval](#retrieval) for how ranking works and how it's measured.
 
 ### Understand
 
@@ -99,7 +99,7 @@ One dialog (`⌘K` or the Quick Capture button), two keystrokes, and whatever's 
 | Auth | Supabase Auth |
 | State | TanStack Query (server state), Zustand (UI state) |
 | UI | shadcn/ui, Tailwind CSS v4, Framer Motion |
-| AI | OpenAI embeddings + chat — fully optional, local fallbacks for everything |
+| AI | Pluggable providers (OpenAI, Anthropic, Gemini, Mistral, Groq, Cohere, HuggingFace, NVIDIA NIM, OpenRouter) — fully optional, local fallbacks for everything |
 | Email | Resend (optional) |
 | Monitoring | Sentry (optional), Plausible (optional) |
 | Tests | Vitest |
@@ -126,7 +126,7 @@ Everything is opt-in. At minimum you need the Supabase pair for real data.
 | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Real data — required |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Real data — required |
-| `OPENAI_API_KEY` | Semantic search, AI assistant, PDF chat, voice transcription, summaries |
+| `OPENAI_API_KEY` | Semantic search, AI assistant, PDF chat, voice transcription, summaries. Other providers (Anthropic, Gemini, Mistral, Groq, Cohere, HuggingFace, NVIDIA NIM, OpenRouter) are selectable in Settings. |
 | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | GitHub integration OAuth |
 | `RESEND_API_KEY` / `EMAIL_FROM` | Email reminders (Resend) |
 | `NEXT_PUBLIC_SENTRY_DSN` / `SENTRY_DSN` | Error tracking |
@@ -148,13 +148,14 @@ npm run build      # production build
 npm run lint       # eslint
 npm run test       # vitest
 npm run typecheck  # tsc --noEmit
+npm run eval:retrieval  # retrieval quality — recall@k and MRR, no DB or API key needed
 ```
 
 ---
 
 ## Database
 
-10 migrations in `supabase/migrations/` (01–10), applied in order. `supabase/config.toml` is committed so the CLI behaves identically locally and in CI:
+27 migrations in `supabase/migrations/`, applied in filename order. `supabase/config.toml` is committed so the CLI behaves identically locally and in CI:
 
 ```bash
 supabase start           # boots the local stack and applies migrations
@@ -229,15 +230,110 @@ Sentry, Plausible, Resend — create projects, add the keys, redeploy. Each acti
 
 **Background work is a client-drained queue.** Postgres triggers enqueue durable `jobs` rows. `useAutoIndex` and `useAutoAutomation` hooks drain them on page load and on a visibility-gated interval — through authenticated API routes. No cron, no worker, no separate process.
 
-**AI is a progressive enhancement.** Every AI feature has a local fallback. Semantic search falls back to keyword scoring. The assistant falls back to extractive answers from note text. Transcription falls back to stored audio without a transcript. The app is fully functional without an OpenAI key.
+**AI is a progressive enhancement.** Every AI feature has a local fallback. Semantic search falls back to keyword scoring. The assistant falls back to extractive answers from note text. Transcription falls back to stored audio without a transcript. The app is fully functional without any provider key.
 
 **Supabase is optional.** `src/lib/supabase/config.ts` gates everything. Without credentials you see a setup notice and can still explore the UI.
+
+---
+
+## Retrieval
+
+Answer quality is bounded by retrieval, not by the model. A strong model over bad
+retrieval produces confident, well-formatted, wrong answers. So retrieval is
+measured rather than assumed.
+
+**Chunking is structure-aware.** `chunkMarkdown` splits on markdown headings —
+the author's own statement of where a topic changes — rather than fixed
+character windows. It skips fenced code blocks, where `#` is a comment and not a
+heading, and prepends `title › heading` to every chunk so chunk 3 of a note is
+still identifiable as that note.
+
+**Ranking fuses two legs on rank position.** Embeddings miss exact tokens
+(`ERR_JWT_EXPIRED`, `auth.uid()`); keyword search misses paraphrase ("how do
+users sign in" → a note titled "JWT refresh flow"). Their scores are not
+comparable — a cosine of 0.82 and a keyword score of 4.7 are different units —
+so reciprocal rank fusion scores on rank instead.
+
+**Empty retrieval refuses.** When nothing matches, the assistant says so and
+lists the terms it actually searched, so you can tell a retrieval miss from an
+empty workspace. There is no path where an empty context reaches the model and
+lets it answer from training data. The degradation ladder is explicit and
+labelled in the response: embeddings → keyword → extractive → refuse.
+
+**Retrieved text is untrusted.** Your notes can contain anything pasted from
+anywhere, including text written to hijack an assistant that reads it. The
+system prompt treats excerpts as data, never as instructions.
+
+**Vectors carry provenance.** `embeddings.embedding_model` records what produced
+each row. Providers return different dimensions and the indexer pads to 1536;
+padding preserves cosine ordering within one provider but means nothing across
+them. Without provenance, switching providers gives you an index where old and
+new rows sit in incomparable spaces — search keeps returning results, they are
+just quietly wrong.
+
+### The eval
+
+`npm run eval:retrieval` runs 20 typed queries over a 22-document corpus with no
+database and no API key. Questions are labelled `paraphrase` / `exact` / `mixed`,
+and 14 of the 22 documents are deliberate distractors — topically adjacent notes
+that must not outrank the true answer.
+
+The distractors exist because the first version had 8 documents and every
+strategy scored 100% recall@3. A saturated eval measures nothing.
+
+| strategy        | recall@1 | recall@3 | recall@5 |   MRR |
+|-----------------|---------:|---------:|---------:|------:|
+| keyword         |    82.5% |   100.0% |   100.0% | 92.5% |
+| semantic        |    52.5% |    85.0% |    95.0% | 72.2% |
+| hybrid (w=1.0)  |    72.5% |    97.5% |   100.0% | 86.7% |
+| hybrid (w=0.35) |    82.5% |   100.0% |   100.0% | 92.5% |
+
+Equal-weight fusion scored **worse** than keyword alone. Down-weighting the
+semantic leg to 0.35 recovered parity — it did not beat it.
+
+That is not a verdict on hybrid retrieval. It is a verdict on this eval's
+semantic leg, which is a bag-of-words fingerprint standing in for a real
+embedding model. Fusing a lexical ranker with another lexical ranker adds no
+independent signal, only noise. The honest reading: **this eval cannot
+demonstrate hybrid's value, because it has no real embedder.** With no API key
+configured, keyword-only is the correct default, and that is what the code does.
+
+The regression tests assert the measured floors, so a change that degrades
+ranking fails CI. One assertion is a deliberate tripwire: when a stronger
+embedder makes *"down-weighting beats equal-weight"* fail, that is the signal to
+raise the weight — not to delete the test.
+
+Full reasoning, including what this eval does **not** cover, is in
+[`docs/adr/0001-retrieval.md`](docs/adr/0001-retrieval.md).
+
+---
+
+## Decision records
+
+Non-obvious decisions are written down with their reasoning and the alternatives
+rejected, because "why" survives being questioned and "what" just gets overruled.
+
+- [`docs/adr/0001-retrieval.md`](docs/adr/0001-retrieval.md) — chunking, rank fusion, refusal behaviour, embedding provenance, and what the eval measured
 
 ---
 
 ## CI
 
 `.github/workflows/ci.yml` runs lint, typecheck, Vitest, and a production build on every push and PR.
+
+---
+
+## Writing
+
+Long-form pieces on the problems behind this project, published at `/blog`:
+
+- **AGENTS.md, Cursor rules, and Claude skills are all solving the same problem — badly** — three formats, one failure: they only carry what you remembered to write down in advance
+- **Your AI assistant is only as good as what it can retrieve** — chunking, rank fusion, and why citations are load-bearing
+- **Self-hosting your second brain** — where notes should live, and the ten-year test
+
+Source lives in `src/content/posts.ts`. The blog is statically generated, with
+per-post schema, an RSS feed at `/blog/rss.xml`, and an `llms.txt` that carries
+each post's direct-answer paragraph.
 
 ---
 
