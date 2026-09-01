@@ -46,3 +46,6 @@ dev.log
 
 # Playwright MCP artifacts
 .playwright-mcp/
+
+# Claude Code local config
+.claude/

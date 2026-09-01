@@ -57,13 +57,13 @@ export function LandingShowcase() {
       />
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <Reveal className="mx-auto max-w-2xl text-center">
-          <p className="font-mono text-[11px] tracking-widest text-accent uppercase">
+          <p className="font-mono text-[11px] tracking-[0.18em] text-faint uppercase">
             The board
           </p>
-          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+          <h2 className="mt-5 font-serif-display text-[clamp(1.9rem,4vw,2.75rem)] font-normal leading-[1.06] tracking-[-0.02em] text-foreground">
             One workspace. Zero context switching.
           </h2>
-          <p className="mt-4 text-base leading-relaxed text-secondary">
+          <p className="mx-auto mt-5 max-w-lg text-[15px] leading-relaxed text-secondary">
             Every project, task, note, and daily entry lives in the same place.
             Drag a card, type a note, search across it all, and never re-open a
             tab to remember what you were doing.

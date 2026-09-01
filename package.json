@@ -9,6 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "eval:retrieval": "vitest run src/lib/ai/eval/",
     "db:lint": "supabase db lint --fail-on error",
     "types:gen": "supabase gen types typescript --local > supabase/types/database.ts"
   },
