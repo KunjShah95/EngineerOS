@@ -1,67 +1,34 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useInView } from "motion/react";
-
 import { Reveal } from "@/components/marketing/reveal";
 
-const METRICS = [
-  { value: 47, suffix: "", label: "Notes" },
-  { value: 128, suffix: "", label: "Tasks" },
-  { value: 12, suffix: "", label: "Projects" },
-  { value: 31, suffix: "", label: "Daily notes" },
+/** What each object becomes once it's in the system. Not vanity counters. */
+const OBJECTS = [
+  { name: "Note", becomes: "embedded, linkable, citable" },
+  { name: "Task", becomes: "on a board, with a due date" },
+  { name: "Project", becomes: "a roof over tasks and notes" },
+  { name: "Daily", becomes: "written once, rolled forward" },
 ];
 
 export function LandingMetrics() {
   return (
-    <section className="border-y border-border-subtle bg-surface/40">
-      <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
+    <section className="border-y border-border-subtle">
+      <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
         <Reveal>
-          <p className="mb-8 text-center font-mono text-[11px] tracking-widest text-faint uppercase">
-            A week of real use, comfortably
-          </p>
-          <dl className="grid grid-cols-2 gap-8 md:grid-cols-4">
-            {METRICS.map((metric) => (
-              <div key={metric.label} className="text-center">
-                <dd className="font-display text-4xl font-semibold tracking-tight text-foreground tabular-nums md:text-5xl">
-                  <CountUp to={metric.value} suffix={metric.suffix} />
-                </dd>
-                <dt className="mt-2 text-sm text-secondary">{metric.label}</dt>
+          <div className="grid grid-cols-2 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
+            {OBJECTS.map((o) => (
+              <div key={o.name} className="px-2 text-center">
+                <p className="font-serif-display text-2xl font-normal tracking-tight text-foreground">
+                  {o.name}
+                </p>
+                <p className="mt-1.5 font-mono text-[11px] leading-relaxed text-faint">
+                  {o.becomes}
+                </p>
               </div>
             ))}
-          </dl>
+          </div>
         </Reveal>
       </div>
     </section>
-  );
-}
-
-function CountUp({ to, suffix = "" }: { to: number; suffix?: string }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-40px" });
-  const [value, setValue] = useState(0);
-
-  useEffect(() => {
-    if (!inView) return;
-    let raf: number;
-    const start = performance.now();
-    const duration = 1200;
-
-    const tick = (now: number) => {
-      const p = Math.min(1, (now - start) / duration);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setValue(Math.round(to * eased));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [inView, to]);
-
-  return (
-    <span ref={ref}>
-      {value}
-      {suffix}
-    </span>
   );
 }

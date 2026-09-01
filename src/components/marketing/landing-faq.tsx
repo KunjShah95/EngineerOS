@@ -53,10 +53,10 @@ export function LandingFaq() {
     <section id="faq" className="relative overflow-hidden py-16 md:py-28">
       <div className="mx-auto w-full max-w-3xl px-4 sm:px-6">
         <div className="text-center">
-          <p className="font-mono text-[11px] tracking-widest text-accent uppercase">
+          <p className="font-mono text-[11px] tracking-[0.18em] text-faint uppercase">
             FAQ
           </p>
-          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+          <h2 className="mt-5 font-serif-display text-[clamp(1.9rem,4vw,2.75rem)] font-normal leading-[1.06] tracking-[-0.02em] text-foreground">
             Common questions
           </h2>
         </div>

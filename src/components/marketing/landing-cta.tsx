@@ -5,57 +5,46 @@ import { ArrowRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/marketing/reveal";
-import { ShaderCanvas } from "@/components/marketing/shader-canvas";
 
 export function LandingCta() {
   return (
-    <section id="cta" className="relative overflow-hidden py-16 md:py-28">
-      {/* Shader canvas at reduced intensity — feels like entering the system */}
-      <ShaderCanvas
-        className="pointer-events-none absolute inset-0 -z-20 h-full w-full"
-        speed={0.7}
-      />
-
-      {/* Top + bottom fades blend with surrounding sections */}
+    <section id="cta" className="relative overflow-hidden border-t border-border-subtle py-16 md:py-24">
+      {/* Same blueprint grid as the hero — the page closes where it opened */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-32 bg-gradient-to-b from-[var(--bg-base)] to-transparent"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-32 bg-gradient-to-t from-[var(--bg-base)] to-transparent"
-      />
-
-      {/* Center darkening for text readability */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_60%_70%_at_50%_50%,black,transparent)] bg-[rgba(8,10,18,0.50)]"
+        className="pointer-events-none absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_70%_100%_at_50%_100%,black,transparent)]"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, color-mix(in oklab, var(--border-subtle) 70%, transparent) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in oklab, var(--border-subtle) 70%, transparent) 1px, transparent 1px)",
+          backgroundSize: "72px 72px",
+        }}
       />
 
-      <Reveal className="mx-auto w-full max-w-3xl px-4 text-center sm:px-6">
-        <p className="font-mono text-[11px] tracking-widest text-accent uppercase">
+      <Reveal className="mx-auto w-full max-w-2xl px-4 text-center sm:px-6">
+        <p className="font-mono text-[11px] tracking-[0.18em] text-faint uppercase">
           No setup debt
         </p>
-        <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-          Start capturing everything today.
+        <h2 className="mt-5 font-serif-display text-[clamp(2rem,4.5vw,3rem)] font-normal leading-[1.04] tracking-[-0.02em] text-foreground">
+          Your first note takes
+          <br />
+          <em className="not-italic font-light italic text-[color:var(--hero-mint)]">
+            ten seconds.
+          </em>
         </h2>
-        <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-secondary">
-          Your first note takes ten seconds. Your workspace, your data, and
-          your daily rhythm follow from there.
+        <p className="mx-auto mt-5 max-w-md text-[15px] leading-relaxed text-secondary">
+          The workspace, the index, and the daily rhythm follow from there. No
+          templates to pick, no schema to design.
         </p>
 
-        <div className="mt-9">
+        <div className="mt-9 flex flex-col items-center gap-4">
           <Link href="/register">
-            <Button
-              size="lg"
-              className="h-12 px-8 text-base shadow-[0_0_60px_-8px_var(--accent),0_0_120px_-20px_rgba(124,58,237,0.4)]"
-            >
-              Get started free
+            <Button size="lg">
+              Create a workspace
               <ArrowRight className="size-4" strokeWidth={1.75} />
             </Button>
           </Link>
-          <p className="mt-4 font-mono text-[11px] tracking-wide text-faint uppercase">
-            No credit card · Self-hosted data
+          <p className="font-mono text-[11px] tracking-wide text-faint">
+            No credit card · Your own Supabase
           </p>
         </div>
       </Reveal>

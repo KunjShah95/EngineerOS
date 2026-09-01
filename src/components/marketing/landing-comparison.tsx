@@ -88,19 +88,15 @@ function CheckIcon({ present }: { present: boolean }) {
 export function LandingComparison() {
   return (
     <section id="compare" className="relative overflow-hidden py-16 md:py-28">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-1/2 -z-10 mx-auto h-[360px] w-[800px] -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(79,70,229,0.16),rgba(30,64,175,0.10)_55%,transparent_75%)] blur-3xl"
-      />
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <Reveal className="mx-auto max-w-2xl text-center">
-          <p className="font-mono text-[11px] tracking-widest text-accent uppercase">
+          <p className="font-mono text-[11px] tracking-[0.18em] text-faint uppercase">
             Comparison
           </p>
-          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+          <h2 className="mt-5 font-serif-display text-[clamp(1.9rem,4vw,2.75rem)] font-normal leading-[1.06] tracking-[-0.02em] text-foreground">
             How EngineerOS stacks up
           </h2>
-          <p className="mt-4 text-base leading-relaxed text-secondary">
+          <p className="mx-auto mt-5 max-w-lg text-[15px] leading-relaxed text-secondary">
             EngineerOS combines the best of note-taking, project management,
             and AI — without locking your data in a proprietary cloud.
           </p>

@@ -8,6 +8,7 @@
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
   --font-display: var(--font-space-grotesk), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
 
   --shadow-card: var(--shadow-card-token);
   --shadow-elevated: var(--shadow-elevated-token);
@@ -77,6 +78,9 @@
   --accent-hover: #6366f1;
   --accent-muted: #1c2340;
 
+  /* Landing-only signal color. Terminal prompt, hero counterpoint. */
+  --hero-mint: #6ee7b7;
+
   --success: #22c55e;
   --warning: #eab308;
   --danger: #ef4444;
@@ -110,6 +114,9 @@
   --accent: #4f46e5;
   --accent-hover: #4338ca;
   --accent-muted: #eceeff;
+
+  /* Darkened for contrast on the light background. */
+  --hero-mint: #047857;
 
   --shadow-card-token: 0 1px 2px rgb(23 23 32 / 0.06), 0 4px 12px -2px rgb(23 23 32 / 0.05);
   --shadow-elevated-token: 0 8px 24px -8px rgb(23 23 32 / 0.16);

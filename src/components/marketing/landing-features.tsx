@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   CalendarDays,
@@ -22,17 +22,17 @@ export function LandingFeatures() {
   return (
     <section id="features" className="relative py-16 md:py-28">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-        <Reveal className="text-center">
-          <p className="font-mono text-[11px] tracking-widest text-accent uppercase">
+        <Reveal className="mx-auto max-w-2xl text-center">
+          <p className="font-mono text-[11px] tracking-[0.18em] text-faint uppercase">
             The model
           </p>
-          <h2 className="mx-auto mt-4 max-w-2xl font-display text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-            Six objects. Every artifact.
+          <h2 className="mt-5 font-serif-display text-[clamp(1.9rem,4vw,2.75rem)] font-normal leading-[1.06] tracking-[-0.02em] text-foreground">
+            Six objects. Everything else
+            is derived from them.
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-secondary">
-            EngineerOS is built on six core objects: User, Workspace, Project,
-            Task, Note, and Daily Note. Everything else is derived from them,
-            so nothing ever lives in a dead end.
+          <p className="mx-auto mt-5 max-w-lg text-[15px] leading-relaxed text-secondary">
+            User, Workspace, Project, Task, Note, Daily Note. Nothing you write
+            lands in a dead end, because there are no dead ends to land in.
           </p>
         </Reveal>
 
@@ -40,7 +40,7 @@ export function LandingFeatures() {
           <Reveal className="md:col-span-4" delay={0}>
             <FeatureCard
               icon={FileText}
-              iconClass="text-accent bg-accent-muted"
+              iconClass="text-accent"
               title="Notes that read like documents"
               body="Markdown in, rendered pages out. Headings, code blocks, tables, and task lists all styled the way your docs deserve."
               visual={<NotesVisual />}
@@ -50,7 +50,7 @@ export function LandingFeatures() {
           <Reveal className="md:col-span-2" delay={0.06}>
             <FeatureCard
               icon={Search}
-              iconClass="text-info bg-info/10"
+              iconClass="text-info"
               title="Search everything with Cmd K"
               body="Notes, tasks, projects, and tags in one palette. Type, hit Enter, move on."
               visual={<SearchVisual />}
@@ -60,7 +60,7 @@ export function LandingFeatures() {
           <Reveal className="md:col-span-2" delay={0}>
             <FeatureCard
               icon={CheckSquare}
-              iconClass="text-success bg-success/10"
+              iconClass="text-success"
               title="A kanban that keeps up"
               body="Drag cards between Backlog, Todo, In Progress, and Done. Positions persist, priorities stay visible."
               visual={<KanbanVisual />}
@@ -70,7 +70,7 @@ export function LandingFeatures() {
           <Reveal className="md:col-span-2" delay={0.06}>
             <FeatureCard
               icon={CalendarDays}
-              iconClass="text-warning bg-warning/10"
+              iconClass="text-warning"
               title="A daily note that shows up"
               body="One note per day, auto-created on first visit. Morning goals, journal, wins, and problems, in a fixed order."
               visual={<DailyVisual />}
@@ -80,7 +80,7 @@ export function LandingFeatures() {
           <Reveal className="md:col-span-2" delay={0.12}>
             <FeatureCard
               icon={Zap}
-              iconClass="text-[#818cf8] bg-[#818cf8]/10"
+              iconClass="text-[#818cf8]"
               title="Projects that hold it together"
               body="Tasks, notes, timeline, and resources under one roof, with progress you can see at a glance."
               visual={<ProjectsVisual />}
@@ -90,7 +90,7 @@ export function LandingFeatures() {
           <Reveal className="md:col-span-3" delay={0}>
             <FeatureCard
               icon={Zap}
-              iconClass="text-accent bg-accent-muted"
+              iconClass="text-accent"
               title="Capture before it evaporates"
               body="One dialog, two keystrokes. It becomes a note, a task, or sits in the inbox until you triage it."
               visual={<CaptureVisual />}
@@ -100,7 +100,7 @@ export function LandingFeatures() {
           <Reveal className="md:col-span-3" delay={0.06}>
             <FeatureCard
               icon={Link2}
-              iconClass="text-info bg-info/10"
+              iconClass="text-info"
               title="Everything is linkable"
               body="Link a note to a task. File a note under a project. The graph is already there waiting for you."
               visual={<LinkVisual />}
@@ -109,16 +109,18 @@ export function LandingFeatures() {
         </div>
 
         {/* AI Layer */}
-        <Reveal className="mt-12 text-center md:mt-20">
-          <div className="flex items-center justify-center">
-            <span className="font-mono text-[11px] tracking-widest text-accent uppercase">
-              AI Layer
-            </span>
-          </div>
-          <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-secondary">
-            Every note and task is indexed automatically. Ask questions in plain
-            English, follow citations back to the source, and watch your
-            knowledge graph grow as you write.
+        <Reveal className="mt-14 border-t border-border-subtle pt-14 text-center md:mt-20 md:pt-20">
+          <p className="font-mono text-[11px] tracking-[0.18em] text-faint uppercase">
+            The AI layer
+          </p>
+          <h2 className="mx-auto mt-5 max-w-2xl font-serif-display text-[clamp(1.9rem,4vw,2.75rem)] font-normal leading-[1.06] tracking-[-0.02em] text-foreground">
+            Indexed as you write, so the
+            answer knows where it came from.
+          </h2>
+          <p className="mx-auto mt-5 max-w-lg text-[15px] leading-relaxed text-secondary">
+            Every note and task is embedded automatically. Ask in plain English,
+            follow the citation back to the source note, and watch the graph fill
+            in behind you.
           </p>
         </Reveal>
 
@@ -126,7 +128,7 @@ export function LandingFeatures() {
           <Reveal className="md:col-span-3" delay={0}>
             <FeatureCard
               icon={Search}
-              iconClass="text-accent bg-accent-muted"
+              iconClass="text-accent"
               title="Semantic search, not just keywords"
               body="Ask in plain English. The index finds the right note even when you don't remember the exact words."
               visual={<SemanticVisual />}
@@ -136,7 +138,7 @@ export function LandingFeatures() {
           <Reveal className="md:col-span-3" delay={0.06}>
             <FeatureCard
               icon={MessageSquareText}
-              iconClass="text-[#818cf8] bg-[#818cf8]/10"
+              iconClass="text-[#818cf8]"
               title="AI assistant with citations"
               body="Ask questions about your workspace and get grounded answers with links back to the exact notes they came from."
               visual={<AssistantVisual />}
@@ -146,7 +148,7 @@ export function LandingFeatures() {
           <Reveal className="md:col-span-3" delay={0}>
             <FeatureCard
               icon={GitFork}
-              iconClass="text-info bg-info/10"
+              iconClass="text-info"
               title="Knowledge graph"
               body="See how your notes connect via wikilinks and task links. Filter by project, drag nodes, and discover hidden relationships."
               visual={<GraphVisual />}
@@ -156,7 +158,7 @@ export function LandingFeatures() {
           <Reveal className="md:col-span-3" delay={0.06}>
             <FeatureCard
               icon={Workflow}
-              iconClass="text-success bg-success/10"
+              iconClass="text-success"
               title="Automation rules"
               body="Recurring tasks create themselves. Quick captures auto-triage by keyword. Yesterday's unfinished work rolls over to today."
               visual={<AutomationVisual />}
@@ -182,14 +184,14 @@ function FeatureCard({
   visual: React.ReactNode;
 }) {
   return (
-    <div className="group flex h-full flex-col rounded-xl border border-border-subtle bg-surface p-5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)] transition-colors duration-200 hover:border-accent/40">
-      <div className="mb-4 flex items-center gap-3">
-        <span className={cn("flex size-8 items-center justify-center rounded-lg", iconClass)}>
-          <Icon className="size-4" strokeWidth={1.75} />
-        </span>
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+    <div className="group flex h-full flex-col border border-border-subtle bg-surface/50 p-5 transition-colors duration-200 hover:border-border-default">
+      <div className="mb-3 flex items-center gap-2.5">
+        <Icon className={cn("size-3.5", iconClass)} strokeWidth={1.75} />
+        <h3 className="font-mono text-[11px] tracking-[0.14em] text-foreground uppercase">
+          {title}
+        </h3>
       </div>
-      <p className="mb-5 text-sm leading-relaxed text-secondary">{body}</p>
+      <p className="mb-5 max-w-sm text-sm leading-relaxed text-secondary">{body}</p>
       <div className="mt-auto">{visual}</div>
     </div>
   );
@@ -199,7 +201,7 @@ function FeatureCard({
 
 function NotesVisual() {
   return (
-    <div className="rounded-lg border border-border-subtle bg-base p-3.5 transition-colors duration-200 group-hover:border-accent/30">
+    <div className="border border-border-subtle bg-base p-3.5 transition-colors duration-200 group-hover:border-border-default">
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-semibold text-foreground">Architecture notes</p>
         <Pin className="size-3 text-accent" strokeWidth={1.75} />
@@ -227,7 +229,7 @@ function NotesVisual() {
 
 function SearchVisual() {
   return (
-    <div className="rounded-lg border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-accent/30">
+    <div className="border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-border-default">
       <div className="flex items-center gap-1.5 rounded border border-border-subtle bg-elevated px-2 py-1.5">
         <Search className="size-2.5 text-faint" strokeWidth={1.75} />
         <span className="text-[9px] text-faint">api design</span>
@@ -253,7 +255,7 @@ function SearchVisual() {
 
 function KanbanVisual() {
   return (
-    <div className="grid grid-cols-4 gap-1.5 rounded-lg border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-accent/30">
+    <div className="grid grid-cols-4 gap-1.5 border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-border-default">
       {[
         { label: "BACKLOG", count: 3 },
         { label: "TODO", count: 2 },
@@ -286,7 +288,7 @@ function KanbanVisual() {
 
 function DailyVisual() {
   return (
-    <div className="rounded-lg border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-accent/30">
+    <div className="border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-border-default">
       <div className="flex items-center gap-1.5">
         {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
           <span
@@ -322,7 +324,7 @@ function DailyVisual() {
 
 function ProjectsVisual() {
   return (
-    <div className="space-y-2 rounded-lg border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-accent/30">
+    <div className="space-y-2 border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-border-default">
       {[
         { name: "EngineerOS", color: "bg-accent", w: "70%", pct: "70%" },
         { name: "Research", color: "bg-[#60a5fa]", w: "40%", pct: "40%" },
@@ -346,7 +348,7 @@ function ProjectsVisual() {
 
 function CaptureVisual() {
   return (
-    <div className="rounded-lg border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-accent/30">
+    <div className="border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-border-default">
       <div className="flex items-center gap-1.5 rounded border border-border-subtle bg-elevated px-2 py-1.5">
         <Zap className="size-2.5 text-accent" strokeWidth={1.75} />
         <span className="text-[9px] text-faint">ship the landing redesign</span>
@@ -366,7 +368,7 @@ function CaptureVisual() {
 
 function LinkVisual() {
   return (
-    <div className="rounded-lg border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-accent/30">
+    <div className="border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-border-default">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5 rounded border border-border-subtle bg-elevated px-2 py-1 text-[9px] text-foreground">
           <CheckSquare className="size-2.5 text-success" strokeWidth={1.75} />
@@ -392,7 +394,7 @@ function LinkVisual() {
 
 function SemanticVisual() {
   return (
-    <div className="rounded-lg border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-accent/30">
+    <div className="border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-border-default">
       <div className="flex items-center gap-1.5 rounded border border-border-subtle bg-elevated px-2 py-1.5">
         <Sparkles className="size-2.5 text-accent" strokeWidth={1.75} />
         <span className="text-[9px] text-faint">how does auth work?</span>
@@ -420,7 +422,7 @@ function SemanticVisual() {
 
 function AssistantVisual() {
   return (
-    <div className="space-y-2 rounded-lg border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-accent/30">
+    <div className="space-y-2 border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-border-default">
       <div className="flex justify-end">
         <span className="max-w-[80%] rounded-lg bg-accent-muted px-2 py-1.5 text-[9px] text-accent">
           How do I structure a new feature?
@@ -431,7 +433,7 @@ function AssistantVisual() {
           <Sparkles className="size-2.5 text-white" strokeWidth={2} />
         </span>
         <div className="rounded-lg border border-border-subtle bg-surface px-2 py-1.5 text-[9px] leading-relaxed text-foreground">
-          Start with the data model, then the API route, then the hook…
+          Start with the data model, then the API route, then the hookâ€¦
           <div className="mt-1.5 flex items-center gap-1">
             <FileText className="size-2.5 text-accent" strokeWidth={1.75} />
             <span className="font-mono text-[8px] text-accent">Architecture notes</span>
@@ -444,7 +446,7 @@ function AssistantVisual() {
 
 function GraphVisual() {
   return (
-    <div className="rounded-lg border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-accent/30">
+    <div className="border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-border-default">
       <svg viewBox="0 0 120 64" className="w-full" aria-hidden>
         {/* edges */}
         <line x1="60" y1="32" x2="22" y2="14" stroke="var(--border-default)" strokeWidth="1" />
@@ -477,7 +479,7 @@ function GraphVisual() {
 
 function AutomationVisual() {
   return (
-    <div className="space-y-2 rounded-lg border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-accent/30">
+    <div className="space-y-2 border border-border-subtle bg-base p-3 transition-colors duration-200 group-hover:border-border-default">
       {[
         { label: "Daily standup", cadence: "Daily", color: "bg-accent" },
         { label: "Weekly review", cadence: "Weekly", color: "bg-info" },
@@ -490,8 +492,10 @@ function AutomationVisual() {
       ))}
       <div className="flex items-center gap-1.5 rounded border border-dashed border-success/40 bg-success/5 px-2 py-1.5">
         <Zap className="size-2.5 shrink-0 text-success" strokeWidth={1.75} />
-        <span className="text-[9px] text-success">2 tasks created · rollover done</span>
+        <span className="text-[9px] text-success">2 tasks created Â· rollover done</span>
       </div>
     </div>
   );
 }
+
+
