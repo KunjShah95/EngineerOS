@@ -37,4 +37,4 @@ User-agent: Bingbot
 Allow: /
 
 User-agent: CCBot
-Disallow: /
+Allow: /

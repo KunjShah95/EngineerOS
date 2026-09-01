@@ -1,5 +1,6 @@
 import { resolveProvider } from "./providers";
-import { isAiConfigured, chunkText } from "../ai";
+import { isAiConfigured } from "../ai";
+import { chunkMarkdown } from "./chunking";
 import { embedQuery, embedText, isEmbeddingConfigured } from "./embeddings";
 import { extractiveAnswer, scoreCorpus, searchedTerms } from "./keyword";
 import { resourceHref } from "@/lib/resource-kind";
@@ -111,9 +112,12 @@ async function indexEntity(
   entityType: EmbeddingEntity,
   entityId: string,
   kind: string | null,
-  text: string
+  text: string,
+  title?: string
 ): Promise<number> {
-  const chunks = chunkText(text, 1400, 200).filter((c) => c.trim().length > 0);
+  // Structure-aware: splits on markdown headings and carries the entity title
+  // into every chunk, so chunk 3 of a note is still identifiable as that note.
+  const chunks = chunkMarkdown(text, { title }).filter((c) => c.trim().length > 0);
   if (chunks.length === 0) return 0;
 
   const embeddings = await embedBatch(chunks);
@@ -161,7 +165,8 @@ export async function indexWorkspace(
         row.entity_type,
         row.entity_id,
         row.kind ?? null,
-        row.text
+        row.text,
+        row.title
       );
     } catch (err) {
       failed += 1;
@@ -183,7 +188,7 @@ async function fetchEntityText(
   workspaceId: string,
   type: EmbeddingEntity,
   entityId: string
-): Promise<{ kind: string | null; text: string } | null> {
+): Promise<{ kind: string | null; text: string; title: string } | null> {
   switch (type) {
     case "note": {
       const { data } = await supabase
@@ -194,7 +199,7 @@ async function fetchEntityText(
         .is("deleted_at", null)
         .maybeSingle();
       if (!data) return null;
-      return { kind: null, text: `${data.title}\n${data.body_markdown}` };
+      return { kind: null, title: data.title, text: `${data.title}\n${data.body_markdown}` };
     }
     case "task": {
       const { data } = await supabase
@@ -205,7 +210,7 @@ async function fetchEntityText(
         .is("deleted_at", null)
         .maybeSingle();
       if (!data) return null;
-      return { kind: null, text: `${data.title}\n${taskMeta(data)}\n${data.description ?? ""}` };
+      return { kind: null, title: data.title, text: `${data.title}\n${taskMeta(data)}\n${data.description ?? ""}` };
     }
     case "resource": {
       const { data } = await supabase
@@ -216,7 +221,7 @@ async function fetchEntityText(
         .is("deleted_at", null)
         .maybeSingle();
       if (!data) return null;
-      return { kind: data.kind, text: `${data.title}\n${data.body_markdown}` };
+      return { kind: data.kind, title: data.title, text: `${data.title}\n${data.body_markdown}` };
     }
     case "daily_note": {
       const { data } = await supabase
@@ -229,7 +234,7 @@ async function fetchEntityText(
       const body = [data.morning_goals, data.journal, data.learned, data.wins, data.problems, data.tomorrow]
         .filter(Boolean)
         .join("\n");
-      return { kind: null, text: `${data.date}\n${body}` };
+      return { kind: null, title: `Daily Note ${data.date}`, text: `${data.date}\n${body}` };
     }
     case "pdf": {
       const { data } = await supabase
@@ -241,7 +246,7 @@ async function fetchEntityText(
       if (!data) return null;
       // text_content may be null in the DB despite the TypeScript cast; guard before slicing.
       const content = data.text_content ?? "";
-      return { kind: null, text: `${data.title}\n${content.slice(0, 12000)}` };
+      return { kind: null, title: data.title, text: `${data.title}\n${content.slice(0, 12000)}` };
     }
     default:
       // "project" is a valid EmbeddingEntity for chat citations but is never
@@ -279,7 +284,7 @@ export async function drainIndexQueue(
         if (!entity) {
           await deleteEmbeddings(supabase, workspaceId, row.entity_type, row.entity_id);
         } else {
-          await indexEntity(supabase, workspaceId, row.entity_type, row.entity_id, entity.kind, entity.text);
+          await indexEntity(supabase, workspaceId, row.entity_type, row.entity_id, entity.kind, entity.text, entity.title);
         }
       }
       processed.push(row);

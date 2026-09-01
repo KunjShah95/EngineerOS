@@ -158,6 +158,10 @@ So: run both, then merge. The standard approach is reciprocal rank fusion, which
 
 The result is a search that handles *how does login work* and \`ERR_JWT_EXPIRED\` equally well, which is what you actually need, because you search for both kinds of thing.
 
+One caveat I only learned by measuring it: fusion is not free. When we built an eval for this — twenty questions over a corpus seeded with deliberately confusable notes — equal-weight fusion scored *worse* than keyword search alone. The reason turned out to be boring and important: the semantic leg in that harness was a bag-of-words fingerprint standing in for a real embedding model, so we were fusing a lexical ranker with another lexical ranker. No independent signal, just noise. Down-weighting the semantic side recovered parity but never beat it.
+
+The lesson is not "hybrid retrieval is overrated." It is that fusion only pays when the two rankers fail *differently*, and you cannot know whether yours do without measuring. If you take one thing from this section, take that: build the eval before you tune the weights.
+
 ## Citations are not a nicety
 
 Once retrieval works, you can feed the top chunks to a model and get an answer. This is the part that looks impressive in a demo, and it is also where the tool earns or loses your trust permanently.
