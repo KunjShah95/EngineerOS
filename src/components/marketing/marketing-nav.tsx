@@ -10,9 +10,10 @@ import { ThemeToggle } from "@/components/shell/ThemeToggle";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { href: "#features", label: "Features" },
-  { href: "#product", label: "Product" },
-  { href: "#cta", label: "Get started" },
+  { href: "/#features", label: "Features" },
+  { href: "/blog", label: "Writing" },
+  { href: "/#product", label: "Product" },
+  { href: "/#cta", label: "Get started" },
 ];
 
 export function MarketingNav() {

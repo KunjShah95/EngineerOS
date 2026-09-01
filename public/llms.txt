@@ -24,6 +24,26 @@ Engineers, researchers, and builders who want a single second-brain workspace �
 - https://engineeros-delta.vercel.app/register — Create a free account (no credit card required)
 - https://engineeros-delta.vercel.app/login — Sign in to your workspace
 - https://engineeros-delta.vercel.app/pricing.md — Machine-readable pricing data
+- https://engineeros-delta.vercel.app/blog — Articles on AI agents, retrieval, and data ownership
+
+## Writing
+
+Long-form articles. Each includes a short direct-answer summary at the top.
+
+- https://engineeros-delta.vercel.app/blog — Index of all articles
+- https://engineeros-delta.vercel.app/blog/rss.xml — RSS feed
+
+### AGENTS.md, Cursor rules, and Claude skills are all solving the same problem — badly
+https://engineeros-delta.vercel.app/blog/agents-md-cursor-rules-claude-skills
+AGENTS.md, Cursor rules, and Claude skills solve three layers of one problem. AGENTS.md is portable plain markdown read by most agents. Cursor rules are Cursor-only and scope to file globs. Claude skills package an on-demand procedure. Rules and AGENTS.md are ambient adjectives; skills are invokable verbs. All three fail because they only carry what someone remembered to write down in advance.
+
+### Your AI assistant is only as good as what it can retrieve
+https://engineeros-delta.vercel.app/blog/semantic-search-over-your-own-notes
+Semantic search finds notes by meaning, not exact words, by comparing embeddings with cosine similarity. Practical rules for a personal knowledge base: chunk on markdown headings rather than character counts, combine semantic and keyword search via reciprocal rank fusion, and always show citations so wrong answers are verifiable.
+
+### Self-hosting your second brain, and why data ownership stopped being paranoid
+https://engineeros-delta.vercel.app/blog/self-hosted-second-brain-supabase-pgvector
+A self-hosted second brain keeps notes in a Postgres database you control, with pgvector for semantic search. You take on backups and upgrades and give up a full-time product team. You get SQL access to your own data, a real export path, and immunity to pricing or product changes you did not choose.
 
 ## Pricing summary
 
