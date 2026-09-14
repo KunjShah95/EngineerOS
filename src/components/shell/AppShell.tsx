@@ -19,7 +19,7 @@ import { useAutoAutomation } from "@/hooks/useAutoAutomation";
 import { useProactiveNudges } from "@/hooks/useProactiveNudges";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { Button } from "@/components/ui/button";
-import { useUiStore, getStoredSidebarCollapsed } from "@/lib/store/ui";
+import { useUiStore, getStoredAdvancedTools, getStoredSidebarCollapsed } from "@/lib/store/ui";
 import { useKeyboardShortcuts, type ShortcutDef } from "@/hooks/useKeyboardShortcuts";
 import { ShortcutsDialog } from "@/components/shell/ShortcutsDialog";
 import { cn } from "@/lib/utils";
@@ -76,10 +76,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const focusMode = useUiStore((s) => s.focusMode);
   const toggleFocusMode = useUiStore((s) => s.toggleFocusMode);
 
-  // Hydrate the persisted collapsed state once on mount.
+  // Hydrate persisted UI preferences. Re-runs when `onboarded_at` first arrives,
+  // because the advanced-tools default depends on it: a workspace that has
+  // finished onboarding has already met every tool, so it starts expanded. Once
+  // the user has toggled it themselves, the stored choice wins on every run.
   useEffect(() => {
-    useUiStore.setState({ sidebarCollapsed: getStoredSidebarCollapsed() });
-  }, []);
+    useUiStore.setState({
+      sidebarCollapsed: getStoredSidebarCollapsed(),
+      advancedToolsOpen: getStoredAdvancedTools(Boolean(workspace?.onboarded_at)),
+    });
+  }, [workspace?.onboarded_at]);
 
   const setCommandPaletteOpen = useUiStore((s) => s.setCommandPaletteOpen);
   const setQuickCaptureOpen = useUiStore((s) => s.setQuickCaptureOpen);

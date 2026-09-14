@@ -227,6 +227,37 @@ export default function LandingPage() {
           }),
         }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "HowTo",
+            name: "How to set up EngineerOS",
+            description: "Set up EngineerOS in 3 steps — create a Supabase project, connect it to EngineerOS, and start taking notes with semantic search.",
+            totalTime: "PT15M",
+            step: [
+              {
+                "@type": "HowToStep",
+                name: "Create a Supabase project",
+                text: "Sign up for a free Supabase account and create a new project. Enable the pgvector extension in your database.",
+                url: "https://supabase.com",
+              },
+              {
+                "@type": "HowToStep",
+                name: "Connect to EngineerOS",
+                text: "Create a free EngineerOS account and enter your Supabase project URL and anon key in the settings.",
+                url: `${BASE}/register`,
+              },
+              {
+                "@type": "HowToStep",
+                name: "Start taking notes",
+                text: "Create your first note, task, or daily entry. EngineerOS automatically indexes everything for semantic search and builds your knowledge graph.",
+              },
+            ],
+          }),
+        }}
+      />
       <div className="min-h-screen bg-base text-foreground">
         <MarketingNav />
         <main>

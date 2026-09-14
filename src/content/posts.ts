@@ -13,6 +13,9 @@ export type Post = {
   readingMinutes: number;
   tags: string[];
   body: string;
+  /** FAQ items for AEO — each is a question/answer pair optimized for
+   *  featured snippets and AI Overviews. */
+  faq: { question: string; answer: string }[];
 };
 
 export const POSTS: Post[] = [
@@ -29,6 +32,28 @@ export const POSTS: Post[] = [
     updated: "2026-09-01",
     readingMinutes: 8,
     tags: ["AI agents", "Developer tools", "Context"],
+    faq: [
+      {
+        question: "What is AGENTS.md?",
+        answer: "AGENTS.md is a plain markdown file at your repo root that describes how your project works — build commands, conventions, and context for AI agents. It's read by most coding agents including Claude Code, Codex, Gemini CLI, and Cursor. Its virtue is portability: it's a convention, not a product, so it costs nothing to adopt.",
+      },
+      {
+        question: "What's the difference between AGENTS.md, Cursor rules, and Claude skills?",
+        answer: "AGENTS.md is a portable markdown file read by most agents. Cursor rules live in .cursor/rules/ with file-glob scoping, useful for large repos with different conventions per directory. Claude skills are folders with a SKILL.md plus scripts and templates, loaded on demand for multi-step procedures. Rules and AGENTS.md are ambient adjectives; skills are invokable verbs.",
+      },
+      {
+        question: "Why do AI agents forget my project context?",
+        answer: "Every instruction format is a write-ahead log for context — you anticipate what the agent will need and write it down in advance. The failure modes are drift (the file describes the project as it was when you wrote it), fragmentation (multiple agents have files that disagree), and unwritten reasoning (the decisions behind your code are in Slack, PRs, or your head — not in the repo).",
+      },
+      {
+        question: "How long should AGENTS.md be?",
+        answer: "Keep it short and true. Fifteen lines you actually maintain beat two hundred that rot. Every line is a maintenance liability — if you would not update it during a refactor, cut it. Date your notes so readers know which parts might be stale.",
+      },
+      {
+        question: "Should I write down decisions or just rules in my instructions file?",
+        answer: "Write down decisions, not just rules. A one-paragraph note per non-obvious decision, dated, with the reasoning and the alternatives you rejected. 'We use pgvector over a separate vector DB because we were already running Postgres and the operational cost of a second datastore was not worth the recall improvement at our scale' survives being questioned. 'We use pgvector' just gets overruled.",
+      },
+    ],
     body: `I keep a folder of other people's config files. It started as research and turned into something closer to a hobby. \`.cursorrules\`, \`AGENTS.md\`, \`CLAUDE.md\`, \`.github/copilot-instructions.md\`, a growing pile of \`SKILL.md\` folders. At last count the biggest public collection of Cursor rules has north of forty thousand stars, which tells you this is not a niche concern.
 
 Read enough of them and a pattern shows up that nobody advertises. Almost every one of these files is a person trying to explain their project to something that will forget the explanation.
@@ -112,6 +137,28 @@ That is the part I find genuinely interesting: the reason your coding agent keep
     updated: "2026-09-01",
     readingMinutes: 9,
     tags: ["Semantic search", "Embeddings", "AI"],
+    faq: [
+      {
+        question: "What is semantic search?",
+        answer: "Semantic search finds notes by meaning rather than exact words. Each note is converted into an embedding — a vector of numbers positioned so that related ideas sit near each other. A query is converted the same way, then compared by cosine similarity. This is why searching 'how does login work' can surface a note titled 'JWT refresh flow' that shares no keywords.",
+      },
+      {
+        question: "Why does keyword search fail for personal knowledge bases?",
+        answer: "Traditional keyword search matches words, not meaning. You search 'how do users log in' and have a note titled 'JWT refresh flow' — zero shared keywords, zero results. For a personal knowledge base this failure is common because you're searching for things you half-remember. If you remembered the exact words, you wouldn't need to search.",
+      },
+      {
+        question: "What is chunking and why does it matter for embeddings?",
+        answer: "Chunking is splitting notes into sections before embedding them. A vector is a fixed size regardless of input length — embed a 3,000-word note covering four topics and you get a vector that means 'approximately the average of all of that,' which is nothing in particular. Split on markdown headings, overlap slightly across boundaries, and prepend the note title to each chunk.",
+      },
+      {
+        question: "Should I use semantic search or keyword search?",
+        answer: "Use both. Semantic search is bad at exact matches (error codes, function names, ticket numbers), while keyword search nails those instantly. The standard approach is reciprocal rank fusion: score each result by its rank position in each list, then merge. This handles 'how does login work' and 'ERR_JWT_EXPIRED' equally well.",
+      },
+      {
+        question: "Why are citations important in AI search?",
+        answer: "An answer without sources is unfalsifiable — it's fluent and plausible, but you have no way to check it. An answer with citations lets you verify every claim in seconds. Citations also create a second-order effect: you start noticing which notes are load-bearing (which ones keep getting cited), giving you signal about what you actually know.",
+      },
+    ],
     body: `Almost every AI note-taking tool demos the same way. Someone types a question, and a well-formatted answer appears. It looks like magic and it usually is not — because the hard part is not writing the answer. Language models have been good at that for years.
 
 The hard part is finding the right four paragraphs out of your two thousand notes and putting them in front of the model. Get that wrong and you have built a very confident liar with access to your journal.
@@ -213,6 +260,28 @@ Most of the work — and most of the value — is in the unglamorous half: how y
     updated: "2026-09-01",
     readingMinutes: 8,
     tags: ["Self-hosting", "Supabase", "Data ownership"],
+    faq: [
+      {
+        question: "What does self-hosted mean for a second brain?",
+        answer: "Self-hosted means the database is yours — a Postgres instance under your account, on a provider you chose, that you can connect to with any Postgres client, back up with pg_dump, and point at a different application tomorrow. The app that renders your notes is replaceable. The data underneath it is not going anywhere without your say-so.",
+      },
+      {
+        question: "Why Postgres for a note-taking app?",
+        answer: "Once your notes are in Postgres, some things become easy: you can query your notes with SQL (which tags do I use most?), semantic search comes nearly free via pgvector, relationships between notes/tasks/projects are actual foreign keys, and the backup story is boring in the best way — pg_dump produces a file that restores into any Postgres anywhere.",
+      },
+      {
+        question: "What are the costs of self-hosting a second brain?",
+        answer: "You own the operations (backups, upgrades), you give up a product team (mobile, offline sync, collaborative editing), and there's a setup cost (typically 20 minutes with managed Postgres). Managed Postgres has made this dramatically less demanding than it was, but it's not zero.",
+      },
+      {
+        question: "When does data ownership actually matter?",
+        answer: "When pricing changes (a tool introduces a seat minimum), when product direction changes (the feature you depend on gets deprioritized), when shutdown happens (rare but not rare enough), or when you want to build something custom on your own data. Ownership is worth nothing right up until the moment it's worth everything, and you can't buy it retroactively.",
+      },
+      {
+        question: "Is self-hosting more private than using Notion?",
+        answer: "Self-hosting doesn't automatically make your data more private or secure. A misconfigured Postgres with row-level security disabled and a public connection string is considerably worse than Notion's cloud. You have to actually configure the security controls. The benefit is that you have the option to lock it down — the data is in your hands.",
+      },
+    ],
     body: `Every note-taking tool makes a bet about where your notes should live, and the bet is usually invisible until it costs you something.
 
 Notion bets on their cloud. Everything is a block in their database, the collaboration is genuinely excellent, and the export is a zip of HTML or markdown that loses most of the structure that made it useful. Obsidian bets on local files, which is a strong position — plain markdown on your disk, yours forever — and then you spend a weekend on sync and another on plugins to get search that works across devices. Evernote bet on their cloud too, and then spent several years teaching a large number of people what it feels like when a company you have trusted with a decade of notes changes its pricing and its priorities.

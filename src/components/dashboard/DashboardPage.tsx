@@ -23,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageLoader } from "@/components/shell/PageLoader";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { MemoryPanel } from "@/components/memory/MemoryPanel";
+import { GettingStarted } from "@/components/dashboard/GettingStarted";
 import { useTasks } from "@/hooks/useTasks";
 import { useMarkReminderRead, useReminders } from "@/hooks/useAutomation";
 import { useNotes } from "@/hooks/useNotes";
@@ -172,6 +173,10 @@ export function DashboardPage() {
           </motion.button>
         }
       />
+
+      {/* Sits above the stat strip on purpose: for a brand-new workspace the
+          strip is five zeroes, which is accurate but tells them nothing to do. */}
+      <GettingStarted />
 
       {isLoading ? (
         <div className="space-y-8">

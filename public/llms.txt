@@ -25,6 +25,10 @@ Engineers, researchers, and builders who want a single second-brain workspace �
 - https://engineeros-delta.vercel.app/login — Sign in to your workspace
 - https://engineeros-delta.vercel.app/pricing.md — Machine-readable pricing data
 - https://engineeros-delta.vercel.app/blog — Articles on AI agents, retrieval, and data ownership
+- https://engineeros-delta.vercel.app/compare/notion-vs-engineeros — Notion vs EngineerOS feature comparison
+- https://engineeros-delta.vercel.app/compare/obsidian-vs-engineeros — Obsidian vs EngineerOS feature comparison
+- https://engineeros-delta.vercel.app/guides/building-a-second-brain — Complete guide to building a second brain with AI
+- https://engineeros-delta.vercel.app/humans.txt — About this project
 
 ## Writing
 

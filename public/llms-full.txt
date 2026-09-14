@@ -1,0 +1,99 @@
+# llms-full.txt — EngineerOS
+
+> AI-native workspace for engineers, researchers, and builders. Combines notes, tasks, projects, and daily entries into one connected system with semantic search, a knowledge graph, and an AI assistant with citations. All data lives in your own Supabase project — no vendor lock-in.
+
+## What EngineerOS does
+
+EngineerOS is a productivity tool built from the ground up with AI as a core feature — not bolted on as an add-on. Every note, task, and daily entry is automatically indexed for semantic search, and the AI assistant can answer questions about your workspace with citations back to source notes.
+
+### Core features
+
+- **Semantic search** — Embedding-powered search across all workspace content. Every note, task, and daily entry is automatically indexed. Ask questions in plain English and get grounded answers with citations back to the exact source notes.
+- **AI assistant with citations** — Answers are grounded in your own notes, not hallucinated. Every claim links to the note it came from. If the answer is subtly wrong, you can verify in seconds.
+- **Knowledge graph** — Automatically built from wikilinks in your notes and links between tasks and notes. Visualize connections, filter by project, and discover hidden relationships across your workspace.
+- **Kanban task boards** — Drag-and-drop task management with project grouping and priority levels.
+- **Daily notes with auto-rollover** — Unfinished tasks roll over to the next day automatically. Your daily rhythm builds itself.
+- **Automation rules** — Recurring tasks, keyword-based quick captures, and daily rollover. Set rules once, let them run.
+- **GitHub integration** — Link notes to GitHub issues and repositories.
+- **PDF chat** — Upload PDFs and ask questions about their content.
+- **Voice notes** — Record voice notes that are transcribed and indexed.
+- **Self-hosted data** — Your data lives in your own Supabase project via the Supabase client. No data is stored on EngineerOS servers. You own your data and can export it at any time.
+
+### How semantic search works
+
+Each note is converted into an embedding — a vector of numbers positioned so that related ideas sit near each other. A query is converted the same way, then compared by cosine similarity. This is why searching "how does login work" can surface a note titled "JWT refresh flow" that shares no keywords.
+
+EngineerOS uses hybrid search: semantic search for meaning-based queries combined with keyword search for exact matches (error codes, function names, ticket numbers). Results are merged using reciprocal rank fusion for the best of both approaches.
+
+### How the knowledge graph works
+
+The knowledge graph is automatically built from:
+- **Wikilinks** in notes (e.g., `[[Project Alpha]]`)
+- **Task-to-note links** — tasks linked to related notes
+- **Project groupings** — notes and tasks grouped under projects
+
+You can visualize the graph, filter by project or tag, and discover connections you didn't know existed. The graph is a query over data that was already shaped correctly — not a separate feature someone built.
+
+### How citations work
+
+When the AI assistant answers a question, every claim links to the note it came from. You can click the citation to see the original source. This makes failure modes visible: if the answer cites nothing relevant, you can tell the retrieval missed rather than assuming the answer is right.
+
+## Who it's for
+
+EngineerOS is built for:
+- **Engineers** who want a connected system for code notes, architecture decisions, and debugging logs
+- **Researchers** who need to organize papers, ideas, and cross-references
+- **Builders** who want tasks, notes, and daily entries in one place without vendor lock-in
+
+## What makes EngineerOS different from Notion or Obsidian
+
+| Feature | EngineerOS | Notion | Obsidian |
+|---------|-----------|--------|----------|
+| Semantic search | Built-in | No (keyword only) | Plugin required |
+| AI with citations | Built-in | No | Plugin required |
+| Knowledge graph | Automatic | No | Manual linking |
+| Self-hosted | Yes (Supabase) | No | Yes (local files) |
+| Data ownership | Full (your Supabase) | Partial (vendor cloud) | Full (local files) |
+| Automation | Built-in rules | Limited | Plugin required |
+| Daily notes | Auto-rollover | Manual | Manual |
+
+## Pricing
+
+EngineerOS is free to start. No credit card required.
+
+- **Free** — Unlimited notes, tasks, daily entries, semantic search, AI assistant, knowledge graph, automation rules, self-hosted Supabase data
+- **Pro** — Contact for pricing. Priority AI search, advanced automation, custom themes
+- **Enterprise** — Custom. SSO, SLA, audit logs, dedicated account manager
+
+See /pricing.md for structured pricing data.
+
+## Technical details
+
+- Built on Next.js 16 (App Router) + Supabase (Postgres + pgvector)
+- Self-hosted: your data stays in your own Supabase project
+- Open-source core
+- Deployed on Vercel
+- Robots.txt allows GPTBot, PerplexityBot, ClaudeBot, Google-Extended, Bingbot, CCBot
+
+## Key pages
+
+- https://engineeros-delta.vercel.app/ — Landing page with product overview
+- https://engineeros-delta.vercel.app/register — Create a free account
+- https://engineeros-delta.vercel.app/login — Sign in to your workspace
+- https://engineeros-delta.vercel.app/pricing.md — Machine-readable pricing data
+- https://engineeros-delta.vercel.app/blog — Articles on AI agents, retrieval, and data ownership
+- https://engineeros-delta.vercel.app/humans.txt — About this project
+
+## Blog posts
+
+### AGENTS.md, Cursor rules, and Claude skills are all solving the same problem — badly
+https://engineeros-delta.vercel.app/blog/agents-md-cursor-rules-claude-skills
+AGENTS.md, Cursor rules, and Claude skills solve three different layers of the same problem. AGENTS.md is a portable, plain-markdown description of how your repo works, read by most agents. Cursor rules are Cursor-only and scope instructions to file globs. Claude skills package a procedure the agent invokes on demand. The rough split: rules and AGENTS.md are ambient — always-on adjectives describing your project. Skills are invokable verbs the agent reaches for. All three break for the same reason: they only carry what someone remembered to write down, and none of them capture the decisions that happened outside the repo.
+
+### Your AI assistant is only as good as what it can retrieve
+https://engineeros-delta.vercel.app/blog/semantic-search-over-your-own-notes
+Semantic search finds notes by meaning rather than exact words. Each note is converted into an embedding — a vector of numbers positioned so that related ideas sit near each other — and a query is converted the same way, then compared by cosine similarity. This is why searching "how does login work" can surface a note titled "JWT refresh flow" that shares no keywords. For a personal knowledge base the practical rules are: chunk notes into sections rather than embedding whole documents, combine semantic search with keyword search since exact terms still matter, and always show citations so a wrong answer is verifiable rather than merely convincing.
+
+### Self-hosting your second brain, and why data ownership stopped being paranoid
+https://engineeros-delta.vercel.app/blog/self-hosted-second-brain-supabase-pgvector
+A self-hosted second brain means your notes live in a database you control rather than a vendor's cloud. In practice this usually means Postgres — with pgvector for semantic search — running on a host you own. The tradeoffs are honest: you take on backups, upgrades, and availability, and you give up the polish of a well-funded product team. What you get is a real export path, the ability to query your own data with SQL, no per-seat pricing on your own thoughts, and immunity to a product decision made in a meeting you were not in.

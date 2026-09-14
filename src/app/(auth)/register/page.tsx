@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
+import { nextPathFromLocation } from "@/lib/next-path";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { SetupNotice } from "@/components/supabase/SetupNotice";
 
@@ -97,8 +98,10 @@ export default function RegisterPage() {
 
     if (data.session) {
       // Email confirmation disabled — session already exists, head to the app.
+      // Honour `next` so an invited account lands back on /invite/<token>, which
+      // is the only page that can finish the acceptance.
       queryClient.clear();
-      router.push("/dashboard");
+      router.push(nextPathFromLocation());
       router.refresh();
     } else {
       // Confirmation email required.

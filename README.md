@@ -87,6 +87,14 @@ One dialog (`⌘K` or the Quick Capture button), two keystrokes, and whatever's 
 - **GitHub** — import issues into tasks; link repos to projects
 - **Calendar** — export tasks with due dates to `.ics`
 
+### Share
+
+- **Workspaces** — separate contexts (work, personal, a client), switched from the sidebar. Notes, tasks and the assistant are scoped to one at a time
+- **Teams** — invite by email, or share the token link directly; membership is what row-level security checks, so a member can see their workspace's content and nothing else
+- **Plans** — Free / Pro / Team, enforced server-side at workspace creation, invites, and assistant calls rather than hidden in the UI. Bring your own AI key on any plan and the assistant allowance disappears — that usage is billed to your provider account, not to us. See `/pricing`
+
+Self-hosting is unchanged: with no billing configured, no limits apply.
+
 ---
 
 ## Stack
@@ -359,7 +367,7 @@ Every schema decision in this project was made with AI in mind:
 
 The AI layer built on top of this isn't bolted on. It's the reason the foundation was designed the way it was.
 
-V1 is also deliberately single-workspace, single-user. Not because I couldn't build multi-tenant — because I wanted to use this myself, daily, and prove it works before adding the complexity of teams, billing, and permissions. Ship fast, use it, learn, then expand.
+V1 was deliberately single-workspace, single-user. Not because I couldn't build multi-tenant — because I wanted to use this myself, daily, and prove it works before adding the complexity of teams, billing, and permissions. Ship fast, use it, learn, then expand. That expansion is now underway: workspaces are real memberships rather than ownership, and plans exist as an enforced layer rather than a pricing screenshot.
 
 ---
 
@@ -381,7 +389,7 @@ Right now the assistant answers questions. The next version takes actions. Creat
 
 **Team workspaces**
 
-The schema is already multi-workspace. Row-level security is already `is_workspace_member()`, not `is_owner()`. Adding teams is a matter of a membership table, invite flows, and permission scoping — none of which requires rearchitecting anything. It's deliberately next, not now.
+The schema was already multi-workspace — row-level security was always `is_workspace_member()`, never `is_owner()`; the function just only ever answered "am I the owner?". Adding a `workspace_members` table and redefining that one function made the entire schema tenancy-aware without touching a single other policy. Invitations, roles and a workspace switcher are shipped; read-only `viewer` enforcement is the remaining sweep.
 
 **Mobile**
 

@@ -57,6 +57,25 @@ export default function BlogIndex() {
           }),
         }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            name: "EngineerOS Blog Posts",
+            description: "Articles on AI agents, semantic search, and data ownership.",
+            url: `${BASE}/blog`,
+            itemListElement: posts.map((p, i) => ({
+              "@type": "ListItem",
+              position: i + 1,
+              name: p.title,
+              url: `${BASE}/blog/${p.slug}`,
+              description: p.description,
+            })),
+          }),
+        }}
+      />
       <div className="min-h-screen bg-base text-foreground">
         <MarketingNav />
         <main className="mx-auto w-full max-w-3xl px-4 pt-32 pb-20 sm:px-6 md:pt-40">

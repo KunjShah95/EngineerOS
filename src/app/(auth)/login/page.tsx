@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
+import { nextPathFromLocation } from "@/lib/next-path";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { SetupNotice } from "@/components/supabase/SetupNotice";
 
@@ -51,9 +52,8 @@ export default function LoginPage() {
       return;
     }
 
-    const next = new URLSearchParams(window.location.search).get("next");
     queryClient.clear();
-    router.push(next || "/dashboard");
+    router.push(nextPathFromLocation());
     router.refresh();
   };
 

@@ -1,12 +1,18 @@
 // EngineerOS database types.
-// Hand-written to match supabase/migrations/20260802000001_init.sql.
-// Regenerate with `supabase gen types typescript` once the project is linked.
+// Hand-written to match supabase/migrations/. Keep in sync when a migration
+// adds a column; `supabase gen types typescript` can regenerate these once the
+// project is linked (see README → Types).
 
 export type ProjectStatus = "active" | "paused" | "archived";
 export type TaskStatus = "backlog" | "todo" | "in_progress" | "done";
 export type TaskPriority = "none" | "low" | "medium" | "high" | "urgent";
 export type NoteStatus = "draft" | "active" | "archived";
 export type CaptureType = "note" | "task";
+
+/** Billing tier. Mirrors `public.workspace_plan` and lib/saas/plans.ts. */
+export type WorkspacePlan = "free" | "pro" | "team";
+/** Membership role. Mirrors `public.workspace_role`. */
+export type WorkspaceRole = "owner" | "editor" | "viewer";
 
 export interface Workspace {
   id: string;
@@ -15,10 +21,51 @@ export interface Workspace {
   /** Where reminder + digest emails go (null = none — in-app feed only). */
   email: string | null;
   weekly_digest: boolean;
+  /**
+   * Absent on deployments that predate 20260914000001_saas_plans_tenancy.sql.
+   * Optional rather than defaulted so `getEntitlements()` can tell "free tier"
+   * apart from "billing not configured here yet" — the difference between
+   * enforcing limits and enforcing none.
+   */
+  plan?: WorkspacePlan | null;
+  trial_ends_at?: string | null;
+  onboarded_at?: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
 }
+
+/** A workspace the signed-in user belongs to, with their role in it. */
+export interface WorkspaceWithRole extends Workspace {
+  /** Null when the membership layer isn't applied and only owner_id matches. */
+  role: WorkspaceRole | null;
+}
+
+export interface WorkspaceMember {
+  id: string;
+  workspace_id: string;
+  user_id: string;
+  role: WorkspaceRole;
+  invited_by: string | null;
+  joined_at: string;
+  /** Joined from `users`; null if that profile is somehow missing. */
+  email?: string | null;
+  display_name?: string | null;
+  avatar_url?: string | null;
+}
+
+export interface WorkspaceInvite {
+  id: string;
+  workspace_id: string;
+  email: string;
+  role: WorkspaceRole;
+  token: string;
+  invited_by: string | null;
+  accepted_at: string | null;
+  expires_at: string;
+  created_at: string;
+}
+
 
 export interface Profile {
   id: string;

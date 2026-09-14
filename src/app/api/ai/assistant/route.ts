@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { requireWorkspace } from "@/lib/supabase/auth";
+import { assertAiQuota, entitlementsFor } from "@/lib/saas/entitlements";
 import { answerWithContext, drainIndexQueue, retrieveWorkspace } from "@/lib/ai/rag";
 import { answerWorkspaceQuestion } from "@/lib/ai/workspace-qa";
 import { loadAiConfig } from "@/lib/ai/db-config";
@@ -20,6 +21,12 @@ export async function POST(request: NextRequest) {
   const auth = await requireWorkspace();
   if (auth.error) return auth.error;
   const { supabase, workspace } = auth;
+
+  // Plan check before any write or provider call. Placed here — ahead of thread
+  // creation — so a blocked question doesn't leave an empty thread behind, and
+  // doesn't spend upstream tokens that were already refused.
+  const quotaBlocked = await assertAiQuota(supabase, workspace, entitlementsFor(workspace));
+  if (quotaBlocked) return quotaBlocked;
 
   // Resolve or create the thread.
   let threadId = body.thread_id ?? null;

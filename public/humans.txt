@@ -1,0 +1,21 @@
+# EngineerOS
+
+> AI-native workspace for notes, tasks, and projects.
+
+## What is this?
+
+EngineerOS is an open-source, self-hosted workspace that combines notes, tasks, projects, and daily entries into one connected system. It uses semantic search (embeddings), a knowledge graph, and an AI assistant with citations to help engineers, researchers, and builders retrieve what they know — without vendor lock-in.
+
+## Built by
+
+- GitHub: https://github.com/KunjShah95
+- Stack: Next.js 16, Supabase (Postgres + pgvector), Tailwind CSS, React 19
+- Deployed on Vercel
+
+## Data ownership
+
+Your data lives in your own Supabase project. No data is stored on EngineerOS servers. You can export or delete it at any time.
+
+## Contact
+
+Open an issue on GitHub or reach out via the repository.

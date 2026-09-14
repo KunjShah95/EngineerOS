@@ -14,6 +14,14 @@ const productLinks = [
   { href: "/settings", label: "Settings" },
 ];
 
+const learnLinks = [
+  { href: "/pricing", label: "Pricing" },
+  { href: "/blog", label: "Blog" },
+  { href: "/guides/building-a-second-brain", label: "Second Brain Guide" },
+  { href: "/compare/notion-vs-engineeros", label: "Notion vs EngineerOS" },
+  { href: "/compare/obsidian-vs-engineeros", label: "Obsidian vs EngineerOS" },
+];
+
 const sections = [
   { href: "#features", label: "Features" },
   { href: "#product", label: "Product" },
@@ -118,7 +126,7 @@ export function MarketingFooter() {
       />
 
       <div className="relative mx-auto w-full max-w-6xl px-4 pt-10 sm:px-6 md:pt-14">
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-[1.4fr_1fr_1fr]">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
             <Link href="/" className="flex items-center gap-2.5" aria-label="EngineerOS home">
               <span className="flex size-7 items-center justify-center rounded-md bg-gradient-to-br from-[#4f46e5] to-[#1e40af] text-white">
@@ -140,6 +148,19 @@ export function MarketingFooter() {
             </p>
             <ul className="space-y-2">
               {productLinks.map((link) => (
+                <li key={link.href}>
+                  <FooterLink href={link.href} label={link.label} />
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <p className="mb-3 font-mono text-[10px] tracking-[0.18em] text-faint uppercase">
+              Learn
+            </p>
+            <ul className="space-y-2">
+              {learnLinks.map((link) => (
                 <li key={link.href}>
                   <FooterLink href={link.href} label={link.label} />
                 </li>

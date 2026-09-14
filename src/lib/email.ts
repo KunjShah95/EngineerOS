@@ -7,6 +7,7 @@
 
 import { Resend } from "resend";
 
+import { appUrl as sharedAppUrl } from "@/lib/app-url";
 import { log } from "@/lib/logger";
 
 export interface EmailMessage {
@@ -44,13 +45,16 @@ const wrap = (body: string) =>
   </body></html>`;
 
 /**
- * Resolve an app-relative path against NEXT_PUBLIC_APP_URL. Returns null when
- * the origin is unset, so emails never emit a useless relative href.
+ * Resolve an app-relative path against the deployment's public origin. Returns
+ * null when the origin is unset, so emails never emit a useless relative href.
+ *
+ * Now delegates to lib/app-url so server-rendered links agree with the value
+ * next.config.ts gives client bundles. The shared helper also honours VERCEL_URL,
+ * which means "Open task" links now work on preview deployments — previously
+ * they silently degraded to no-link because only NEXT_PUBLIC_APP_URL was read.
  */
 function appUrl(path: string): string | null {
-  const origin = process.env.NEXT_PUBLIC_APP_URL;
-  if (!origin) return null;
-  return `${origin.replace(/\/$/, "")}${path}`;
+  return sharedAppUrl(path);
 }
 
 /** One in-app reminder surfaced — mirror it in the inbox. */
@@ -85,6 +89,34 @@ export function renderDigestEmail(args: {
      <h2 style="margin:0 0 8px;font-size:18px;">Here's what happened this week</h2>
      ${list("Completed tasks", args.completedTasks, "No tasks completed this week.")}
      ${list("New notes", args.newNotes, "No notes created this week.")}`,
+  );
+}
+
+/**
+ * A workspace invitation.
+ *
+ * Carries the accept link as a button, but the link is also shown as text:
+ * several email clients strip or rewrite links, and the token is the only way to
+ * accept. A recipient who can't click should at least be able to copy.
+ */
+export function renderInviteEmail(args: {
+  email: string;
+  workspaceName: string;
+  acceptUrl: string;
+}): string {
+  const url = escapeHtml(args.acceptUrl);
+  return wrap(
+    `<h2 style="margin:0 0 8px;font-size:18px;">Join ${escapeHtml(args.workspaceName)}</h2>
+     <p style="margin:0 0 20px;color:#6b7280;">
+       You've been invited to collaborate in an EngineerOS workspace, addressed to
+       ${escapeHtml(args.email)}.
+     </p>
+     <p style="margin:0 0 20px;">
+       <a href="${url}" style="display:inline-block;background:#101736;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:8px;font-size:13px;">Accept invitation</a>
+     </p>
+     <p style="margin:0 0 4px;font-size:12px;color:#6b7280;">Or open this link:</p>
+     <p style="margin:0 0 20px;font-size:12px;word-break:break-all;color:#374151;">${url}</p>
+     <p style="margin:0;font-size:12px;color:#9ca3af;">Invitations expire after 7 days. If you weren't expecting this, you can ignore it.</p>`,
   );
 }
 

@@ -79,7 +79,11 @@ export default async function BlogPost({
             wordCount: post.body.split(/\s+/).length,
             inLanguage: "en",
             image: `${BASE}/og-image.png`,
-            author: { "@type": "Organization", name: "EngineerOS", url: BASE },
+            author: {
+              "@type": "Person",
+              name: "Kunj Shah",
+              url: "https://github.com/KunjShah95",
+            },
             publisher: {
               "@type": "Organization",
               name: "EngineerOS",
@@ -103,6 +107,25 @@ export default async function BlogPost({
           }),
         }}
       />
+      {post.faq.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: post.faq.map((item) => ({
+                "@type": "Question",
+                name: item.question,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: item.answer,
+                },
+              })),
+            }),
+          }}
+        />
+      )}
 
       <div className="min-h-screen bg-base text-foreground">
         <MarketingNav />
@@ -127,6 +150,20 @@ export default async function BlogPost({
                     timeZone: "UTC",
                   })}
                 </time>
+                {post.updated !== post.date && (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span>
+                      Last updated{" "}
+                      {new Date(post.updated).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                        timeZone: "UTC",
+                      })}
+                    </span>
+                  </>
+                )}
                 <span aria-hidden>·</span>
                 <span>{post.readingMinutes} min read</span>
               </div>
@@ -160,6 +197,26 @@ export default async function BlogPost({
 
             <PostBody markdown={post.body} />
           </article>
+
+          {post.faq.length > 0 && (
+            <section className="mt-16 border-t border-border-subtle pt-10">
+              <h2 className="font-serif-display text-2xl leading-snug tracking-[-0.015em] text-foreground">
+                Frequently asked questions
+              </h2>
+              <div className="mt-8 space-y-6">
+                {post.faq.map((item, i) => (
+                  <details key={i} className="group rounded-lg border border-border-subtle bg-surface p-5">
+                    <summary className="cursor-pointer font-serif-display text-[15px] font-medium leading-snug text-foreground transition-colors group-hover:text-[color:var(--hero-mint)]">
+                      {item.question}
+                    </summary>
+                    <p className="mt-3 text-[15px] leading-relaxed text-secondary">
+                      {item.answer}
+                    </p>
+                  </details>
+                ))}
+              </div>
+            </section>
+          )}
 
           <section className="mt-16 border-t border-border-subtle pt-10">
             <p className="font-mono text-[11px] tracking-[0.18em] text-faint uppercase">

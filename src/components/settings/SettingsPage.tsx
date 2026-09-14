@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   Bell,
   Brain,
   Building2,
+  CreditCard,
   Database,
   Download,
   Link2,
@@ -20,6 +22,7 @@ import {
   Sun,
   Upload,
   User,
+  Users,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -45,6 +48,8 @@ import { createClient } from "@/lib/supabase/client";
 import { useSyncedState } from "@/lib/use-synced-state";
 import { useQueryClient } from "@tanstack/react-query";
 import { GitHubSection } from "@/components/integrations/GitHubSection";
+import { TeamSection } from "@/components/settings/TeamSection";
+import { BillingSection } from "@/components/settings/BillingSection";
 import { useAiConfig } from "@/hooks/useAiConfig";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
@@ -52,6 +57,8 @@ import type { LucideIcon } from "lucide-react";
 type SettingsSection =
   | "profile"
   | "workspace"
+  | "team"
+  | "billing"
   | "notifications"
   | "ai"
   | "voice"
@@ -63,6 +70,8 @@ type SettingsSection =
 const SECTIONS: { id: SettingsSection; label: string; icon: LucideIcon }[] = [
   { id: "profile", label: "Profile", icon: User },
   { id: "workspace", label: "Workspace", icon: Building2 },
+  { id: "team", label: "Team", icon: Users },
+  { id: "billing", label: "Plan & usage", icon: CreditCard },
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "ai", label: "AI Provider", icon: Brain },
   { id: "voice", label: "Voice Agent", icon: Mic },
@@ -430,10 +439,24 @@ export function SettingsPage() {
                     {savingName ? "Saving…" : "Save"}
                   </Button>
                 </div>
-                <p className="text-xs text-faint">One workspace per account in this version.</p>
+                <p className="text-xs text-faint">
+                  The name shown at the top of the sidebar and in invitations.
+                  {workspace.role && workspace.role !== "owner" && " Only the workspace owner can rename it."}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href="/pricing">Manage plan</Link>
+                  </Button>
+                </div>
               </div>
             </section>
           )}
+
+          {/* Team */}
+          {activeSection === "team" && <TeamSection />}
+
+          {/* Plan & usage */}
+          {activeSection === "billing" && <BillingSection />}
 
           {/* Notifications */}
           {activeSection === "notifications" && (

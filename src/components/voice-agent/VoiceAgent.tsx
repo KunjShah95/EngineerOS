@@ -29,20 +29,21 @@ export function VoiceAgent() {
   const tts: TtsSelection = { provider: "openai", voice };
   const { status, lastMessage, error, toggle, cancel } = useVoiceAgent(tts);
   const [open, setOpen] = useState(false);
-  const [amplitude, setAmplitude] = useState(0);
+  // Drives the orb pulse and the waveform shimmer. Updated once per animation
+  // frame while listening; both numbers are consumed only when
+  // `status === "listening"`, so no reset is needed when it changes — a stale
+  // value is never read, which also avoids a setState-in-effect cascade.
+  const [anim, setAnim] = useState({ amplitude: 0, phase: 0 });
   const rafRef = useRef<number | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Fake waveform amplitude during "listening" (just animates the orb)
   useEffect(() => {
-    if (status !== "listening") {
-      setAmplitude(0);
-      return;
-    }
+    if (status !== "listening") return;
     let t = 0;
     const tick = () => {
       t += 0.08;
-      setAmplitude(0.4 + Math.abs(Math.sin(t)) * 0.6);
+      setAnim({ amplitude: 0.4 + Math.abs(Math.sin(t)) * 0.6, phase: t });
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
@@ -69,7 +70,7 @@ export function VoiceAgent() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, toggle, cancel]);
 
-  const orbScale = status === "listening" ? 1 + amplitude * 0.18 : 1;
+  const orbScale = status === "listening" ? 1 + anim.amplitude * 0.18 : 1;
   const isActive = status !== "idle";
 
   return (
@@ -163,7 +164,7 @@ export function VoiceAgent() {
               {Array.from({ length: 32 }).map((_, i) => {
                 const bar =
                   status === "listening"
-                    ? 0.15 + amplitude * Math.abs(Math.sin(i * 0.6 + Date.now() * 0.001))
+                    ? 0.15 + anim.amplitude * Math.abs(Math.sin(i * 0.6 + anim.phase))
                     : status === "speaking"
                     ? 0.2 + 0.4 * Math.abs(Math.sin(i * 0.5))
                     : 0.08;
