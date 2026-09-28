@@ -1,6 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
+import { drainIndexQueue } from "@/lib/ai/rag";
+import { loadAiConfig } from "@/lib/ai/db-config";
+import { runWithAiConfig } from "@/lib/ai/server-config";
 import { drainAutomation, type DrainSummary } from "@/lib/automation";
 import { log } from "@/lib/logger";
 
@@ -13,6 +16,8 @@ export const dynamic = "force-dynamic";
 // Stay under the 10s Hobby limit so a single over-budget run can't be killed
 // mid-workspace. Work left over is idempotently re-processed next run.
 const TIME_BUDGET_MS = 9_000;
+// Queue rows re-embedded per workspace per run (see the loop below).
+const INDEX_BATCH = 10;
 
 export async function GET(request: Request) {
   // Vercel Cron sends `Authorization: Bearer <CRON_SECRET>` when the
@@ -44,12 +49,13 @@ export async function GET(request: Request) {
   let drained = 0;
   let lastProcessed: string | null = null;
   let brokeOnBudget = false;
-  const total: DrainSummary = {
+  const total: DrainSummary & { indexed: number } = {
     recurring_created: 0,
     triaged: 0,
     rollover_done: false,
     reminders_created: 0,
     digests_sent: 0,
+    indexed: 0,
   };
 
   // Resume where the previous run left off so that, as the workspace count
@@ -92,6 +98,14 @@ export async function GET(request: Request) {
       total.rollover_done = total.rollover_done || result.rollover_done;
       total.reminders_created += result.reminders_created;
       total.digests_sent += result.digests_sent;
+
+      // The in-app drain only runs while a tab is open, so an idle workspace's
+      // index would otherwise stay stale indefinitely. Small batch: embedding
+      // calls are slow and the whole run shares the Hobby-safe budget; the
+      // rest carries over to the next run or in-app drain.
+      const aiConfig = await loadAiConfig(admin, workspace.id);
+      const indexed = await runWithAiConfig(aiConfig, () => drainIndexQueue(admin, workspace.id, INDEX_BATCH));
+      total.indexed += indexed.drained;
     } catch (err) {
       // One workspace failing must not abort the rest; the next run retries it.
       log("error", "cron drain — workspace failed", {

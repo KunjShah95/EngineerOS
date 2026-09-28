@@ -84,7 +84,7 @@ One dialog (`⌘K` or the Quick Capture button), two keystrokes, and whatever's 
 
 ### Integrate
 
-- **GitHub** — import issues into tasks; link repos to projects
+- **GitHub** — import issues into tasks; link repos to projects. With the webhook configured, issue edits, closes, reopens and deletes flow back into the imported tasks and get re-indexed within seconds. Turn on "Capture merged PRs as notes" for a repo and every merged PR becomes a searchable decision note (description + links to the tasks it closes) — the why gets recorded without anyone filing it
 - **Calendar** — export tasks with due dates to `.ics`
 
 ### Share
@@ -136,13 +136,14 @@ Everything is opt-in. At minimum you need the Supabase pair for real data.
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Real data — required |
 | `OPENAI_API_KEY` | Semantic search, AI assistant, PDF chat, voice transcription, summaries. Other providers (Anthropic, Gemini, Mistral, Groq, Cohere, HuggingFace, NVIDIA NIM, OpenRouter) are selectable in Settings. |
 | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | GitHub integration OAuth |
+| `GITHUB_WEBHOOK_SECRET` | GitHub webhook at `/api/github/webhook` (JSON; "Issues" + "Pull requests" events) — issue → task sync and merged PR → note capture. Needs `SUPABASE_SERVICE_ROLE_KEY` |
 | `RESEND_API_KEY` / `EMAIL_FROM` | Email reminders (Resend) |
 | `NEXT_PUBLIC_SENTRY_DSN` / `SENTRY_DSN` | Error tracking |
 | `SENTRY_ORG` / `SENTRY_PROJECT` / `SENTRY_AUTH_TOKEN` | Sentry source-map upload (CI only) |
 | `NEXT_PUBLIC_PLAUSIBLE_DOMAIN` | Analytics |
 | `NEXT_PUBLIC_APP_URL` | Canonical origin for metadata — auto-derived from `VERCEL_URL` if not set |
 | `CRON_SECRET` | Server cron auth — Vercel sends it as `Authorization: Bearer` to `/api/cron/drain` |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server cron drain only — never expose to the client |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server cron drain and GitHub webhook only — never expose to the client |
 
 Never expose `SUPABASE_SERVICE_ROLE_KEY` to the client.
 
@@ -210,6 +211,7 @@ The repo is Vercel-ready. Push to GitHub, import at vercel.com, and set the envi
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Production + Preview + Development |
 | `OPENAI_API_KEY` | Production (Preview optional) |
 | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | Production only |
+| `GITHUB_WEBHOOK_SECRET` | Production only |
 | `RESEND_API_KEY` / `EMAIL_FROM` | Production |
 | `NEXT_PUBLIC_SENTRY_DSN` | Production + Preview |
 | `SENTRY_AUTH_TOKEN` | Build-time, Production + Preview |
@@ -224,7 +226,7 @@ Every push to the production branch deploys. Every PR gets a preview URL.
 - `NEXT_PUBLIC_APP_URL` is auto-derived from `VERCEL_URL` on previews. Only set it for a custom domain on production.
 - Sentry source-map upload requires `SENTRY_AUTH_TOKEN` as a build-time variable.
 - `vercel.json` pins functions to `iad1` (us-east-1), adds security headers (Permissions-Policy keeps `microphone=(self)` so voice notes keep working), and registers a cron at `/api/cron/drain` — set `CRON_SECRET` (any long random string) + `SUPABASE_SERVICE_ROLE_KEY` for it to run.
-- The shipped cron schedule is `0 8 * * *` (daily, 08:00 UTC) — the Hobby plan runs at most one cron per day. On Pro you can tighten it (e.g. `*/15 * * * *`) for near-real-time reminders when the app is closed. The client-drain hooks still cover everything while the app is open.
+- The shipped cron schedule is `0 8 * * *` (daily, 08:00 UTC) — the Hobby plan runs at most one cron per day. On Pro you can tighten it (e.g. `*/15 * * * *`) for near-real-time reminders when the app is closed. The client-drain hooks still cover everything while the app is open. The cron also re-embeds up to 10 queued changes per workspace per run, so the search index catches up even when nobody opens the app.
 
 ### Optional services
 
