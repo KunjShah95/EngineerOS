@@ -85,6 +85,7 @@ One dialog (`⌘K` or the Quick Capture button), two keystrokes, and whatever's 
 ### Integrate
 
 - **GitHub** — import issues into tasks; link repos to projects. With the webhook configured, issue edits, closes, reopens and deletes flow back into the imported tasks and get re-indexed within seconds. Turn on "Capture merged PRs as notes" for a repo and every merged PR becomes a searchable decision note (description + links to the tasks it closes) — the why gets recorded without anyone filing it
+- **Decisions** — each captured PR (or any note, via "Extract decision") is turned into a lightweight decision record by AI: the decision, the context that forced it, rejected alternatives, trade-offs, and when to revisit. Browse them all at `/decisions`. Needs an AI provider key; with none, no record is invented
 - **Calendar** — export tasks with due dates to `.ics`
 
 ### Share
