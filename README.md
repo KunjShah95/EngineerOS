@@ -153,6 +153,11 @@ Everything is opt-in. At minimum you need the Supabase pair for real data.
 
 Never expose `SUPABASE_SERVICE_ROLE_KEY` to the client.
 
+**GitHub OAuth, two flows:** account sign-in and the workspace integration are separate.
+
+- **Sign-in** ("Continue with GitHub" on `/login` + `/register`) runs through Supabase Auth — no app env vars. Enable it in the Supabase dashboard: Auth → Sign In / Providers → GitHub (set a GitHub OAuth app's Client ID/Secret), and register `https://<project-ref>.supabase.co/auth/v1/callback` as that OAuth app's callback URL. Under Auth → URL Configuration, add `https://engineeros-delta.vercel.app/auth/callback` (and `http://localhost:3000/auth/callback` for dev) to the allowed Redirect URLs. The app completes the session exchange at `/auth/callback`.
+- **Integration** (linking repos, issue → task sync) uses `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` and the callback `/api/auth/github/callback` on the same or a separate OAuth app — see the table above.
+
 ---
 
 ## Scripts
@@ -228,7 +233,7 @@ Every push to the production branch deploys. Every PR gets a preview URL.
 
 **Notes:**
 
-- GitHub OAuth only works on production — the preview callback origin won't match. The integration shows as disconnected on previews, nothing breaks.
+- GitHub OAuth only works on production — the preview callback/redirect origins won't match the GitHub OAuth app or Supabase allow-list. The integration shows as disconnected on previews, nothing breaks.
 - `NEXT_PUBLIC_APP_URL` is auto-derived from `VERCEL_URL` on previews. Only set it for a custom domain on production.
 - Sentry source-map upload requires `SENTRY_AUTH_TOKEN` as a build-time variable.
 - `vercel.json` pins functions to `iad1` (us-east-1), adds security headers (Permissions-Policy keeps `microphone=(self)` so voice notes keep working), and registers a cron at `/api/cron/drain` — set `CRON_SECRET` (any long random string) + `SUPABASE_SERVICE_ROLE_KEY` for it to run.
