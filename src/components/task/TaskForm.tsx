@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { RelatedDecisions } from "@/components/decisions/RelatedDecisions";
 import { useCreateTask, type CreateTaskInput, type TaskFilters } from "@/hooks/useTasks";
 import { useProjects } from "@/hooks/useProjects";
 import { PRIORITY_META, TASK_STATUS_META } from "@/lib/task-meta";
@@ -79,6 +80,7 @@ export function TaskForm({
             reset fresh on every open. */}
         <TaskFormFields
           key={isOpen ? "open" : "closed"}
+          workspaceId={workspaceId}
           defaultStatus={defaultStatus ?? "todo"}
           projects={projects ?? []}
           submitting={createTask.isPending}
@@ -91,12 +93,14 @@ export function TaskForm({
 }
 
 function TaskFormFields({
+  workspaceId,
   defaultStatus,
   projects,
   submitting,
   onSubmit,
   onCancel,
 }: {
+  workspaceId: string;
   defaultStatus: TaskStatus;
   projects: Project[];
   submitting: boolean;
@@ -156,6 +160,8 @@ function TaskFormFields({
             autoFocus
           />
         </div>
+
+        <RelatedDecisions workspaceId={workspaceId} text={title} />
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
