@@ -17,6 +17,7 @@ import {
   Pin,
   PinOff,
   RefreshCw,
+  Scale,
   Sparkles,
   Trash2,
 } from "lucide-react";
@@ -44,6 +45,7 @@ import { useDebouncedCallback } from "@/lib/use-debounced-callback";
 import { useSyncedState } from "@/lib/use-synced-state";
 import { cn, slugify } from "@/lib/utils";
 import { useAiSummary, useGenerateSummary } from "@/hooks/useAiSummary";
+import { useExtractDecision, useNoteDecision } from "@/hooks/useDecisions";
 import { useNoteVersions, useSaveNoteVersion } from "@/hooks/useNoteVersions";
 import { VoiceRecorder } from "@/components/voice/VoiceRecorder";
 import { VoiceNotesList } from "@/components/voice/VoiceNotesList";
@@ -138,6 +140,23 @@ export function NoteDetail({ noteId }: { noteId: string }) {
 
   const { data: aiSummary } = useAiSummary(workspaceId, "note", noteId);
   const generateSummary = useGenerateSummary(workspaceId, "note", noteId);
+  const { data: decision } = useNoteDecision(workspaceId, noteId);
+  const extractDecision = useExtractDecision(workspaceId);
+
+  const runExtractDecision = () =>
+    extractDecision.mutate(noteId, {
+      onSuccess: (r) => {
+        if (r.status !== "saved") return toast.info("No clear decision found in this note");
+        toast.success("Decision record saved");
+        if (r.conflicts > 0) {
+          toast.warning(
+            `This may reverse ${r.conflicts} earlier decision${r.conflicts > 1 ? "s" : ""} — review on the Decisions page`,
+            { action: { label: "Review", onClick: () => router.push("/decisions") }, duration: 10_000 },
+          );
+        }
+      },
+      onError: (err) => toast.error(err.message),
+    });
 
   if (isLoading || !workspace) return <PageLoader label="Loading note…" />;
 
@@ -406,6 +425,27 @@ export function NoteDetail({ noteId }: { noteId: string }) {
 
       {/* AI summary + voice notes live under the editor */}
       <div className="mb-6 space-y-4">
+        {decision && (
+          <div className="rounded-lg border border-border-subtle bg-surface p-4">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-accent uppercase">
+                <Scale className="size-3.5" strokeWidth={1.75} />
+                Decision
+              </p>
+              <Link href="/decisions" className="text-xs text-faint transition-colors hover:text-accent">
+                All decisions
+              </Link>
+            </div>
+            <p className="text-sm font-medium text-foreground">{decision.title}</p>
+            <p className="mt-1 text-sm leading-relaxed text-secondary">{decision.decision}</p>
+            {decision.alternatives.length > 0 && (
+              <p className="mt-2 text-xs text-faint">
+                Rejected: {decision.alternatives.map((a) => a.option).join(" · ")}
+              </p>
+            )}
+          </div>
+        )}
+
         {(aiSummary || summaryExpanded) && (
           <div className="rounded-lg border border-border-subtle bg-surface p-4">
             <div className="mb-2 flex items-center justify-between gap-2">
@@ -448,6 +488,14 @@ export function NoteDetail({ noteId }: { noteId: string }) {
           >
             <Sparkles className="size-3.5" strokeWidth={1.75} />
             Summarize with AI
+          </Button>
+          <Button variant="outline" size="sm" onClick={runExtractDecision} disabled={extractDecision.isPending}>
+            {extractDecision.isPending ? (
+              <Loader2 className="size-3.5 animate-spin" strokeWidth={1.75} />
+            ) : (
+              <Scale className="size-3.5" strokeWidth={1.75} />
+            )}
+            {decision ? "Re-extract decision" : "Extract decision"}
           </Button>
           <VoiceRecorder workspaceId={workspace.id} noteId={noteId} compact />
         </div>

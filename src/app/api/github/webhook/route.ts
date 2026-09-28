@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { after, NextResponse } from "next/server";
 
+import { extractDecisionForNote } from "@/lib/ai/decisions";
 import { drainIndexQueue } from "@/lib/ai/rag";
 import { loadAiConfig } from "@/lib/ai/db-config";
 import { runWithAiConfig } from "@/lib/ai/server-config";
@@ -17,7 +18,7 @@ import {
 import { log } from "@/lib/logger";
 
 // GitHub waits 10s for a response, so the route only does the DB write;
-// re-embedding runs in after() within this budget.
+// decision extraction and re-embedding run in after() within this budget.
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
@@ -77,13 +78,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: result.error }, { status: 500 });
   }
 
-  if (result.workspaceIds.length > 0) after(() => drainWorkspaces(admin, result.workspaceIds));
+  if (result.workspaceIds.length > 0) {
+    after(async () => {
+      await extractDecisions(admin, result.newNotes ?? []);
+      await drainWorkspaces(admin, result.workspaceIds);
+    });
+  }
   return NextResponse.json({ ok: true, ...result.summary });
 }
 
 type HandlerResult =
-  | { workspaceIds: string[]; summary: Record<string, unknown> }
+  | { workspaceIds: string[]; newNotes?: NewNote[]; summary: Record<string, unknown> }
   | { error: string };
+
+type NewNote = { workspaceId: string; noteId: string };
 
 async function handleIssue(admin: SupabaseClient, payload: GitHubIssuePayload): Promise<HandlerResult> {
   const patch = issueEventToTaskPatch(payload);
@@ -123,7 +131,7 @@ async function handlePullRequest(admin: SupabaseClient, payload: GitHubPullReque
   if (!links || links.length === 0) return { workspaceIds: [], summary: { ignored: "repo-not-linked" } };
 
   const issueUrls = closingIssueUrls(pr.body, repo);
-  const created: string[] = [];
+  const created: NewNote[] = [];
 
   for (const { workspace_id: workspaceId } of links as { workspace_id: string }[]) {
     let linkedTasks: LinkedTask[] = [];
@@ -151,10 +159,31 @@ async function handlePullRequest(admin: SupabaseClient, payload: GitHubPullReque
       log("error", "github webhook — PR note insert failed", { pr: pr.html_url, workspace: workspaceId, error: error.message });
       return { error: "insert failed" };
     }
-    if (data && data.length > 0) created.push(workspaceId);
+    const noteId = (data as { id: string }[] | null)?.[0]?.id;
+    if (noteId) created.push({ workspaceId, noteId });
   }
 
-  return { workspaceIds: created, summary: { action: "merged", notes: created.length } };
+  return {
+    workspaceIds: created.map((n) => n.workspaceId),
+    newNotes: created,
+    summary: { action: "merged", notes: created.length },
+  };
+}
+
+/**
+ * Turn each new PR note into a decision record. Best-effort: no AI key, a
+ * routine PR ("bump deps") or a provider error just means no record — the
+ * user can extract one later from the note.
+ */
+async function extractDecisions(admin: SupabaseClient, notes: NewNote[]) {
+  for (const { workspaceId, noteId } of notes) {
+    try {
+      const aiConfig = await loadAiConfig(admin, workspaceId);
+      await runWithAiConfig(aiConfig, () => extractDecisionForNote(admin, workspaceId, noteId));
+    } catch (err) {
+      log("warn", "github webhook — decision extraction failed", { note: noteId, error: (err as Error).message });
+    }
+  }
 }
 
 async function drainWorkspaces(admin: SupabaseClient, workspaceIds: string[]) {

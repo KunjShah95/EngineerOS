@@ -85,6 +85,11 @@ One dialog (`⌘K` or the Quick Capture button), two keystrokes, and whatever's 
 ### Integrate
 
 - **GitHub** — import issues into tasks; link repos to projects. With the webhook configured, issue edits, closes, reopens and deletes flow back into the imported tasks and get re-indexed within seconds. Turn on "Capture merged PRs as notes" for a repo and every merged PR becomes a searchable decision note (description + links to the tasks it closes) — the why gets recorded without anyone filing it
+- **Decisions** — each captured PR (or any note, via "Extract decision") is turned into a lightweight decision record by AI: the decision, the context that forced it, rejected alternatives, trade-offs, and when to revisit. Browse them all at `/decisions`. Needs an AI provider key; with none, no record is invented
+- **Paste a chat** — drop a ChatGPT / Claude / Slack thread into `/decisions → Paste a chat`; it's saved as a searchable note and its decision becomes a record
+- **Decided before — check first** — while you type a new task, related past decisions appear under the title (semantic when embeddings are on, keyword otherwise), so settled questions don't get re-litigated
+- **Stale-decision alerts** — when a new decision looks like it reverses or conflicts with an earlier one ("add Redis" vs "no Redis, Postgres is enough"), the earlier record is flagged on `/decisions` under "Needs review". Mark it superseded or dismiss the alert; superseded decisions drop out of related-decision hints
+- **Automatic webhook** — linking a repo for PR capture registers the GitHub webhook for you when you're a repo admin (production only; local dev can't receive deliveries). Unlinking removes the hook EngineerOS created
 - **Calendar** — export tasks with due dates to `.ics`
 
 ### Share
@@ -144,6 +149,7 @@ Everything is opt-in. At minimum you need the Supabase pair for real data.
 | `NEXT_PUBLIC_APP_URL` | Canonical origin for metadata — auto-derived from `VERCEL_URL` if not set |
 | `CRON_SECRET` | Server cron auth — Vercel sends it as `Authorization: Bearer` to `/api/cron/drain` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server cron drain and GitHub webhook only — never expose to the client |
+| `NEXT_PUBLIC_BILLING_ENFORCED` | Set to `true` to enforce Free/Pro/Team limits. Off by default: the tenancy migration makes `plan` exist, this makes it bind. Inlined at build, so it needs a redeploy |
 
 Never expose `SUPABASE_SERVICE_ROLE_KEY` to the client.
 

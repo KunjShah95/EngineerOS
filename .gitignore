@@ -49,3 +49,6 @@ dev.log
 
 # Claude Code local config
 .claude/
+videos/
+# Supabase CLI local state (project ref, versions)
+supabase/.temp/

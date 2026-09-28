@@ -172,6 +172,47 @@ describe("upgrade paths", () => {
   });
 });
 
+describe("billing-enabled switch", () => {
+  it("reports no plan and no limits when billing is off", () => {
+    // The state a self-hoster is in right after `supabase db push`: the plan
+    // column exists and says 'free', but nobody has enabled enforcement. If this
+    // regressed, migrating would silently rate-limit their assistant.
+    const e = getEntitlements("free", false);
+    expect(e.enforced).toBe(false);
+    expect(e.plan).toBeNull();
+    expect(e.limits.aiMessagesPerMonth).toBeNull();
+    expect(e.limits.workspaces).toBeNull();
+    expect(e.features.team).toBe(true);
+  });
+
+  it("ignores even a paid plan when billing is off", () => {
+    expect(getEntitlements("team", false).enforced).toBe(false);
+  });
+
+  it("still enforces nothing when billing is on but the column is absent", () => {
+    // Two independent off-switches, both must hold.
+    expect(getEntitlements(null, true).enforced).toBe(false);
+  });
+
+  it("passes every gate when billing is off", () => {
+    const off = getEntitlements("free", false);
+    expect(checkGate(off, { type: "create_workspace", ownedCount: 999 })).toBeNull();
+    expect(checkGate(off, { type: "invite_member", currentSeats: 999 })).toBeNull();
+    expect(
+      checkGate(off, { type: "ai_message", usedThisMonth: 999, hasOwnProviderKey: false })
+    ).toBeNull();
+  });
+
+  it("enforces the free tier once billing is switched on", () => {
+    const on = getEntitlements("free", true);
+    expect(on.enforced).toBe(true);
+    expect(on.limits.aiMessagesPerMonth).toBe(60);
+    expect(checkGate(on, { type: "ai_message", usedThisMonth: 60, hasOwnProviderKey: false })).not.toBeNull();
+    // ...and an externally-funded call is still waived on the paid-plan path.
+    expect(checkGate(on, { type: "ai_message", usedThisMonth: 999, hasOwnProviderKey: true })).toBeNull();
+  });
+});
+
 describe("bestPlan", () => {
   it("picks the highest plan an account holds", () => {
     expect(bestPlan(["free", "team", "pro"])).toBe("team");

@@ -15,6 +15,8 @@
 import { NextResponse } from "next/server";
 
 import { loadAiConfig } from "@/lib/ai/db-config";
+import { getActiveProvider } from "@/lib/ai/providers/registry";
+import { isBillingEnabled } from "@/lib/saas/billing-enabled";
 import { isMissingSchemaError } from "@/lib/supabase/errors";
 import type { Supabase } from "@/lib/supabase/auth";
 import {
@@ -31,21 +33,37 @@ export { isMissingSchemaError };
 
 /** Entitlements for a workspace row, tolerant of a missing `plan` column. */
 export function entitlementsFor(workspace: Pick<ActiveWorkspace, "plan"> | null | undefined): Entitlements {
-  return getEntitlements(workspace?.plan ?? null);
+  return getEntitlements(workspace?.plan ?? null, isBillingEnabled());
 }
 
 /**
- * Does this workspace pay for its own AI?
+ * Does someone other than this deployment pay for the next assistant call?
  *
- * When an owner has saved a provider key, assistant calls are billed to their
- * account, so a platform meter would charge them twice for the same tokens.
- * Absent config we assume platform-funded and apply the limit: the conservative
- * direction for revenue, and a no-op for a self-hoster (unenforced anyway).
+ * Two funding sources exist, and both have to be checked:
+ *
+ *   - a key the owner saved for this workspace (the `ai_configs` row), and
+ *   - a key the operator put in the environment (`AI_PROVIDER` + its API key),
+ *     which `getActiveProvider()` resolves.
+ *
+ * Checking only the first was a real bug: a self-hoster whose tokens are billed
+ * to their own provider account would still be capped by a platform meter that
+ * costs them nothing to serve — double-charging in the one direction that makes
+ * people leave. It also made the free tier *worse* than no plan at all, since
+ * removing the env key would have been the only way to lift the limit.
  */
-export async function hasOwnProviderKey(supabase: Supabase, workspaceId: string): Promise<boolean> {
+export async function aiIsExternallyFunded(
+  supabase: Supabase,
+  workspaceId: string
+): Promise<boolean> {
   const config = await loadAiConfig(supabase, workspaceId);
-  return Boolean(config?.apiKey);
+  if (config?.apiKey) return true;
+  // No request-scoped config is bound at this point, so this resolves purely
+  // against the environment: an operator-configured provider counts as funded.
+  return getActiveProvider() !== null;
 }
+
+/** Back-compat alias for call sites that read it as a BYOK question. */
+export const hasOwnProviderKey = aiIsExternallyFunded;
 
 /** Assistant messages used this calendar month. 0 when the meter isn't installed. */
 export async function aiUsageThisMonth(supabase: Supabase, workspaceId: string): Promise<number> {
