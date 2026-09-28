@@ -97,3 +97,19 @@ export async function fetchGitHubIssues(token: string, repo: string): Promise<Gi
   // The issues endpoint includes PRs; filter them out.
   return issues.filter((i) => !("pull_request" in i));
 }
+
+/** "owner/repo" as GitHub allows it; rejects paths, queries and whitespace. */
+export const REPO_FULL_NAME = /^[\w.-]+\/[\w.-]+$/;
+
+/**
+ * Whether `token` can read `repo`, returning GitHub's canonical full_name
+ * (null on 403/404). Gatekeeps repo links: the webhook writes a linked repo's
+ * PR descriptions into the workspace, so a link must prove access first.
+ */
+export async function readableRepoName(token: string, repo: string): Promise<string | null> {
+  if (!REPO_FULL_NAME.test(repo)) return null;
+  const res = await fetch(`${GITHUB_API}/repos/${repo}`, { headers: githubHeaders(token) });
+  if (res.status === 403 || res.status === 404) return null;
+  if (!res.ok) throw new Error(`GitHub repo fetch failed (${res.status})`);
+  return ((await res.json()) as { full_name: string }).full_name;
+}

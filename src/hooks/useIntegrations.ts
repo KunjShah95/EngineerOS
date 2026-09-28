@@ -76,3 +76,49 @@ export async function fetchGitHubIssues(repo: string): Promise<GitHubIssue[]> {
   if (!res.ok) throw new Error("Failed to load issues");
   return (await res.json()) as GitHubIssue[];
 }
+
+/** Repos whose merged PRs are captured as decision notes (lowercased names). */
+export function useRepoLinks(workspaceId: string | null) {
+  return useQuery({
+    queryKey: ["github-repo-links", workspaceId ?? ""],
+    queryFn: async (): Promise<string[]> => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("github_repo_links")
+        .select("repo_full_name")
+        .eq("workspace_id", workspaceId!)
+        .eq("capture_prs", true);
+      if (error) throw error;
+      return ((data ?? []) as { repo_full_name: string }[]).map((r) => r.repo_full_name);
+    },
+    enabled: Boolean(workspaceId),
+  });
+}
+
+const REPO_LINK_ERRORS: Record<string, string> = {
+  "no-access": "Your GitHub account can't read that repository",
+  "not-connected": "Connect GitHub first",
+  "not-configured": "PR capture isn't configured on this server",
+};
+
+export function useSetRepoCapture(workspaceId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ repo, enabled }: { repo: string; enabled: boolean }) => {
+      const res = enabled
+        ? await fetch("/api/github/repo-links", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ repo }),
+          })
+        : await fetch(`/api/github/repo-links?repo=${encodeURIComponent(repo)}`, { method: "DELETE" });
+      if (!res.ok) {
+        const json = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(REPO_LINK_ERRORS[json?.error ?? ""] ?? json?.error ?? "Couldn't update PR capture");
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["github-repo-links", workspaceId ?? ""] });
+    },
+  });
+}

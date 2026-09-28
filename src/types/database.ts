@@ -258,6 +258,8 @@ export interface Note {
   body_markdown: string;
   status: NoteStatus;
   pinned: boolean;
+  /** GitHub PR this note was captured from (merged-PR webhook); null for hand-written notes. */
+  source_url?: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;

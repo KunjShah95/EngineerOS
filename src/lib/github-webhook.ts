@@ -72,3 +72,90 @@ export function issueEventToTaskPatch(payload: GitHubIssuePayload, now = new Dat
       return null;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Merged pull requests → decision notes
+// ---------------------------------------------------------------------------
+
+export interface GitHubPullRequestPayload {
+  action: string;
+  repository?: { full_name: string };
+  pull_request?: {
+    number: number;
+    html_url: string;
+    title: string;
+    body: string | null;
+    merged: boolean;
+    merged_at: string | null;
+    user: { login: string } | null;
+    base: { ref: string };
+  };
+}
+
+/** Only the final merge is worth a note; drafts and abandoned PRs are noise. */
+export function isMergedPullRequest(payload: GitHubPullRequestPayload): boolean {
+  return payload.action === "closed" && Boolean(payload.pull_request?.merged && payload.repository);
+}
+
+// GitHub's closing keywords: https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue
+const CLOSING_REF = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*:?\s+(?:([\w.-]+\/[\w.-]+))?#(\d+)\b/gi;
+
+/**
+ * Issue URLs a PR body closes ("Fixes #12", "resolves owner/repo#3"), in order
+ * of first mention. Used to link the note to tasks imported from those issues.
+ */
+export function closingIssueUrls(body: string | null, repoFullName: string): string[] {
+  const urls = new Set<string>();
+  for (const match of (body ?? "").matchAll(CLOSING_REF)) {
+    const repo = match[1] ?? repoFullName;
+    urls.add(`https://github.com/${repo}/issues/${match[2]}`);
+  }
+  return [...urls];
+}
+
+/** Long PR bodies (logs, screenshots) would drown the chunk index. */
+export const PR_BODY_LIMIT = 20_000;
+
+export interface LinkedTask {
+  id: string;
+  title: string;
+  source_url: string;
+}
+
+export function pullRequestToNote(
+  payload: GitHubPullRequestPayload,
+  issueUrls: string[],
+  linkedTasks: LinkedTask[],
+): { title: string; body_markdown: string } {
+  const pr = payload.pull_request!;
+  const repo = payload.repository!.full_name;
+
+  const rawBody = (pr.body ?? "").trim();
+  const body =
+    rawBody.length > PR_BODY_LIMIT
+      ? `${rawBody.slice(0, PR_BODY_LIMIT)}\n\n_…truncated — full description on GitHub._`
+      : rawBody || "_No description provided._";
+
+  const merged = pr.merged_at ? pr.merged_at.slice(0, 10) : "unknown date";
+  const author = pr.user ? ` by @${pr.user.login}` : "";
+
+  const lines = [
+    `> Merged [${repo}#${pr.number}](${pr.html_url})${author} into \`${pr.base.ref}\` on ${merged}.`,
+    "",
+    "## Why",
+    "",
+    body,
+  ];
+
+  if (issueUrls.length > 0) {
+    const taskByUrl = new Map(linkedTasks.map((t) => [t.source_url, t]));
+    lines.push("", "## Closes", "");
+    for (const url of issueUrls) {
+      const ref = url.replace("https://github.com/", "").replace("/issues/", "#");
+      const task = taskByUrl.get(url);
+      lines.push(task ? `- [${ref}](${url}) · task: [${task.title}](/tasks?task=${task.id})` : `- [${ref}](${url})`);
+    }
+  }
+
+  return { title: `PR #${pr.number}: ${pr.title}`, body_markdown: lines.join("\n") };
+}

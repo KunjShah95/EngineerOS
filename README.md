@@ -84,7 +84,7 @@ One dialog (`⌘K` or the Quick Capture button), two keystrokes, and whatever's 
 
 ### Integrate
 
-- **GitHub** — import issues into tasks; link repos to projects. With the webhook configured, issue edits, closes, reopens and deletes flow back into the imported tasks and get re-indexed within seconds
+- **GitHub** — import issues into tasks; link repos to projects. With the webhook configured, issue edits, closes, reopens and deletes flow back into the imported tasks and get re-indexed within seconds. Turn on "Capture merged PRs as notes" for a repo and every merged PR becomes a searchable decision note (description + links to the tasks it closes) — the why gets recorded without anyone filing it
 - **Calendar** — export tasks with due dates to `.ics`
 
 ### Share
@@ -136,7 +136,7 @@ Everything is opt-in. At minimum you need the Supabase pair for real data.
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Real data — required |
 | `OPENAI_API_KEY` | Semantic search, AI assistant, PDF chat, voice transcription, summaries. Other providers (Anthropic, Gemini, Mistral, Groq, Cohere, HuggingFace, NVIDIA NIM, OpenRouter) are selectable in Settings. |
 | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | GitHub integration OAuth |
-| `GITHUB_WEBHOOK_SECRET` | Issue → task sync at `/api/github/webhook` (JSON, "Issues" events). Needs `SUPABASE_SERVICE_ROLE_KEY` |
+| `GITHUB_WEBHOOK_SECRET` | GitHub webhook at `/api/github/webhook` (JSON; "Issues" + "Pull requests" events) — issue → task sync and merged PR → note capture. Needs `SUPABASE_SERVICE_ROLE_KEY` |
 | `RESEND_API_KEY` / `EMAIL_FROM` | Email reminders (Resend) |
 | `NEXT_PUBLIC_SENTRY_DSN` / `SENTRY_DSN` | Error tracking |
 | `SENTRY_ORG` / `SENTRY_PROJECT` / `SENTRY_AUTH_TOKEN` | Sentry source-map upload (CI only) |

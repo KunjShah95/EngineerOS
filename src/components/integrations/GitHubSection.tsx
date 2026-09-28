@@ -13,11 +13,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import {
   fetchGitHubIssues,
   fetchGitHubRepos,
   useDisconnectIntegration,
   useIntegration,
+  useRepoLinks,
+  useSetRepoCapture,
 } from "@/hooks/useIntegrations";
 import { useCreateTask } from "@/hooks/useTasks";
 import type { GitHubIssue, GitHubRepo } from "@/hooks/useIntegrations";
@@ -27,6 +30,18 @@ export function GitHubSection({ workspaceId }: { workspaceId: string }) {
   const { data: integration, isLoading } = useIntegration(workspaceId);
   const disconnect = useDisconnectIntegration(workspaceId);
   const createTask = useCreateTask(workspaceId);
+  const { data: linkedRepos = [] } = useRepoLinks(integration ? workspaceId : null);
+  const setCapture = useSetRepoCapture(workspaceId);
+
+  const toggleCapture = (repo: string, enabled: boolean) =>
+    setCapture.mutate(
+      { repo, enabled },
+      {
+        onSuccess: () =>
+          toast.success(enabled ? `Merged PRs from ${repo} will become notes` : `Stopped capturing PRs from ${repo}`),
+        onError: (err) => toast.error(err.message),
+      },
+    );
 
   const [repos, setRepos] = useState<GitHubRepo[] | null>(null);
   const [loadingRepos, setLoadingRepos] = useState(false);
@@ -148,6 +163,31 @@ export function GitHubSection({ workspaceId }: { workspaceId: string }) {
 
       {integration && (
         <div className="mt-5 space-y-4 border-t border-border-subtle pt-5">
+          {linkedRepos.length > 0 && (
+            <div>
+              <p className="mb-1.5 text-xs font-medium text-secondary">Capturing merged PRs as notes</p>
+              <ul className="flex flex-wrap gap-2">
+                {linkedRepos.map((repo) => (
+                  <li
+                    key={repo}
+                    className="flex items-center gap-2 rounded-md border border-border-subtle px-2.5 py-1 text-xs text-foreground"
+                  >
+                    {repo}
+                    <button
+                      type="button"
+                      onClick={() => toggleCapture(repo, false)}
+                      disabled={setCapture.isPending}
+                      className="text-faint transition-colors hover:text-foreground"
+                      aria-label={`Stop capturing PRs from ${repo}`}
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {!repos && (
             <Button variant="secondary" size="sm" onClick={() => void loadRepos()} disabled={loadingRepos}>
               {loadingRepos ? <Loader2 className="size-4 animate-spin" strokeWidth={1.75} /> : <RefreshCw className="size-4" strokeWidth={1.75} />}
@@ -172,6 +212,22 @@ export function GitHubSection({ workspaceId }: { workspaceId: string }) {
                   </SelectContent>
                 </Select>
               </div>
+
+              {selectedRepo && (
+                <label className="flex max-w-sm items-center justify-between gap-3 text-sm text-foreground">
+                  <span>
+                    Capture merged PRs as notes
+                    <span className="block text-xs text-faint">
+                      Needs the repo webhook with &ldquo;Pull requests&rdquo; events.
+                    </span>
+                  </span>
+                  <Switch
+                    checked={linkedRepos.includes(selectedRepo.toLowerCase())}
+                    onCheckedChange={(on) => toggleCapture(selectedRepo, on)}
+                    disabled={setCapture.isPending}
+                  />
+                </label>
+              )}
 
               {loadingIssues && (
                 <p className="flex items-center gap-2 text-sm text-faint">
