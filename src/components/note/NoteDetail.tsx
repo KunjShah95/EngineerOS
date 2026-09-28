@@ -145,10 +145,16 @@ export function NoteDetail({ noteId }: { noteId: string }) {
 
   const runExtractDecision = () =>
     extractDecision.mutate(noteId, {
-      onSuccess: (r) =>
-        r.status === "saved"
-          ? toast.success("Decision record saved")
-          : toast.info("No clear decision found in this note"),
+      onSuccess: (r) => {
+        if (r.status !== "saved") return toast.info("No clear decision found in this note");
+        toast.success("Decision record saved");
+        if (r.conflicts > 0) {
+          toast.warning(
+            `This may reverse ${r.conflicts} earlier decision${r.conflicts > 1 ? "s" : ""} — review on the Decisions page`,
+            { action: { label: "Review", onClick: () => router.push("/decisions") }, duration: 10_000 },
+          );
+        }
+      },
       onError: (err) => toast.error(err.message),
     });
 

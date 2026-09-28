@@ -11,6 +11,7 @@
 // record is worse than none.
 
 import { isAiConfigured } from "../ai";
+import { detectDecisionConflicts } from "./decision-conflicts";
 import { resolveProvider } from "./providers";
 import type { Supabase } from "@/lib/supabase/auth";
 
@@ -92,7 +93,7 @@ export function parseDecisionReply(raw: string): DecisionDraft | null {
 }
 
 export type ExtractResult =
-  | { status: "saved"; id: string; draft: DecisionDraft; model: string }
+  | { status: "saved"; id: string; draft: DecisionDraft; model: string; conflicts: number }
   | { status: "no-decision" }
   | { status: "no-ai" }
   | { status: "note-not-found" };
@@ -155,6 +156,16 @@ export async function extractDecisionForNote(
     .select("id")
     .single();
   if (saveError) throw saveError;
+  const id = (saved as { id: string }).id;
 
-  return { status: "saved", id: (saved as { id: string }).id, draft, model: provider.name };
+  // Flag earlier decisions this one may reverse. Best-effort: the record is
+  // already saved, and a failed check just means no alert this time.
+  let conflicts = 0;
+  try {
+    conflicts = (await detectDecisionConflicts(supabase, workspaceId, { id, note_id: noteId, ...draft })).length;
+  } catch (err) {
+    console.error("[decisions] conflict check failed", (err as Error).message);
+  }
+
+  return { status: "saved", id, draft, model: provider.name, conflicts };
 }

@@ -2,7 +2,72 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { createClient } from "@/lib/supabase/client";
-import type { DecisionRecord } from "@/types/database";
+import type { DecisionConflict, DecisionRecord } from "@/types/database";
+
+/** Open stale-decision alerts for the workspace. */
+export function useDecisionConflicts(workspaceId: string | null) {
+  return useQuery({
+    queryKey: ["decisions", workspaceId ?? "", "conflicts"],
+    queryFn: async (): Promise<DecisionConflict[]> => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("decision_conflicts")
+        .select("*")
+        .eq("workspace_id", workspaceId!)
+        .eq("status", "open")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as DecisionConflict[];
+    },
+    enabled: Boolean(workspaceId),
+  });
+}
+
+/**
+ * Accept: the earlier decision is marked superseded by the newer one.
+ * Dismiss: the alert is closed and won't be raised again for this pair.
+ */
+export function useResolveConflict(workspaceId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ conflict, accept }: { conflict: DecisionConflict; accept: boolean }) => {
+      const supabase = createClient();
+      if (accept) {
+        const { error } = await supabase
+          .from("decision_records")
+          .update({ status: "superseded", superseded_by: conflict.decision_id })
+          .eq("id", conflict.earlier_decision_id);
+        if (error) throw error;
+      }
+      const { error } = await supabase
+        .from("decision_conflicts")
+        .update({ status: accept ? "accepted" : "dismissed", resolved_at: new Date().toISOString() })
+        .eq("id", conflict.id);
+      if (error) throw error;
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["decisions", workspaceId ?? ""] });
+    },
+  });
+}
+
+/** Undo "superseded" — the earlier decision turns out to still hold. */
+export function useReactivateDecision(workspaceId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("decision_records")
+        .update({ status: "active", superseded_by: null })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["decisions", workspaceId ?? ""] });
+    },
+  });
+}
 
 export type RelatedDecision = Pick<
   DecisionRecord,
@@ -111,15 +176,17 @@ const EXTRACT_ERRORS: Record<string, string> = {
 export function useExtractDecision(workspaceId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (noteId: string): Promise<{ status: "saved" | "no-decision" }> => {
+    mutationFn: async (noteId: string): Promise<{ status: "saved" | "no-decision"; conflicts: number }> => {
       const res = await fetch("/api/ai/decisions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ note_id: noteId }),
       });
-      const json = (await res.json().catch(() => null)) as { status?: string; error?: string } | null;
+      const json = (await res.json().catch(() => null)) as
+        | { status?: string; error?: string; conflicts?: number }
+        | null;
       if (!res.ok) throw new Error(EXTRACT_ERRORS[json?.error ?? ""] ?? json?.error ?? "Extraction failed");
-      return { status: json?.status === "saved" ? "saved" : "no-decision" };
+      return { status: json?.status === "saved" ? "saved" : "no-decision", conflicts: json?.conflicts ?? 0 };
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["decisions", workspaceId ?? ""] });
