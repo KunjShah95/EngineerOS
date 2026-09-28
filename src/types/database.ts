@@ -278,8 +278,23 @@ export interface DecisionRecord {
   revisit_when: string;
   source_url: string | null;
   model: string | null;
+  status: "active" | "superseded";
+  superseded_by: string | null;
   created_at: string;
   updated_at: string;
+}
+
+/** A newer decision suspected of reversing an earlier one (decision_conflicts). */
+export interface DecisionConflict {
+  id: string;
+  workspace_id: string;
+  decision_id: string;
+  earlier_decision_id: string;
+  relation: "supersedes" | "conflicts";
+  reason: string;
+  status: "open" | "accepted" | "dismissed";
+  created_at: string;
+  resolved_at: string | null;
 }
 
 export interface DailyNote {
