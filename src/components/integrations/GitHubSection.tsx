@@ -21,6 +21,7 @@ import {
   useIntegration,
   useRepoLinks,
   useSetRepoCapture,
+  WEBHOOK_HINTS,
 } from "@/hooks/useIntegrations";
 import { useCreateTask } from "@/hooks/useTasks";
 import type { GitHubIssue, GitHubRepo } from "@/hooks/useIntegrations";
@@ -37,8 +38,12 @@ export function GitHubSection({ workspaceId }: { workspaceId: string }) {
     setCapture.mutate(
       { repo, enabled },
       {
-        onSuccess: () =>
-          toast.success(enabled ? `Merged PRs from ${repo} will become notes` : `Stopped capturing PRs from ${repo}`),
+        onSuccess: ({ webhook }) => {
+          if (!enabled) return toast.success(`Stopped capturing PRs from ${repo}`);
+          toast.success(`Merged PRs from ${repo} will become notes`);
+          const hint = webhook ? WEBHOOK_HINTS[webhook] : null;
+          if (hint) toast.warning(hint, { duration: 8_000 });
+        },
         onError: (err) => toast.error(err.message),
       },
     );
@@ -218,7 +223,7 @@ export function GitHubSection({ workspaceId }: { workspaceId: string }) {
                   <span>
                     Capture merged PRs as notes
                     <span className="block text-xs text-faint">
-                      Needs the repo webhook with &ldquo;Pull requests&rdquo; events.
+                      Adds the GitHub webhook for you if you&rsquo;re a repo admin.
                     </span>
                   </span>
                   <Switch
