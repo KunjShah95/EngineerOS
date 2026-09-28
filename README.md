@@ -149,6 +149,7 @@ Everything is opt-in. At minimum you need the Supabase pair for real data.
 | `NEXT_PUBLIC_APP_URL` | Canonical origin for metadata — auto-derived from `VERCEL_URL` if not set |
 | `CRON_SECRET` | Server cron auth — Vercel sends it as `Authorization: Bearer` to `/api/cron/drain` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server cron drain and GitHub webhook only — never expose to the client |
+| `NEXT_PUBLIC_BILLING_ENFORCED` | Set to `true` to enforce Free/Pro/Team limits. Off by default: the tenancy migration makes `plan` exist, this makes it bind. Inlined at build, so it needs a redeploy |
 
 Never expose `SUPABASE_SERVICE_ROLE_KEY` to the client.
 

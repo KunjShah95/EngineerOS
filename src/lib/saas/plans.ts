@@ -145,9 +145,17 @@ export function isPlanId(value: unknown): value is PlanId {
  *
  * Accepts anything the database might hand back — a `plan` column, a joined
  * value, or `undefined` because the column doesn't exist yet on this deployment.
+ *
+ * `billingEnabled` is the deployment-wide switch (see lib/saas/billing-enabled).
+ * When it is off, no plan is reported and nothing is limited, even though rows
+ * carry `plan = 'free'`: applying the tenancy migration makes the *data* exist,
+ * and this keeps that from being the same event as switching billing on.
  */
-export function getEntitlements(plan: string | null | undefined): Entitlements {
-  if (!isPlanId(plan)) {
+export function getEntitlements(
+  plan: string | null | undefined,
+  billingEnabled = true
+): Entitlements {
+  if (!billingEnabled || !isPlanId(plan)) {
     return { plan: null, ...UNENFORCED };
   }
   const definition = PLANS[plan];

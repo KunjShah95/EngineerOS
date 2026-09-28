@@ -6,6 +6,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isMissingSchemaError } from "@/lib/supabase/errors";
 import { resolveActiveWorkspaceId } from "@/lib/workspace/active";
 import { getEntitlements, type Entitlements } from "@/lib/saas/plans";
+import { isBillingEnabled } from "@/lib/saas/billing-enabled";
 import { useUiStore } from "@/lib/store/ui";
 import type { Workspace, WorkspaceRole, WorkspaceWithRole } from "@/types/database";
 
@@ -117,7 +118,7 @@ export function useWorkspaces() {
     activeWorkspaceId,
     setActiveWorkspace,
     /** `plan: null` — billing isn't configured on this deployment: no limits. */
-    entitlements: getEntitlements(activeWorkspace?.plan ?? null),
+    entitlements: getEntitlements(activeWorkspace?.plan ?? null, isBillingEnabled()),
     /** Null role means the membership layer isn't installed, so they own it. */
     isOwner: activeWorkspace ? activeWorkspace.role === null || activeWorkspace.role === "owner" : false,
   };
@@ -142,7 +143,7 @@ export function useWorkspace() {
 /** Entitlements for the active workspace, derived from its stored plan. */
 export function useEntitlements(): Entitlements {
   const { data: workspace } = useWorkspace();
-  return getEntitlements(workspace?.plan ?? null);
+  return getEntitlements(workspace?.plan ?? null, isBillingEnabled());
 }
 
 /** Raised when the API refused an action because of the plan. */
