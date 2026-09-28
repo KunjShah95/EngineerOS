@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { EmptyState } from "@/components/shell/EmptyState";
+import { CaptureChatDialog } from "@/components/decisions/CaptureChatDialog";
 import { useDecisions, useDeleteDecision } from "@/hooks/useDecisions";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import type { DecisionRecord } from "@/types/database";
@@ -40,8 +41,9 @@ export function DecisionsPage() {
       <PageHeader
         icon={Scale}
         title="Decisions"
-        description="The why behind your code — extracted automatically from merged PRs and notes."
+        description="The why behind your code — extracted automatically from merged PRs, notes and pasted chats."
         className="mb-6"
+        actions={<CaptureChatDialog workspaceId={workspaceId} />}
       />
 
       {(decisions?.length ?? 0) > 0 && (
@@ -67,7 +69,7 @@ export function DecisionsPage() {
         <EmptyState
           icon={Scale}
           title="No decisions yet"
-          description="Link a repo under Settings → GitHub to capture merged PRs automatically, or open any note and choose “Extract decision”."
+          description="Paste a chat above, link a repo under Settings → GitHub to capture merged PRs automatically, or open any note and choose “Extract decision”."
         />
       ) : filtered.length === 0 ? (
         <p className="py-8 text-center text-sm text-faint">No decisions match “{query}”.</p>
