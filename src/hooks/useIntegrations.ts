@@ -95,6 +95,19 @@ export function useRepoLinks(workspaceId: string | null) {
   });
 }
 
+/**
+ * Follow-up after linking, keyed by the route's `webhook` status. null means
+ * deliveries are wired up and nothing more is needed.
+ */
+export const WEBHOOK_HINTS: Record<string, string | null> = {
+  created: null,
+  exists: null,
+  "no-permission": "Ask a repo admin to add the EngineerOS webhook — you need admin rights to add it automatically",
+  "not-public": "Webhook not added: this deployment isn't publicly reachable (local dev)",
+  "no-secret": "Webhook not added: GITHUB_WEBHOOK_SECRET isn't set on the server",
+  failed: "Couldn't add the webhook automatically — add it in the repo's settings",
+};
+
 const REPO_LINK_ERRORS: Record<string, string> = {
   "no-access": "Your GitHub account can't read that repository",
   "not-connected": "Connect GitHub first",
@@ -112,10 +125,11 @@ export function useSetRepoCapture(workspaceId: string | null) {
             body: JSON.stringify({ repo }),
           })
         : await fetch(`/api/github/repo-links?repo=${encodeURIComponent(repo)}`, { method: "DELETE" });
+      const json = (await res.json().catch(() => null)) as { error?: string; webhook?: string } | null;
       if (!res.ok) {
-        const json = (await res.json().catch(() => null)) as { error?: string } | null;
         throw new Error(REPO_LINK_ERRORS[json?.error ?? ""] ?? json?.error ?? "Couldn't update PR capture");
       }
+      return { webhook: json?.webhook ?? null };
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["github-repo-links", workspaceId ?? ""] });
