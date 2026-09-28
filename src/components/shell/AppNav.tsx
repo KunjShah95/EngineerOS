@@ -16,6 +16,7 @@ import {
   FolderKanban,
   LayoutDashboard,
   Network,
+  Scale,
   Search,
   Settings,
   Sparkles,
@@ -71,6 +72,7 @@ const ESSENTIALS: NavItem[] = [
 /** Collecting and asking — the two things that pull people back in. */
 const LIBRARY: NavItem[] = [
   { href: "/assistant", label: "Ask AI", icon: Sparkles },
+  { href: "/decisions", label: "Decisions", icon: Scale },
   { href: "/bookmarks", label: "Saved links", icon: Bookmark },
   { href: "/reading", label: "Reading list", icon: BookOpenText },
 ];

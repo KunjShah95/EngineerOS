@@ -10,6 +10,7 @@ const PROTECTED_PREFIXES = [
   "/tasks",
   "/daily",
   "/assistant",
+  "/decisions",
   "/mindmap",
   "/graph",
   "/automation",
