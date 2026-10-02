@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LogIn, PanelLeftClose, PanelLeftOpen, Terminal, X } from "lucide-react";
@@ -17,6 +17,8 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { useAutoIndex } from "@/hooks/useAutoIndex";
 import { useAutoAutomation } from "@/hooks/useAutoAutomation";
 import { useProactiveNudges } from "@/hooks/useProactiveNudges";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { Button } from "@/components/ui/button";
 import { useUiStore, getStoredAdvancedTools, getStoredSidebarCollapsed } from "@/lib/store/ui";
@@ -71,10 +73,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [prevPathname, setPrevPathname] = useState(pathname);
+  const drawerRef = useRef<HTMLElement>(null);
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const focusMode = useUiStore((s) => s.focusMode);
   const toggleFocusMode = useUiStore((s) => s.toggleFocusMode);
+  const reducedMotion = usePrefersReducedMotion();
+
+  useFocusTrap(mobileNavOpen, drawerRef);
 
   // Hydrate persisted UI preferences. Re-runs when `onboarded_at` first arrives,
   // because the advanced-tools default depends on it: a workspace that has
@@ -305,7 +311,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const drawer = (
     <div className="flex h-full w-64 flex-col bg-surface">
       <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-default pr-2 md:hidden">
-        <SidebarHeader collapsed={false} onToggle={() => {}} className="flex-1 border-b-0 pl-4" />
+        <div className="flex flex-1 items-center gap-2 border-b-0 pl-4">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-accent shadow-[0_0_16px_-6px_var(--accent)]">
+            <Terminal className="size-4 text-white" strokeWidth={2} />
+          </span>
+          <span className="text-sm font-semibold tracking-tight text-foreground">EngineerOS</span>
+        </div>
         <Button
           variant="ghost"
           size="icon"
@@ -351,10 +362,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}
-              initial={{ opacity: 0, y: 10 }}
+              initial={reducedMotion ? false : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
+              exit={reducedMotion ? undefined : { opacity: 0, y: -10 }}
+              transition={reducedMotion ? { duration: 0 } : { duration: 0.2, ease: "easeOut" }}
             >
               {children}
             </motion.div>
@@ -368,20 +379,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <>
             <motion.div
               key="nav-backdrop"
-              initial={{ opacity: 0 }}
+              initial={reducedMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
+              exit={reducedMotion ? undefined : { opacity: 0 }}
+              transition={{ duration: reducedMotion ? 0 : 0.15 }}
               className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
               onClick={() => setMobileNavOpen(false)}
               aria-hidden
             />
             <motion.aside
+              ref={drawerRef}
               key="nav-drawer"
-              initial={{ x: "-100%" }}
+              initial={reducedMotion ? false : { x: "-100%" }}
               animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "tween", duration: 0.22, ease: "easeOut" }}
+              exit={reducedMotion ? undefined : { x: "-100%" }}
+              transition={
+                reducedMotion
+                  ? { duration: 0 }
+                  : { type: "tween", duration: 0.22, ease: "easeOut" }
+              }
               className="fixed inset-y-0 left-0 z-50 w-64 border-r border-default shadow-2xl md:hidden"
               role="dialog"
               aria-modal="true"

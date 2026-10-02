@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { priorityColor } from "@/lib/task-meta";
-import { EVENT_COLORS } from "@/lib/calendar-events";
+import { EVENT_COLORS, eventTimeLabel } from "@/lib/calendar-events";
 import type { CalendarEvent, TaskWithProject } from "@/types/database";
 
 interface MonthDay {
@@ -20,26 +20,25 @@ interface MonthGridProps {
   days: MonthDay[];
   onOpenTask: (id: string) => void;
   onOpenEvent: (id: string) => void;
+  onOpenDay: (iso: string) => void;
 }
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-export function MonthGrid({ days, onOpenTask, onOpenEvent }: MonthGridProps) {
+export function MonthGrid({ days, onOpenTask, onOpenEvent, onOpenDay }: MonthGridProps) {
   return (
-    <div className="overflow-hidden rounded-xl border border-default">
-      {/* Weekday headers */}
+    <div className="overflow-hidden rounded-lg border border-default">
       <div className="grid grid-cols-7 border-b border-default bg-surface">
         {WEEKDAY_LABELS.map((d) => (
-          <div key={d} className="py-2 text-center text-xs font-semibold text-secondary">
+          <div key={d} className="label-mono py-2 text-center">
             {d}
           </div>
         ))}
       </div>
 
-      {/* Day cells */}
       <div className="grid grid-cols-7">
         {days.map((day, i) => {
-          const visibleEvents = day.events.slice(0, 2);
+          const visibleEvents = day.events.slice(0, 3);
           const taskBudget = Math.max(0, 3 - visibleEvents.length);
           const visibleTasks = day.tasks.slice(0, taskBudget);
           const overflow =
@@ -49,18 +48,18 @@ export function MonthGrid({ days, onOpenTask, onOpenEvent }: MonthGridProps) {
             <div
               key={day.iso}
               className={cn(
-                "min-h-[100px] border-border-subtle p-1.5",
+                "min-h-[104px] border-border-subtle p-1.5",
                 i % 7 !== 6 && "border-r",
                 i < days.length - 7 && "border-b",
                 !day.isCurrentMonth && "bg-surface/40",
-                day.isToday && "bg-accent-muted/10"
+                day.isToday && "bg-accent/[0.06]"
               )}
             >
               <div className="mb-1 flex items-center justify-between">
                 <Link
                   href={`/daily/${day.iso}`}
                   className={cn(
-                    "flex size-6 items-center justify-center rounded-full text-xs font-medium transition-colors hover:bg-surface-hover",
+                    "figure-mono flex size-6 items-center justify-center rounded-full text-xs font-medium text-foreground transition-colors hover:bg-surface-hover",
                     day.isToday && "bg-accent text-accent-foreground hover:bg-accent",
                     !day.isCurrentMonth && "text-faint"
                   )}
@@ -68,48 +67,64 @@ export function MonthGrid({ days, onOpenTask, onOpenEvent }: MonthGridProps) {
                   {day.date.getDate()}
                 </Link>
                 {day.hasNote && (
-                  <span className="size-1.5 rounded-full bg-accent" title="Has daily note" />
+                  <span
+                    className="size-1.5 rounded-full bg-signal"
+                    title="Has daily note"
+                    aria-label="Has journal entry"
+                  />
                 )}
               </div>
 
-              <div className="space-y-0.5">
+              <div className="space-y-px">
                 {visibleEvents.map((event) => (
                   <button
                     key={event.id}
                     type="button"
+                    title={event.title}
+                    aria-label={event.title}
                     onClick={() => onOpenEvent(event.id)}
-                    className="w-full truncate rounded px-1.5 py-0.5 text-left text-[11px] leading-tight text-foreground transition-colors hover:opacity-80"
+                    className="flex h-[18px] w-full min-w-0 items-center gap-1 rounded-[3px] px-1 text-left text-[11px] leading-none text-foreground transition-[filter] hover:brightness-125"
                     style={{
-                      backgroundColor: `${EVENT_COLORS[event.color]}22`,
-                      borderLeft: `2px solid ${EVENT_COLORS[event.color]}`,
+                      backgroundColor: `${EVENT_COLORS[event.color]}26`,
+                      boxShadow: `inset 2px 0 0 0 ${EVENT_COLORS[event.color]}`,
                     }}
                   >
-                    {event.title}
+                    {!event.all_day && (
+                      <span className="figure-mono shrink-0 text-[10px] text-secondary">
+                        {eventTimeLabel(event)}
+                      </span>
+                    )}
+                    <span className="truncate">{event.title}</span>
                   </button>
                 ))}
                 {visibleTasks.map((task) => (
                   <button
                     key={task.id}
                     type="button"
+                    title={task.title}
+                    aria-label={task.title}
                     onClick={() => onOpenTask(task.id)}
                     className={cn(
-                      "w-full truncate rounded px-1.5 py-0.5 text-left text-[11px] leading-tight transition-colors hover:opacity-80",
-                      task.status === "done"
-                        ? "text-faint line-through"
-                        : "text-foreground"
+                      "flex h-[18px] w-full min-w-0 items-center gap-1 rounded-[3px] px-1 text-left text-[11px] leading-none transition-colors hover:bg-surface-hover",
+                      task.status === "done" ? "text-secondary line-through" : "text-foreground"
                     )}
-                    style={{
-                      backgroundColor: `${priorityColor(task.priority)}22`,
-                      borderLeft: `2px solid ${priorityColor(task.priority)}`,
-                    }}
                   >
-                    {task.title}
+                    <span
+                      className="size-1.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: priorityColor(task.priority) }}
+                      aria-hidden
+                    />
+                    <span className="truncate">{task.title}</span>
                   </button>
                 ))}
                 {overflow > 0 && (
-                  <span className="block px-1 text-[10px] text-faint">
+                  <button
+                    type="button"
+                    onClick={() => onOpenDay(day.iso)}
+                    className="w-full truncate rounded-[3px] px-1 text-left text-[10px] font-medium leading-[18px] text-accent transition-colors hover:bg-accent-muted/40"
+                  >
                     +{overflow} more
-                  </span>
+                  </button>
                 )}
               </div>
             </div>
