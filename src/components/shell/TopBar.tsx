@@ -10,6 +10,7 @@ import { NotificationPanel } from "@/components/shell/NotificationPanel";
 import { useProfile } from "@/hooks/useProfile";
 import { useReminders } from "@/hooks/useAutomation";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useModCombo } from "@/hooks/usePlatformShortcut";
 import { useUiStore } from "@/lib/store/ui";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ export function TopBar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
   const { data: profile } = useProfile();
   const { data: workspace } = useWorkspace();
   const { data: reminders } = useReminders(workspace?.id ?? null);
+  const searchShortcut = useModCombo("K");
 
   const unreadCount = (reminders ?? []).filter((r) => !r.read_at).length;
 
@@ -49,12 +51,13 @@ export function TopBar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
         <button
           type="button"
           onClick={() => setCommandPaletteOpen(true)}
+          aria-label={`Search (${searchShortcut})`}
           className="group flex w-full min-w-0 max-w-72 flex-1 items-center gap-2 rounded-lg border border-default bg-base/50 px-3 py-1.5 text-sm text-secondary transition-all duration-200 hover:border-accent-muted hover:bg-base hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 sm:w-64 sm:flex-none"
         >
           <Search className="size-4 shrink-0" strokeWidth={1.75} />
           <span className="min-w-0 flex-1 truncate text-left">Search…</span>
           <kbd className="hidden rounded border border-border-subtle bg-elevated px-1.5 py-0.5 text-[10px] font-medium text-faint sm:block">
-            ⌘K
+            {searchShortcut}
           </kbd>
         </button>
       </div>
@@ -70,7 +73,6 @@ export function TopBar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
           <span className="hidden lg:inline">Quick Capture</span>
         </Button>
 
-        {/* Focus mode toggle */}
         <Button
           variant="ghost"
           size="icon"
@@ -82,19 +84,26 @@ export function TopBar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
           <Focus className="size-4" strokeWidth={1.75} />
         </Button>
 
-        {/* Notification bell */}
         <div className="relative">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setNotificationPanelOpen(!notificationPanelOpen)}
-            aria-label="Notifications"
+            aria-label={
+              unreadCount > 0
+                ? `Notifications, ${unreadCount} unread`
+                : "Notifications"
+            }
+            aria-expanded={notificationPanelOpen}
             className={cn(notificationPanelOpen && "text-accent")}
           >
             <Bell className="size-4" strokeWidth={1.75} />
           </Button>
           {unreadCount > 0 && (
-            <span className="pointer-events-none absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-accent-foreground">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-accent-foreground"
+            >
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}

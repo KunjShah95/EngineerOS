@@ -34,6 +34,7 @@ import {
 
 import { useUiStore } from "@/lib/store/ui";
 import { WorkspaceSwitcher } from "@/components/shell/WorkspaceSwitcher";
+import { useModCombo } from "@/hooks/usePlatformShortcut";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
@@ -119,10 +120,11 @@ function NavLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
       <Link
         href={item.href}
         title={collapsed ? item.label : undefined}
+        aria-label={collapsed ? item.label : undefined}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "group relative flex items-center rounded-lg py-2 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
-          collapsed ? "justify-center px-0" : "gap-2.5 px-3",
+          "group relative flex items-center py-2 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+          collapsed ? "justify-center rounded-md px-0" : "gap-2.5 rounded-md px-3",
           active
             ? "bg-accent-muted/60 text-foreground"
             : "text-secondary hover:bg-surface-hover hover:text-foreground"
@@ -161,9 +163,8 @@ function NavGroup({
   return (
     <div className="flex flex-col gap-1">
       {label && !collapsed && (
-        <span className="px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-faint">
-          {label}
-        </span>
+        /* Mono micro-label, not uppercase Inter — group headers are metadata. */
+        <span className="label-mono px-3">{label}</span>
       )}
       <div className="flex flex-col gap-0.5">
         {items.map((item) => (
@@ -178,6 +179,7 @@ export function AppNav({ collapsed = false }: { collapsed?: boolean }) {
   const setCommandPaletteOpen = useUiStore((s) => s.setCommandPaletteOpen);
   const advancedToolsOpen = useUiStore((s) => s.advancedToolsOpen);
   const toggleAdvancedTools = useUiStore((s) => s.toggleAdvancedTools);
+  const searchShortcut = useModCombo("K");
 
   return (
     <nav className="flex flex-1 flex-col overflow-hidden" aria-label="Primary">
@@ -200,6 +202,7 @@ export function AppNav({ collapsed = false }: { collapsed?: boolean }) {
             type="button"
             onClick={toggleAdvancedTools}
             aria-expanded={advancedToolsOpen}
+            aria-label={advancedToolsOpen ? "Fewer tools" : `Show all ${ADVANCED.length} tools`}
             title={collapsed ? (advancedToolsOpen ? "Fewer tools" : "Show all tools") : undefined}
             className={cn(
               "flex items-center rounded-lg py-1.5 text-xs font-medium text-faint transition-colors duration-150 hover:bg-surface-hover hover:text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
@@ -238,19 +241,21 @@ export function AppNav({ collapsed = false }: { collapsed?: boolean }) {
           transition={{ delay: 0.4 }}
           type="button"
           onClick={() => setCommandPaletteOpen(true)}
-          aria-label="Search (⌘K)"
-          title={collapsed ? "Search (⌘K)" : undefined}
+          aria-label={`Search (${searchShortcut})`}
+          title={collapsed ? `Search (${searchShortcut})` : undefined}
           className={cn(
-            "flex w-full items-center rounded-lg border border-border-subtle bg-base/50 text-sm font-medium text-secondary transition-all duration-150 hover:border-accent/30 hover:bg-base hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
-            collapsed ? "justify-center gap-0 px-0 py-2" : "gap-2.5 px-3 py-2"
+            "flex w-full items-center border border-border-subtle bg-base/50 text-sm font-medium text-secondary transition-all duration-150 hover:border-accent/30 hover:bg-base hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+            collapsed ? "justify-center gap-0 rounded-md px-0 py-2" : "gap-2.5 rounded-md px-3 py-2"
           )}
         >
           <Search className="size-4 shrink-0" strokeWidth={1.75} />
           {!collapsed && (
             <>
               Search
-              <kbd className="ml-auto rounded border border-border-subtle bg-elevated px-1.5 py-0.5 text-[10px] font-medium text-faint">
-                ⌘K
+              {/* Keycaps are mono and tabular so the column of them in the
+                  shortcuts page and this one read the same. */}
+              <kbd className="figure-mono ml-auto rounded border border-border-subtle bg-elevated px-1.5 py-0.5 text-[10px] text-faint">
+                {searchShortcut}
               </kbd>
             </>
           )}

@@ -29,6 +29,10 @@ import { useMarkReminderRead, useReminders } from "@/hooks/useAutomation";
 import { useNotes } from "@/hooks/useNotes";
 import { useProjects } from "@/hooks/useProjects";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import {
+  useHasSampleData,
+  useSeedSampleData,
+} from "@/hooks/useSampleWorkspace";
 import { useUiStore } from "@/lib/store/ui";
 import { PRIORITY_META, priorityColor } from "@/lib/task-meta";
 import { projectColorStyle } from "@/lib/project-colors";
@@ -58,6 +62,8 @@ export function DashboardPage() {
   const { data: projects, isLoading: projectsLoading } = useProjects(workspaceId);
   const { data: reminders } = useReminders(workspaceId);
   const markReminderRead = useMarkReminderRead(workspaceId);
+  const { data: hasSample } = useHasSampleData(workspaceId);
+  const seedSample = useSeedSampleData(workspaceId);
 
   if (!workspace) return <PageLoader label="Loading dashboard…" />;
 
@@ -164,6 +170,7 @@ export function DashboardPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             type="button"
+            aria-label="Quick capture"
             onClick={() => setQuickCaptureOpen(true)}
             className="group flex w-full max-w-md items-center gap-2 rounded-lg border border-default bg-surface px-3 py-2 text-sm text-secondary transition-colors duration-150 hover:border-border-subtle hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
           >
@@ -177,6 +184,30 @@ export function DashboardPage() {
       {/* Sits above the stat strip on purpose: for a brand-new workspace the
           strip is five zeroes, which is accurate but tells them nothing to do. */}
       <GettingStarted />
+
+      {/* Empty Home after the tour is gone: one click makes every card, the
+          calendar, the graph and Ask AI demonstrable instead of all zeroes. */}
+      {!isLoading && !hasSample &&
+        (allTasks ?? []).length === 0 &&
+        (notes ?? []).length === 0 && (
+          <div className="rail-accent panel-inset flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+            <div className="min-w-0">
+              <p className="label-mono">nothing indexed yet</p>
+              <p className="mt-1 text-sm text-secondary">
+                Load sample data to see every surface with something real in it.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => seedSample.mutate()}
+              disabled={seedSample.isPending}
+              className="label-mono inline-flex shrink-0 items-center gap-1.5 border border-accent/40 bg-accent-muted px-2.5 py-1.5 text-accent transition-colors hover:border-accent/70 disabled:opacity-50"
+            >
+              <Zap className="size-3" strokeWidth={1.75} />
+              {seedSample.isPending ? "loading…" : "explore with sample data"}
+            </button>
+          </div>
+        )}
 
       {isLoading ? (
         <div className="space-y-8">
@@ -306,6 +337,7 @@ export function DashboardPage() {
                 icon={CheckCircle2}
                 title="Nothing due today"
                 description="Tasks with a due date of today will show up here."
+                action={{ label: "Add a due date", href: "/tasks?new=1" }}
               />
             ) : (
               <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -345,6 +377,7 @@ export function DashboardPage() {
                   icon={CheckCircle2}
                   title="No tasks today"
                   description="Assign a due date to tasks to plan your day."
+                  action={{ label: "Capture something", onClick: () => setQuickCaptureOpen(true) }}
                 />
               ) : (
                 <div className="space-y-1">
@@ -362,6 +395,7 @@ export function DashboardPage() {
                   icon={FileText}
                   title="No notes yet"
                   description="Write your first markdown note to see it here."
+                  action={{ label: "Write a note", href: "/notes?new=1" }}
                 />
               ) : (
                 <div className="space-y-1">
@@ -395,6 +429,7 @@ export function DashboardPage() {
                 icon={FolderKanban}
                 title="No projects yet"
                 description="Create a project to track its progress here."
+                action={{ label: "Create a project", href: "/projects" }}
               />
             ) : (
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -446,6 +481,7 @@ export function DashboardPage() {
                 icon={Zap}
                 title="No activity yet"
                 description="Changes to your tasks and notes will show up here."
+                action={{ label: "Write today’s journal", href: "/daily" }}
               />
             ) : (
               <div className="overflow-hidden rounded-lg border border-default">
@@ -525,21 +561,52 @@ function StatCard({
   );
 }
 
-function EmptyCard({ icon: Icon, title, description }: { icon: typeof FileText; title: string; description: string }) {
+function EmptyCard({
+  icon: Icon,
+  title,
+  description,
+  action,
+}: {
+  icon: typeof FileText;
+  title: string;
+  description: string;
+  action?: { label: string; href?: string; onClick?: () => void };
+}) {
   return (
-    <div className="flex items-center gap-4 rounded-lg border border-dashed border-border-subtle bg-surface/50 px-4 py-6">
+    <div className="flex flex-wrap items-center gap-4 rounded-lg border border-dashed border-border-subtle bg-surface/50 px-4 py-6">
       <div className="rounded-md bg-accent-muted p-2.5">
         <Icon className="size-5 text-accent" strokeWidth={1.75} />
       </div>
-      <div>
+      <div className="min-w-0 flex-1">
         <p className="text-sm font-medium">{title}</p>
         <p className="text-sm text-secondary">{description}</p>
       </div>
+      {action ? (
+        action.href ? (
+          <Link
+            href={action.href}
+            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-secondary transition-colors hover:border-accent/30 hover:text-foreground"
+          >
+            {action.label}
+            <ArrowRight className="size-3" strokeWidth={2} />
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={action.onClick}
+            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-secondary transition-colors hover:border-accent/30 hover:text-foreground"
+          >
+            {action.label}
+            <ArrowRight className="size-3" strokeWidth={2} />
+          </button>
+        )
+      ) : null}
     </div>
   );
 }
 
 function TaskRow({ task, overdue }: { task: TaskWithProject; overdue?: boolean }) {
+  const priorityLabel = PRIORITY_META.find((p) => p.value === task.priority)?.label;
   return (
     <Link
       href={`/tasks?task=${task.id}`}
@@ -550,7 +617,12 @@ function TaskRow({ task, overdue }: { task: TaskWithProject; overdue?: boolean }
         style={{ backgroundColor: priorityColor(task.priority) }}
         aria-hidden
       />
-      <span className="min-w-0 flex-1 truncate">{task.title}</span>
+      <span className="min-w-0 flex-1 truncate">
+        {task.title}
+        {priorityLabel && task.priority !== "none" ? (
+          <span className="sr-only">, priority {priorityLabel}</span>
+        ) : null}
+      </span>
       {overdue ? (
         <span className="shrink-0 text-xs text-danger">Overdue · {task.due_date}</span>
       ) : task.status === "done" ? (

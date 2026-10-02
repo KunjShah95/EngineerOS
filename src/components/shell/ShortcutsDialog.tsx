@@ -11,8 +11,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { ShortcutDef } from "@/hooks/useKeyboardShortcuts";
+import { useModCombo } from "@/hooks/usePlatformShortcut";
+import { isApplePlatform } from "@/lib/platform";
 
 const GROUP_ORDER = ["Navigate", "Actions", "View"];
+
+function localizeCombo(combo: string): string {
+  if (isApplePlatform()) return combo;
+  // Stored combos use Apple glyphs: ⇧⌘N, ⌘K, ⌘/
+  return combo
+    .replace(/⇧/g, "Shift+")
+    .replace(/⌘/g, "Ctrl+")
+    .replace(/\+$/, "");
+}
 
 export function ShortcutsDialog({
   open,
@@ -23,6 +34,8 @@ export function ShortcutsDialog({
   onOpenChange: (open: boolean) => void;
   shortcuts: ShortcutDef[];
 }) {
+  const searchHint = useModCombo("K");
+
   const groups = useMemo(() => {
     const map = new Map<string, ShortcutDef[]>();
     for (const s of shortcuts) {
@@ -53,7 +66,8 @@ export function ShortcutsDialog({
             Keyboard shortcuts
           </DialogTitle>
           <DialogDescription>
-            Move fast without leaving the keyboard. Press ⌘K anywhere to search or run commands.
+            Move fast without leaving the keyboard. Press {searchHint} anywhere to search or run
+            commands.
           </DialogDescription>
         </DialogHeader>
 
@@ -64,24 +78,35 @@ export function ShortcutsDialog({
                 {group}
               </p>
               <div className="space-y-1">
-                {items.map((s) => (
-                  <div
-                    key={s.id}
-                    className="flex items-center justify-between gap-4 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-surface-hover"
-                  >
-                    <span className="min-w-0 truncate text-secondary">{s.label}</span>
-                    <span className="flex shrink-0 items-center gap-1">
-                      {s.combo.split("+").map((part, i) => (
-                        <kbd
-                          key={i}
-                          className="rounded border border-border-subtle bg-elevated px-1.5 py-0.5 font-mono text-[11px] font-medium text-foreground"
-                        >
-                          {part}
-                        </kbd>
-                      ))}
-                    </span>
-                  </div>
-                ))}
+                {items.map((s) => {
+                  const display = localizeCombo(s.combo);
+                  const parts = isApplePlatform()
+                    ? display.split("+").flatMap((p) =>
+                        // Apple style is unsplit glyphs like ⇧⌘N — split into chars for kbd
+                        p.length > 1 && !/[A-Za-z0-9]/.test(p[0]!)
+                          ? [...p.matchAll(/⇧|⌘|⌥|[\w/]/g)].map((m) => m[0])
+                          : [p]
+                      )
+                    : display.split("+");
+                  return (
+                    <div
+                      key={s.id}
+                      className="flex items-center justify-between gap-4 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-surface-hover"
+                    >
+                      <span className="min-w-0 truncate text-secondary">{s.label}</span>
+                      <span className="flex shrink-0 items-center gap-1">
+                        {parts.filter(Boolean).map((part, i) => (
+                          <kbd
+                            key={i}
+                            className="rounded border border-border-subtle bg-elevated px-1.5 py-0.5 font-mono text-[11px] font-medium text-foreground"
+                          >
+                            {part}
+                          </kbd>
+                        ))}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ))}

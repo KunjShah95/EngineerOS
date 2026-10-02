@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Building2, Mail, Plus, Trash2, User, Users } from "lucide-react";
+import { Building2, Mail, Plus, Trash2, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shell/EmptyState";
-import { PageHeader } from "@/components/shell/PageHeader";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import {
   useContacts,
@@ -40,12 +39,18 @@ export function ContactsPage() {
   };
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full flex-col md:flex-row">
       {/* Sidebar */}
-      <aside className="flex w-64 shrink-0 flex-col border-r border-default">
+      <aside
+        className={cn(
+          "flex w-full shrink-0 flex-col border-default md:w-64 md:border-r",
+          selectedId ? "hidden md:flex" : "flex",
+          "border-b md:border-b-0"
+        )}
+      >
         <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
           <span className="text-sm font-semibold">Contacts</span>
-          <Button size="icon" variant="ghost" onClick={() => void handleNew()} disabled={createContact.isPending}>
+          <Button size="icon" variant="ghost" aria-label="Add contact" onClick={() => void handleNew()} disabled={createContact.isPending}>
             <Plus className="size-4" strokeWidth={1.75} />
           </Button>
         </div>
@@ -82,13 +87,14 @@ export function ContactsPage() {
       </aside>
 
       {/* Detail */}
-      <div className="flex-1 overflow-y-auto">
+      <div className={cn("flex-1 overflow-y-auto", !selectedId && "hidden md:block")}>
         {selected ? (
           <ContactDetail
             key={selected.id}
             contact={selected}
             workspaceId={workspaceId}
             onDelete={() => setSelectedId(null)}
+            onBack={() => setSelectedId(null)}
           />
         ) : (
           <div className="flex h-full items-center justify-center">
@@ -110,10 +116,12 @@ function ContactDetail({
   contact,
   workspaceId,
   onDelete,
+  onBack,
 }: {
   contact: Contact;
   workspaceId: string | null;
   onDelete: () => void;
+  onBack: () => void;
 }) {
   const updateContact = useUpdateContact(workspaceId);
   const deleteContact = useDeleteContact(workspaceId);
@@ -135,9 +143,18 @@ function ContactDetail({
   };
 
   return (
-    <div className="mx-auto max-w-2xl p-6 space-y-5">
+    <div className="mx-auto max-w-2xl space-y-5 p-6">
       <div className="flex items-start justify-between gap-4">
-        <PageHeader icon={User} title="" description="" actions={null} />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="md:hidden"
+          onClick={onBack}
+          aria-label="Back to contacts"
+        >
+          ← Contacts
+        </Button>
+        <div className="hidden md:block" />
         <Button
           variant="ghost"
           size="sm"
