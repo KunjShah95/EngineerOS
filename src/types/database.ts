@@ -473,13 +473,35 @@ export interface SemanticMatch {
 
 export type ChatRole = "user" | "assistant";
 
-/** A cited source attached to an assistant chat message. */
+/** Which retriever produced a source. Surfaced in the "why this answer" panel. */
+export type RetrievalMode = "semantic" | "keyword" | "structured" | "time-travel";
+
+/**
+ * A cited source attached to an assistant chat message.
+ *
+ * `retrieval`/`chunk_index`/`snippet` are the retrieval inspector's payload:
+ * they let a reader see exactly which excerpt was cited and how it was found,
+ * instead of taking the answer on faith. Older messages simply don't have them
+ * (the column is jsonb, so the shape widens without a migration).
+ */
 export interface ChatSource {
   entity_type: EmbeddingEntity;
   entity_id: string;
   title: string;
   href: string;
   score: number;
+  /** Which retriever picked this source. */
+  retrieval?: RetrievalMode;
+  /** Ordinal of the cited chunk inside the entity's index, when known. */
+  chunk_index?: number;
+  /** Short excerpt of the exact text the answer was built from. */
+  snippet?: string;
+  /** Time travel: the date this answer is pinned to (ISO yyyy-mm-dd). */
+  as_of?: string;
+  /** Time travel: the cited note changed after the pinned date. */
+  changed_since?: boolean;
+  /** Time travel: compact "what changed since" summary. */
+  diff_summary?: string;
 }
 
 export interface ChatThread {

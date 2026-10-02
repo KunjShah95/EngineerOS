@@ -21,6 +21,24 @@ export function useNoteVersions(noteId: string | null) {
   });
 }
 
+/**
+ * Seed version history for notes that predate versioning. Lets time-travel
+ * answers reconstruct more than "no snapshot exists". Idempotent server-side.
+ */
+export function useBackfillNoteVersions() {
+  return useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/ai/versions/backfill", { method: "POST" });
+      const json = (await res.json().catch(() => null)) as
+        | { inserted: number; backdated: number; fromNow: number; skipped: number; error: string | null }
+        | { error: string }
+        | null;
+      if (!res.ok || !json) throw new Error("error" in (json ?? {}) ? (json as { error: string }).error : "Backfill failed");
+      return json as { inserted: number; backdated: number; fromNow: number; skipped: number; error: string | null };
+    },
+  });
+}
+
 export function useSaveNoteVersion(noteId: string | null, workspaceId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({

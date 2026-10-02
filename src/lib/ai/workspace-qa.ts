@@ -10,7 +10,7 @@
 // summary. The route feeds the chunks through answerWithContext (LLM with
 // citations) and uses the summary as the answer in local/no-API-key mode.
 
-import type { RagChunk } from "./rag";
+import { makeSnippet, type RagChunk } from "./rag";
 import { resourceHref } from "@/lib/resource-kind";
 
 type Supabase = NonNullable<Awaited<ReturnType<typeof import("@/lib/supabase/server").createClient>>>;
@@ -257,7 +257,7 @@ function taskChunk(t: TaskChunkInput): RagChunk {
   const content = t.description ? `${line}\n${t.description}` : line;
   return {
     content,
-    source: { entity_type: "task", entity_id: t.id, title: t.title, href: `/tasks?task=${t.id}`, score: 1 },
+    source: { entity_type: "task", entity_id: t.id, title: t.title, href: `/tasks?task=${t.id}`, score: 1, retrieval: "structured", snippet: makeSnippet(content) },
   };
 }
 
@@ -286,7 +286,7 @@ function dailySections(d: RenderDaily): string {
 function dailyChunk(d: RenderDaily & { id: string }): RagChunk {
   return {
     content: dailySections(d),
-    source: { entity_type: "daily_note", entity_id: d.id, title: `Daily Note ${d.date}`, href: `/daily/${d.date}`, score: 1 },
+    source: { entity_type: "daily_note", entity_id: d.id, title: `Daily Note ${d.date}`, href: `/daily/${d.date}`, score: 1, retrieval: "structured", snippet: makeSnippet(dailySections(d)) },
   };
 }
 
@@ -309,7 +309,7 @@ function projectChunk(p: RenderProject & { id: string }): RagChunk {
     .join("\n");
   return {
     content: lines,
-    source: { entity_type: "project", entity_id: p.id, title: p.name, href: `/projects/${p.id}`, score: 1 },
+    source: { entity_type: "project", entity_id: p.id, title: p.name, href: `/projects/${p.id}`, score: 1, retrieval: "structured", snippet: makeSnippet(lines) },
   };
 }
 
@@ -319,7 +319,7 @@ function meetingChunk(m: { id: string; title: string; body_markdown?: string | n
   const content = `[meeting] ${m.title}${date}\n${m.body_markdown ?? ""}`;
   return {
     content: content.slice(0, 1400),
-    source: { entity_type: "resource", entity_id: m.id, title: m.title, href: resourceHref("meeting", m.id), score: 1 },
+    source: { entity_type: "resource", entity_id: m.id, title: m.title, href: resourceHref("meeting", m.id), score: 1, retrieval: "structured", snippet: makeSnippet(content) },
   };
 }
 
@@ -735,10 +735,21 @@ async function queryFollowUp(supabase: Supabase, workspaceId: string, now: Date)
 
   const chunks: RagChunk[] = [
     ...meetings.map(meetingChunk),
-    ...tomorrows.map((d) => ({
-      content: `[daily note ${d.date}] tomorrow:\n${d.tomorrow ?? ""}`,
-      source: { entity_type: "daily_note" as const, entity_id: d.id, title: `Daily Note ${d.date}`, href: `/daily/${d.date}`, score: 1 },
-    })),
+    ...tomorrows.map((d): RagChunk => {
+      const content = `[daily note ${d.date}] tomorrow:\n${d.tomorrow ?? ""}`;
+      return {
+        content,
+        source: {
+          entity_type: "daily_note",
+          entity_id: d.id,
+          title: `Daily Note ${d.date}`,
+          href: `/daily/${d.date}`,
+          score: 1,
+          retrieval: "structured",
+          snippet: makeSnippet(content),
+        },
+      };
+    }),
     ...openTasks.map(taskChunk),
   ];
 

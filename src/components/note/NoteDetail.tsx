@@ -108,6 +108,26 @@ export function NoteDetail({ noteId }: { noteId: string }) {
   const { data: versions } = useNoteVersions(noteId);
   const saveVersion = useSaveNoteVersion(noteId, workspaceId);
 
+  /**
+   * Keep a version snapshot on a slow cadence.
+   *
+   * Time-travel answers are only as good as the history they can reconstruct:
+   * a note edited repeatedly with no snapshot means the earlier text is
+   * unrecoverable and a question about that date can't be answered honestly.
+   * Versioning every keystroke would flood note_versions, so this snapshots at
+   * most once per SNAPSHOT_INTERVAL and only when the body actually moved since
+   * the last snapshot — enough to reconstruct any past date with that much
+   * staleness, at one row per interval per note.
+   */
+  const SNAPSHOT_INTERVAL_MS = 6 * 60 * 60 * 1000;
+  const snapshotBody = useDebouncedCallback((value: string) => {
+    const latest = versions?.[0];
+    const latestAt = latest ? new Date(latest.created_at).getTime() : 0;
+    if (latest?.body_markdown === value) return;
+    if (Date.now() - latestAt < SNAPSHOT_INTERVAL_MS) return;
+    saveVersion.mutate({ title: note?.title ?? title, body_markdown: value });
+  }, SNAPSHOT_INTERVAL_MS);
+
   const tocItems = useMemo(() => {
     const regex = /^(#{1,4})\s+(.+)$/gm;
     const items: { level: number; text: string; slug: string }[] = [];
@@ -134,7 +154,13 @@ export function NoteDetail({ noteId }: { noteId: string }) {
   const saveBody = useDebouncedCallback((value: string) => {
     updateNote.mutate(
       { body_markdown: value },
-      { onSuccess: () => setJustSaved(true), onError: () => toast.error("Failed to save note") }
+      {
+        onSuccess: () => {
+          setJustSaved(true);
+          snapshotBody(value);
+        },
+        onError: () => toast.error("Failed to save note"),
+      }
     );
   }, 600);
 
