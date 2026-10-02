@@ -6,6 +6,43 @@
 2. **Dark mode is the default**, light mode is the alternate — this is a tool used at night and during deep work, not a consumer app.
 3. **Markdown-native.** Typography must render clean markdown (headings, code blocks, lists, tables) beautifully — this is used constantly.
 4. **No decoration without function.** No illustrations, no gradients-for-gradients-sake. Every visual element earns its place.
+5. **Engineering instrument, not dashboard.** The app must not read as default shadcn. Specifically: no `rounded-full` pills as a structural device, no filled rounded icon chips, no uppercase Inter as a label. Structure comes from hairline rules and rails; corners are square-ish (6px); labels are monospaced.
+6. **Color is a signal, never an ornament.** One accent (indigo) for interaction, one signal color (mint) for state — historical, verified, resolved. If something is mint, it is telling you something.
+
+## Type System
+
+Four families, four jobs. Using the wrong one for a job is a design bug, not a taste call.
+
+| Family | Variable | Job | Never used for |
+|---|---|---|---|
+| **Fraunces** | `--font-serif-display` | Editorial display: page/section headlines that make a claim | Body text, controls, dense data |
+| **Inter** | `--font-sans` | Body text, prose, UI copy | Labels, numeric readouts |
+| **JetBrains Mono** | `--font-mono` | Labels, metadata, keycaps, scores, dates, anything monospaced | Paragraphs |
+| **Space Grotesk** | `--font-display` | Reserved accents | — |
+
+- **Labels are monospaced.** Section eyebrows, group headers, statuses, counts. This is the single strongest signal that an interface was designed rather than defaulted — Inter uppercase reads as template; mono tracked-out reads as instrument.
+  - Use `.label-mono`: 11px, 0.16em tracking, uppercase, tertiary.
+- **Measured values are tabular.** Relevance scores, `+N −M` deltas, counts, dates, keycaps.
+  - Use `.figure-mono`: mono + `tabular-nums` so columns align and can be compared at a glance.
+- **Fraunces inside the app** is for one thing: a headline making a claim (e.g. the assistant empty state). Not for chrome.
+
+### Shared utilities
+
+Defined in `globals.css` under `@layer components` / `@utility`:
+
+- `.label-mono` — micro-label (11px, tracked, uppercase, tertiary)
+- `.figure-mono` — tabular measured value
+- `.panel-inset` — structural container: 6px radius, hairline border, surface bg, **no shadow**
+- `.rail-accent` / `.rail-signal` — 2px left rail for selection and provenance
+- `bg-blueprint` — 28px engineering grid; texture for empty space only
+
+Shadows are reserved for things that genuinely float (popovers, dialogs, the landing terminal). Structure never gets a shadow.
+
+## Shape Language
+
+- **Structure:** square-ish. 6px radius (`rounded-md`). Pills (`rounded-full`) only for tags and status chips, never for buttons, list items, or nav.
+- **Selection** is marked by a 2px left rail, not a filled background pill.
+- **Grouping** is by hairline rules (`divide-y border-border-subtle`), not by nested boxes.
 
 ## Typography
 
@@ -28,19 +65,24 @@ Defined as CSS variables, dark-first.
 :root {
   /* dark (default) */
   --bg-base: #0d0e12;
-  --bg-surface: #16171d;
-  --bg-surface-hover: #1e1f27;
-  --bg-elevated: #1e1f27;
-  --border-subtle: #2a2b34;
-  --border-default: #35363f;
+  --bg-surface: #15161c;
+  --bg-surface-hover: #1d1e26;
+  --bg-elevated: #1d1e26;
+  --border-subtle: #282a34;
+  --border-default: #34363f;
 
-  --text-primary: #e8e9ed;
-  --text-secondary: #9a9ba5;
-  --text-tertiary: #66676f;
+  --text-primary: #e9eaee;
+  --text-secondary: #9b9ca7;
+  --text-tertiary: #8a8b96;
 
-  --accent: #6366f1;       /* indigo — primary actions */
-  --accent-hover: #7678f5;
-  --accent-muted: #23233f;
+  --accent: #4f46e5;       /* indigo — interaction */
+  --accent-hover: #6366f1;
+  --accent-muted: #1c2340;
+
+  /* Signal mint — semantically reserved. Historical state, verified/resolved,
+     live system status. Never decoration. */
+  --signal: #6ee7b7;
+  --signal-muted: #14352c;
 
   --success: #22c55e;
   --warning: #eab308;
@@ -52,26 +94,44 @@ Defined as CSS variables, dark-first.
   --priority-high: #f97316;
   --priority-medium: #eab308;
   --priority-low: #3b82f6;
-  --priority-none: #66676f;
+  --priority-none: #65666f;
 }
 
 [data-theme="light"] {
-  --bg-base: #ffffff;
-  --bg-surface: #f7f7f8;
-  --bg-surface-hover: #eeeef0;
+  --bg-base: #fafafa;
+  --bg-surface: #f4f4f6;
+  --bg-surface-hover: #ececf0;
   --bg-elevated: #ffffff;
-  --border-subtle: #e5e5e8;
-  --border-default: #d4d4d9;
+  --border-subtle: #e7e7eb;
+  --border-default: #d6d6dc;
 
   --text-primary: #16171d;
   --text-secondary: #5c5d66;
   --text-tertiary: #8a8b93;
 
-  --accent: #6366f1;
-  --accent-hover: #4f52e0;
-  --accent-muted: #eeeeff;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-muted: #eceeff;
+
+  /* Darkened for contrast on the light background. */
+  --signal: #047857;
+  --signal-muted: #e3f2ec;
 }
 ```
+
+> Authoritative values live in `src/app/globals.css`. This doc is the *rule*;
+> the stylesheet is the current *state*. If they disagree, the stylesheet wins
+> and this doc needs updating.
+
+### Color discipline
+
+- `--accent` (indigo) = **interaction**. Anything clickable, selected, or active.
+- `--signal` (mint) = **state**. Historical/pinned, verified, resolved, live.
+- `--text-tertiary` = labels and metadata, never body copy.
+- Status colors (`success`/`warning`/`danger`) only carry actual status.
+
+Adding a third accent for a feature is how a product becomes generic. Extend
+`--signal` semantics or reuse an existing one.
 
 ## Spacing Scale
 

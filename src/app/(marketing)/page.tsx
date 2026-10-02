@@ -2,6 +2,7 @@ import { MarketingNav } from "@/components/marketing/marketing-nav";
 import { LandingHero } from "@/components/marketing/landing-hero";
 import { LandingMetrics } from "@/components/marketing/landing-metrics";
 import { LandingFeatures } from "@/components/marketing/landing-features";
+import { LandingProof } from "@/components/marketing/landing-proof";
 import { LandingShowcase } from "@/components/marketing/landing-showcase";
 import { LandingComparison } from "@/components/marketing/landing-comparison";
 import { LandingFaq } from "@/components/marketing/landing-faq";
@@ -264,6 +265,7 @@ export default function LandingPage() {
           <LandingHero />
           <LandingMetrics />
           <LandingFeatures />
+          <LandingProof />
           <LandingShowcase />
           <LandingComparison />
           <LandingFaq />

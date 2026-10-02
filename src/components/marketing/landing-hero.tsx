@@ -14,7 +14,8 @@ const BOOT = [
   { cmd: "engineeros init", out: "workspace ready · supabase://your-project", tone: "ok" },
   { cmd: "index --all", out: "47 notes · 128 tasks · 12 projects embedded", tone: "ok" },
   { cmd: "graph build", out: "214 wikilinks resolved · 0 orphans", tone: "ok" },
-  { cmd: "ask \"how does auth work?\"", out: "3 sources cited → Supabase auth setup notes", tone: "accent" },
+  { cmd: "ask \"how does auth work?\"", out: "3 sources cited → 0.82 / 0.71 / 0.44", tone: "signal" },
+  { cmd: "ask --as-of 2026-03-01 \"what did we decide?\"", out: "answered as of 2026-03-01 · 1 note edited since", tone: "signal" },
 ];
 
 export function LandingHero() {
@@ -23,12 +24,7 @@ export function LandingHero() {
       {/* Blueprint grid — engineering paper, not a gradient blob */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-20 [mask-image:radial-gradient(ellipse_80%_70%_at_50%_0%,black,transparent)]"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, color-mix(in oklab, var(--border-subtle) 70%, transparent) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in oklab, var(--border-subtle) 70%, transparent) 1px, transparent 1px)",
-          backgroundSize: "72px 72px",
-        }}
+        className="bg-blueprint pointer-events-none absolute inset-0 -z-20 opacity-70 [mask-image:radial-gradient(ellipse_80%_70%_at_50%_0%,black,transparent)] [background-size:72px_72px]"
       />
 
       <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-12 px-4 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
@@ -38,7 +34,7 @@ export function LandingHero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, ease: EASE }}
         >
-          <p className="font-mono text-[11px] tracking-[0.18em] text-faint uppercase">
+          <p className="label-mono">
             Notes · Tasks · Projects · Daily
           </p>
 
@@ -47,7 +43,7 @@ export function LandingHero() {
             <br />
             connected.
             <br />
-            <em className="not-italic font-light italic text-[color:var(--hero-mint)]">
+            <em className="not-italic font-light italic text-[color:var(--signal)]">
               Your tools aren&rsquo;t.
             </em>
           </h1>
@@ -73,7 +69,7 @@ export function LandingHero() {
             </Link>
           </div>
 
-          <p className="mt-6 border-l border-border-subtle pl-3 font-mono text-[11px] leading-relaxed tracking-wide text-faint">
+          <p className="figure-mono mt-6 border-l border-border-subtle pl-3 text-[11px] leading-relaxed tracking-wide text-faint">
             Free to start. Data lives in your own Supabase project.
           </p>
         </motion.div>
@@ -131,7 +127,7 @@ function BootTerminal() {
             transition={{ duration: 0.3, ease: EASE }}
           >
             <p className="flex items-baseline gap-2 text-foreground">
-              <span className="text-[color:var(--hero-mint)]">$</span>
+              <span className="text-signal">$</span>
               <span className="break-all">{line.cmd}</span>
             </p>
             {i < step ? (
@@ -141,7 +137,7 @@ function BootTerminal() {
                 transition={{ duration: 0.3, delay: 0.25 }}
                 className={
                   "mt-1 pl-4 text-[11px] " +
-                  (line.tone === "accent" ? "text-accent" : "text-secondary")
+                  (line.tone === "signal" ? "text-signal" : "text-secondary")
                 }
               >
                 {line.out}
@@ -151,10 +147,10 @@ function BootTerminal() {
         ))}
 
         <p className="flex items-center gap-2 text-foreground">
-          <span className="text-[color:var(--hero-mint)]">$</span>
+          <span className="text-signal">$</span>
           <span
             aria-hidden
-            className="inline-block h-3.5 w-[7px] bg-[color:var(--hero-mint)] motion-safe:animate-pulse"
+            className="inline-block h-3.5 w-[7px] bg-signal motion-safe:animate-pulse"
           />
         </p>
       </div>

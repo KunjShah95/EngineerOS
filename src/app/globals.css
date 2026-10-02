@@ -28,6 +28,8 @@
   --color-muted-foreground: var(--text-secondary);
   --color-accent: var(--accent);
   --color-accent-foreground: #ffffff;
+  --color-signal: var(--signal);
+  --color-signal-muted: var(--signal-muted);
   --color-destructive: var(--danger);
   --color-destructive-foreground: #ffffff;
   --color-border: var(--border-default);
@@ -72,14 +74,21 @@
 
   --text-primary: #e9eaee;
   --text-secondary: #9b9ca7;
-  --text-tertiary: #65666f;
+  --text-tertiary: #8a8b96;
 
   --accent: #4f46e5;
   --accent-hover: #6366f1;
   --accent-muted: #1c2340;
 
-  /* Landing-only signal color. Terminal prompt, hero counterpoint. */
-  --hero-mint: #6ee7b7;
+  /* Signal mint. Semantically reserved — never decoration. It means one of:
+     resolved/verified, historical state, or a live system's status. Landing
+     uses it for the hero counterpoint and terminal prompts; the app uses it for
+     retrieval provenance and pinned-date affordances. If something is mint, it
+     is telling you something. */
+  --signal: #6ee7b7;
+  /* Mint at low emphasis — washes behind text, tints hairlines. */
+  --signal-muted: #14352c;
+  --hero-mint: var(--signal);
 
   --success: #22c55e;
   --warning: #eab308;
@@ -116,7 +125,9 @@
   --accent-muted: #eceeff;
 
   /* Darkened for contrast on the light background. */
-  --hero-mint: #047857;
+  --signal: #047857;
+  --signal-muted: #e3f2ec;
+  --hero-mint: var(--signal);
 
   --shadow-card-token: 0 1px 2px rgb(23 23 32 / 0.06), 0 4px 12px -2px rgb(23 23 32 / 0.05);
   --shadow-elevated-token: 0 8px 24px -8px rgb(23 23 32 / 0.16);
@@ -124,13 +135,7 @@
 }
 
 @theme inline {
-  --animate-aurora: aurora 22s linear infinite;
   --animate-lamp-expand: lamp-expand 1.2s cubic-bezier(0.16,1,0.3,1) forwards;
-}
-
-@keyframes aurora {
-  from { background-position: 50% 50%, 50% 50%; }
-  to   { background-position: 350% 50%, 350% 50%; }
 }
 
 @keyframes lamp-expand {
@@ -200,4 +205,72 @@
   p {
     text-wrap: pretty;
   }
+}
+
+/* ===========================================================================
+   Design language — "engineering instrument", not generic dashboard.
+
+   The marketing redesign (Fraunces display, mono micro-labels, blueprint grid,
+   labeled chrome) established a direction. These utilities carry the parts of
+   it that belong inside the product, so app surfaces stop reading as default
+   shadcn and start reading as a tool someone designed on purpose.
+
+   Rules this encodes:
+     · Mono micro-labels, not uppercase Inter — labels are metadata, and
+       metadata is monospaced everywhere in this product.
+     · Square-ish corners for structure, pills only for tags. Rounded-full was
+       the single biggest tell of the generic look.
+     · Numbers that can be compared are tabular, so scores and dates line up.
+   =========================================================================== */
+
+@layer components {
+  /* Section eyebrow: the label above a block. Mono, tracked, quiet. */
+  .label-mono {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 11px;
+    line-height: 1rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+
+  /* A measured value — relevance scores, line deltas, counts. Aligns in columns. */
+  .figure-mono {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* Structural container. Square-ish (6px), hairline border, no shadow —
+     shadows are reserved for things that float. */
+  .panel-inset {
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    background-color: var(--bg-surface);
+  }
+
+  /* Left rail used to mark provenance and state. One accent, not a border. */
+  .rail-signal {
+    box-shadow: inset 2px 0 0 0 var(--signal);
+  }
+  .rail-accent {
+    box-shadow: inset 2px 0 0 0 var(--accent);
+  }
+}
+
+/* Blueprint paper — the app's texture for empty space. Engineering grid, not a
+   gradient blob. Uses hairlines so it stays a texture at any density. */
+@utility bg-blueprint {
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in oklab, var(--border-subtle) 60%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--border-subtle) 60%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 28px 28px;
 }

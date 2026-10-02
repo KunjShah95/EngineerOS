@@ -1,7 +1,5 @@
 "use client";
 
-import { Check, X } from "lucide-react";
-
 import { Reveal } from "@/components/marketing/reveal";
 
 const FEATURES = [
@@ -77,72 +75,61 @@ const FEATURES = [
   },
 ];
 
-function CheckIcon({ present }: { present: boolean }) {
+function Mark({ present }: { present: boolean }) {
+  /* Marked in words, not green ticks. A checkmark grid is the most recognizable
+     SaaS-template artifact there is, and it flattens "absent" into a scold. */
   return present ? (
-    <Check className="size-4 text-success" strokeWidth={1.75} />
+    <span className="label-mono text-signal">yes</span>
   ) : (
-    <X className="size-4 text-faint" strokeWidth={1.75} />
+    <span className="label-mono text-[10px]">—</span>
   );
 }
 
 export function LandingComparison() {
   return (
-    <section id="compare" className="relative overflow-hidden py-16 md:py-28">
+    <section id="compare" className="relative py-16 md:py-28">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-        <Reveal className="mx-auto max-w-2xl text-center">
-          <p className="font-mono text-[11px] tracking-[0.18em] text-faint uppercase">
-            Comparison
-          </p>
+        <Reveal className="max-w-2xl">
+          <p className="label-mono">comparison</p>
           <h2 className="mt-5 font-serif-display text-[clamp(1.9rem,4vw,2.75rem)] font-normal leading-[1.06] tracking-[-0.02em] text-foreground">
             How EngineerOS stacks up
           </h2>
-          <p className="mx-auto mt-5 max-w-lg text-[15px] leading-relaxed text-secondary">
+          <p className="mt-5 max-w-lg text-[15px] leading-relaxed text-secondary">
             EngineerOS combines the best of note-taking, project management,
             and AI — without locking your data in a proprietary cloud.
           </p>
         </Reveal>
 
-        <Reveal delay={0.12} className="mt-10 md:mt-14 overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
+        <Reveal delay={0.12} className="mt-10 overflow-x-auto md:mt-14">
+          <table className="w-full border-collapse">
             <thead>
-              <tr className="border-b border-border-subtle">
-                <th className="py-3 pr-4 text-left text-xs font-semibold text-faint uppercase tracking-wide">
-                  Feature
-                </th>
-                <th className="py-3 px-4 text-center text-xs font-semibold text-accent uppercase tracking-wide">
+              <tr className="border-b border-border-default">
+                <th className="label-mono py-3 pr-4 text-left font-normal">capability</th>
+                {/* Our column is the one that gets emphasis — a rail, not a
+                    filled cell, so the table stays a table. */}
+                <th className="label-mono border-x border-border-subtle bg-surface/40 px-4 py-3 text-center font-normal text-signal">
                   EngineerOS
                 </th>
-                <th className="py-3 px-4 text-center text-xs font-semibold text-secondary uppercase tracking-wide">
-                  Notion
-                </th>
-                <th className="py-3 px-4 text-center text-xs font-semibold text-secondary uppercase tracking-wide">
-                  Obsidian
-                </th>
-                <th className="py-3 pl-4 text-center text-xs font-semibold text-secondary uppercase tracking-wide">
-                  Evernote
-                </th>
+                <th className="label-mono px-4 py-3 text-center font-normal">Notion</th>
+                <th className="label-mono px-4 py-3 text-center font-normal">Obsidian</th>
+                <th className="label-mono pl-4 py-3 text-center font-normal">Evernote</th>
               </tr>
             </thead>
             <tbody>
               {FEATURES.map((f) => (
-                <tr
-                  key={f.label}
-                  className="border-b border-border-subtle/50 hover:bg-surface-hover/50"
-                >
-                  <td className="py-3 pr-4 text-sm text-foreground">
-                    {f.label}
+                <tr key={f.label} className="border-b border-border-subtle/60">
+                  <td className="py-3 pr-4 text-sm text-secondary">{f.label}</td>
+                  <td className="rail-signal bg-surface/40 px-4 py-3 text-center">
+                    <Mark present={f.engineeros} />
                   </td>
-                  <td className="py-3 px-4 text-center">
-                    <CheckIcon present={f.engineeros} />
+                  <td className="px-4 py-3 text-center">
+                    <Mark present={f.notion} />
                   </td>
-                  <td className="py-3 px-4 text-center">
-                    <CheckIcon present={f.notion} />
+                  <td className="px-4 py-3 text-center">
+                    <Mark present={f.obsidian} />
                   </td>
-                  <td className="py-3 px-4 text-center">
-                    <CheckIcon present={f.obsidian} />
-                  </td>
-                  <td className="py-3 pl-4 text-center">
-                    <CheckIcon present={f.evernote} />
+                  <td className="pl-4 py-3 text-center">
+                    <Mark present={f.evernote} />
                   </td>
                 </tr>
               ))}

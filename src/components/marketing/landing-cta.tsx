@@ -12,22 +12,17 @@ export function LandingCta() {
       {/* Same blueprint grid as the hero — the page closes where it opened */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_70%_100%_at_50%_100%,black,transparent)]"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, color-mix(in oklab, var(--border-subtle) 70%, transparent) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in oklab, var(--border-subtle) 70%, transparent) 1px, transparent 1px)",
-          backgroundSize: "72px 72px",
-        }}
+        className="bg-blueprint pointer-events-none absolute inset-0 -z-10 opacity-70 [mask-image:radial-gradient(ellipse_70%_100%_at_50%_100%,black,transparent)] [background-size:72px_72px]"
       />
 
       <Reveal className="mx-auto w-full max-w-2xl px-4 text-center sm:px-6">
-        <p className="font-mono text-[11px] tracking-[0.18em] text-faint uppercase">
+        <p className="label-mono">
           No setup debt
         </p>
         <h2 className="mt-5 font-serif-display text-[clamp(2rem,4.5vw,3rem)] font-normal leading-[1.04] tracking-[-0.02em] text-foreground">
           Your first note takes
           <br />
-          <em className="not-italic font-light italic text-[color:var(--hero-mint)]">
+          <em className="not-italic font-light italic text-[color:var(--signal)]">
             ten seconds.
           </em>
         </h2>
@@ -43,7 +38,7 @@ export function LandingCta() {
               <ArrowRight className="size-4" strokeWidth={1.75} />
             </Button>
           </Link>
-          <p className="font-mono text-[11px] tracking-wide text-faint">
+          <p className="figure-mono text-[11px] tracking-wide text-faint">
             No credit card · Your own Supabase
           </p>
         </div>

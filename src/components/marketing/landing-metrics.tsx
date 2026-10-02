@@ -13,20 +13,29 @@ const OBJECTS = [
 export function LandingMetrics() {
   return (
     <section className="border-y border-border-subtle">
-      <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <Reveal>
-          <div className="grid grid-cols-2 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
-            {OBJECTS.map((o) => (
-              <div key={o.name} className="px-2 text-center">
-                <p className="font-serif-display text-2xl font-normal tracking-tight text-foreground">
-                  {o.name}
-                </p>
-                <p className="mt-1.5 font-mono text-[11px] leading-relaxed text-faint">
+          {/* A spec strip, not four centered stat cards. Hairline dividers do
+              the separating, so there are no boxes at all. */}
+          <dl className="grid grid-cols-2 lg:grid-cols-4">
+            {OBJECTS.map((o, i) => (
+              <div
+                key={o.name}
+                className={[
+                  "px-4 py-8 sm:py-10",
+                  i > 0 ? "lg:border-l lg:border-border-subtle" : "",
+                  i === 1 ? "border-l border-border-subtle lg:border-l" : "",
+                  i === 3 ? "border-l border-border-subtle" : "",
+                  i === 2 ? "border-t border-border-subtle lg:border-t-0" : "",
+                ].join(" ")}
+              >
+                <dt className="label-mono">{o.name}</dt>
+                <dd className="mt-2 font-serif-display text-xl leading-snug tracking-[-0.01em] text-foreground">
                   {o.becomes}
-                </p>
+                </dd>
               </div>
             ))}
-          </div>
+          </dl>
         </Reveal>
       </div>
     </section>
