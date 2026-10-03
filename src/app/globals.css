@@ -108,7 +108,19 @@
   --radius: 0.5rem;
 }
 
+/* Tell the browser's form-control renderer which scheme the app is using.
+   Chromium/WebKit do NOT honour `color` for the segmented edit fields inside
+   date / time / datetime-local / month inputs, nor the calendar-picker glyph —
+   they pick their colors from `color-scheme`. Without this, dark mode renders
+   those fields with near-black text on a dark background (invisible) and a
+   black calendar icon. Declared on :root (dark is the default token set) and
+   overridden for the light theme; `[data-theme]` sits on <html>. */
+:root {
+  color-scheme: dark;
+}
+
 [data-theme="light"] {
+  color-scheme: light;
   --bg-base: #fafafa;
   --bg-surface: #f4f4f6;
   --bg-surface-hover: #ececf0;
@@ -149,11 +161,48 @@
   }
   /* Force form controls to inherit text color so the app theme (not the
      browser's OS-level fieldtext) controls typed-text contrast. Without
-     this, inputs in dark mode can render invisible dark-on-dark text. */
+     this, inputs in dark mode can render invisible dark-on-dark text.
+     Note: native date/time/datetime-local fields ignore `color` entirely and
+     are governed by `color-scheme` above — don't expect this rule to cover
+     them. */
   input,
   textarea,
   select {
     color: inherit;
+  }
+  /* Native date/time segmented edit fields. `color-scheme` above does the real
+     work in Chromium/WebKit, but `color` on the edit segments is honoured too,
+     so set both — that covers engines that only implement one of the two.
+     Without either, dark mode draws near-black segments on a dark field. */
+  input[type="date"]::-webkit-datetime-edit,
+  input[type="datetime-local"]::-webkit-datetime-edit,
+  input[type="month"]::-webkit-datetime-edit,
+  input[type="time"]::-webkit-datetime-edit,
+  input[type="week"]::-webkit-datetime-edit {
+    color: inherit;
+  }
+  /* Affordance only. Deliberately no `filter` here: `color-scheme` already
+     picks a correct glyph color for the active theme, and inverting on top of
+     that would render it invisible. */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  input[type="month"]::-webkit-calendar-picker-indicator,
+  input[type="week"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.65;
+    transition: opacity 150ms ease;
+  }
+  input[type="date"]:hover::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]:hover::-webkit-calendar-picker-indicator,
+  input[type="month"]:hover::-webkit-calendar-picker-indicator,
+  input[type="week"]:hover::-webkit-calendar-picker-indicator,
+  input[type="time"]:hover::-webkit-calendar-picker-indicator {
+    opacity: 1;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    opacity: 0.55;
   }
   body {
     background-color: var(--bg-base);
