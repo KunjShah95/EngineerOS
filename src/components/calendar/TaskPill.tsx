@@ -9,7 +9,7 @@ export function TaskPill({ task }: { task: TaskWithProject }) {
     <Link
       href={`/tasks?task=${task.id}`}
       className={cn(
-        "group flex min-w-0 items-center gap-1.5 rounded-md border border-border-subtle bg-elevated px-2 py-1 text-xs text-foreground transition-colors duration-150 hover:bg-surface-hover",
+        "group flex h-[22px] w-full min-w-0 items-center gap-1.5 rounded-[4px] bg-elevated px-1.5 text-[11px] leading-none text-foreground ring-1 ring-inset ring-border-subtle transition-colors duration-150 hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
         task.status === "done" && "opacity-50"
       )}
     >

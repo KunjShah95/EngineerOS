@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   CalendarDays,
@@ -23,7 +23,7 @@ export function LandingFeatures() {
     <section id="features" className="relative py-16 md:py-28">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <Reveal className="mx-auto max-w-2xl text-center">
-          <p className="font-mono text-[11px] tracking-[0.18em] text-faint uppercase">
+          <p className="label-mono">
             The model
           </p>
           <h2 className="mt-5 font-serif-display text-[clamp(1.9rem,4vw,2.75rem)] font-normal leading-[1.06] tracking-[-0.02em] text-foreground">
@@ -110,7 +110,7 @@ export function LandingFeatures() {
 
         {/* AI Layer */}
         <Reveal className="mt-14 border-t border-border-subtle pt-14 text-center md:mt-20 md:pt-20">
-          <p className="font-mono text-[11px] tracking-[0.18em] text-faint uppercase">
+          <p className="label-mono">
             The AI layer
           </p>
           <h2 className="mx-auto mt-5 max-w-2xl font-serif-display text-[clamp(1.9rem,4vw,2.75rem)] font-normal leading-[1.06] tracking-[-0.02em] text-foreground">
@@ -184,12 +184,10 @@ function FeatureCard({
   visual: React.ReactNode;
 }) {
   return (
-    <div className="group flex h-full flex-col border border-border-subtle bg-surface/50 p-5 transition-colors duration-200 hover:border-border-default">
-      <div className="mb-3 flex items-center gap-2.5">
-        <Icon className={cn("size-3.5", iconClass)} strokeWidth={1.75} />
-        <h3 className="font-mono text-[11px] tracking-[0.14em] text-foreground uppercase">
-          {title}
-        </h3>
+    <div className="group flex h-full flex-col border border-border-subtle bg-surface/40 p-5 transition-colors duration-200 hover:border-border-default">
+      <div className="mb-3 flex items-start gap-2.5">
+        <Icon className={cn("mt-0.5 size-3.5 shrink-0", iconClass)} strokeWidth={1.75} />
+        <h3 className="label-mono text-[10px] text-foreground">{title}</h3>
       </div>
       <p className="mb-5 max-w-sm text-sm leading-relaxed text-secondary">{body}</p>
       <div className="mt-auto">{visual}</div>
@@ -433,7 +431,7 @@ function AssistantVisual() {
           <Sparkles className="size-2.5 text-white" strokeWidth={2} />
         </span>
         <div className="rounded-lg border border-border-subtle bg-surface px-2 py-1.5 text-[9px] leading-relaxed text-foreground">
-          Start with the data model, then the API route, then the hookâ€¦
+          Start with the data model, then the API route, then the hook…
           <div className="mt-1.5 flex items-center gap-1">
             <FileText className="size-2.5 text-accent" strokeWidth={1.75} />
             <span className="font-mono text-[8px] text-accent">Architecture notes</span>
@@ -492,7 +490,7 @@ function AutomationVisual() {
       ))}
       <div className="flex items-center gap-1.5 rounded border border-dashed border-success/40 bg-success/5 px-2 py-1.5">
         <Zap className="size-2.5 shrink-0 text-success" strokeWidth={1.75} />
-        <span className="text-[9px] text-success">2 tasks created Â· rollover done</span>
+        <span className="text-[9px] text-success">2 tasks created · rollover done</span>
       </div>
     </div>
   );

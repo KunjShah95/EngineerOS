@@ -6,6 +6,7 @@ import { Bell, Check, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useMarkReminderRead, useReminders } from "@/hooks/useAutomation";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useUiStore } from "@/lib/store/ui";
 import { cn } from "@/lib/utils";
@@ -19,12 +20,16 @@ export function NotificationPanel() {
   const setOpen = useUiStore((s) => s.setNotificationPanelOpen);
   const panelRef = useRef<HTMLDivElement>(null);
 
+  useFocusTrap(open, panelRef);
+
   const unread = (reminders ?? []).filter((r) => !r.read_at);
   const recent = (reminders ?? []).slice(0, 12);
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
     const onClickOut = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) setOpen(false);
     };
@@ -41,6 +46,9 @@ export function NotificationPanel() {
   return (
     <div
       ref={panelRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Notifications"
       className="absolute top-14 right-4 z-50 w-80 rounded-xl border border-default bg-popover shadow-2xl"
     >
       <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
@@ -67,6 +75,7 @@ export function NotificationPanel() {
           <button
             type="button"
             onClick={() => setOpen(false)}
+            aria-label="Close notifications"
             className="rounded p-1 text-secondary hover:bg-surface-hover hover:text-foreground"
           >
             <X className="size-3.5" strokeWidth={1.75} />
@@ -76,9 +85,7 @@ export function NotificationPanel() {
 
       <div className="max-h-96 overflow-y-auto">
         {recent.length === 0 ? (
-          <div className="px-4 py-8 text-center text-sm text-faint">
-            No notifications yet.
-          </div>
+          <div className="px-4 py-8 text-center text-sm text-faint">No notifications yet.</div>
         ) : (
           recent.map((r) => (
             <div

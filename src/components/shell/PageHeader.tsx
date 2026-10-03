@@ -28,15 +28,18 @@ export function PageHeader({
         className
       )}
     >
-      <div className="flex min-w-0 items-start gap-3.5">
+      <div className="flex min-w-0 items-start gap-3">
         {Icon ? (
+          /* Not a filled rounded chip — that's the default-dashboard tell. A
+             hairline square with the icon inside reads as a tool marking a
+             panel, and it doesn't add a second color field to every page. */
           <span
             className={cn(
-              "mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent-muted ring-1 ring-accent/20",
+              "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-surface",
               iconClassName
             )}
           >
-            <Icon className="size-4.5 text-accent" strokeWidth={1.75} />
+            <Icon className="size-4 text-accent" strokeWidth={1.75} />
           </span>
         ) : null}
         <div className="min-w-0">

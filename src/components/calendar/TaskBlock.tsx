@@ -1,6 +1,8 @@
 "use client";
 
 import { format } from "date-fns";
+import { useDraggable } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 
 import { useGridResize } from "@/hooks/useGridResize";
 import { taskTimedRange, type TimedLayout } from "@/lib/calendar-grid";
@@ -33,6 +35,10 @@ export function TaskBlock({
   // HourGrid only renders timed tasks here, so the range is always present;
   // the hook still runs first (rules of hooks), then we bail if it vanished.
   const range = taskTimedRange(task);
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: `task:${task.id}`,
+    data: { task },
+  });
   const { beginResize, moveResize, endResize, topPx, heightPx, resized } = useGridResize({
     id: task.id,
     startsAt: range?.starts_at ?? "",
@@ -43,8 +49,8 @@ export function TaskBlock({
     onResize,
   });
   if (!range) return null;
-  const width = `calc(${100 / layout.columns}% - 2px)`;
-  const left = `calc(${(layout.column / layout.columns) * 100}% + 1px)`;
+  const width = `calc(${100 / layout.columns}% - 3px)`;
+  const left = `calc(${(layout.column / layout.columns) * 100}% + 1.5px)`;
 
   // Live time label during a resize; falls back to the stored range.
   const labelStart = resized?.starts_at ?? range.starts_at;
@@ -52,20 +58,33 @@ export function TaskBlock({
 
   return (
     <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
       role="button"
       tabIndex={0}
       aria-label={task.title}
       title={task.title}
       onKeyDown={(e) => {
-        if (e.key === "Enter") onOpen(task.id);
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen(task.id);
+        }
       }}
       onClick={() => onOpen(task.id)}
       onPointerDown={(e) => e.stopPropagation()}
       className={cn(
-        "group absolute z-10 touch-none select-none overflow-hidden rounded-md border border-border-subtle bg-elevated px-1.5 py-0.5 text-left text-[11px] leading-tight text-foreground transition-colors duration-150 hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
-        task.status === "done" && "opacity-50"
+        "group absolute z-10 cursor-grab touch-none select-none overflow-hidden rounded-[5px] border border-border-subtle bg-elevated px-1.5 py-[3px] text-left text-[11px] leading-[1.25] text-foreground transition-colors duration-150 hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 active:cursor-grabbing",
+        task.status === "done" && "opacity-50",
+        isDragging && "z-20 opacity-70 shadow-lg"
       )}
-      style={{ top: topPx, height: heightPx, width, left }}
+      style={{
+        top: topPx,
+        height: heightPx,
+        width,
+        left,
+        transform: CSS.Transform.toString(transform),
+      }}
     >
       <p className={cn("line-clamp-1 font-medium", task.status === "done" && "line-through")}>
         <span
@@ -75,8 +94,8 @@ export function TaskBlock({
         />
         {task.title}
       </p>
-      {heightPx >= hourHeight * 0.55 && (
-        <p className="line-clamp-1 text-faint">
+      {heightPx >= hourHeight * 0.5 && (
+        <p className="figure-mono line-clamp-1 text-[10px] text-secondary">
           {clock(labelStart)} – {clock(labelEnd)}
         </p>
       )}

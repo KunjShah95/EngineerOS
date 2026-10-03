@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Menu, Terminal, X } from "lucide-react";
+import { ArrowRight, Menu, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 
 import { Button } from "@/components/ui/button";
@@ -52,21 +52,25 @@ export function MarketingNav() {
             className="flex items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
             aria-label="EngineerOS home"
           >
-            <span className="flex size-7 items-center justify-center rounded-md bg-gradient-to-br from-[#4f46e5] to-[#1e40af] text-white shadow-[0_0_20px_-6px_var(--accent)]">
-              <Terminal className="size-4" strokeWidth={2} />
+            {/* A prompt, not a logo blob. The product is a tool you type into,
+                so the mark is the one glyph that says so — and it costs nothing
+                where a gradient chip with a glow would. */}
+            <span className="figure-mono flex size-7 items-center justify-center rounded border border-border-subtle bg-surface text-[13px] leading-none text-signal">
+              <span aria-hidden>&gt;_</span>
             </span>
             <span className="text-sm font-semibold tracking-tight text-foreground">
               EngineerOS
             </span>
           </Link>
 
-          {/* Desktop nav */}
+          {/* Desktop nav — labels in mono, because these are section names, and
+              the whole page speaks in mono eyebrows. */}
           <nav className="hidden items-center gap-1 md:flex" aria-label="Sections">
             {links.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className="rounded-md px-3 py-2 text-sm font-medium text-secondary transition-colors duration-150 hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                className="label-mono rounded px-3 py-2 transition-colors duration-150 hover:bg-surface-hover hover:text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
               >
                 {link.label}
               </a>
@@ -115,7 +119,7 @@ export function MarketingNav() {
                   key={link.href}
                   href={link.href}
                   onClick={closeMobile}
-                  className="rounded-md px-3 py-2.5 text-sm font-medium text-secondary transition-colors duration-150 hover:bg-surface-hover hover:text-foreground"
+                  className="label-mono rounded px-3 py-2.5 transition-colors duration-150 hover:bg-surface-hover hover:text-secondary"
                 >
                   {link.label}
                 </a>

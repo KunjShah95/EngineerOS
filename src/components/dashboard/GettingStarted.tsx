@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, Check, Sparkles, X } from "lucide-react";
@@ -8,6 +8,13 @@ import { ArrowRight, Check, Sparkles, X } from "lucide-react";
 import { useNotes } from "@/hooks/useNotes";
 import { useTasks } from "@/hooks/useTasks";
 import { useDismissOnboarding, useWorkspace } from "@/hooks/useWorkspace";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { useModCombo } from "@/hooks/usePlatformShortcut";
+import {
+  useClearSampleData,
+  useHasSampleData,
+  useSeedSampleData,
+} from "@/hooks/useSampleWorkspace";
 import { useUiStore } from "@/lib/store/ui";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +32,38 @@ import { cn } from "@/lib/utils";
  * un-migrated self-host should be able to close their own checklist.
  */
 
+const SEARCH_SESSION_KEY = "engineeros:tried-search";
+
+/**
+ * sessionStorage-backed "tried the search palette" flag, exposed through
+ * useSyncExternalStore (the sanctioned external-store pattern — no
+ * setState-in-effect). Server snapshot is always false.
+ */
+const searchTriedListeners = new Set<() => void>();
+
+function subscribeSearchTried(onChange: () => void): () => void {
+  searchTriedListeners.add(onChange);
+  return () => searchTriedListeners.delete(onChange);
+}
+
+function readSearchTried(): boolean {
+  try {
+    return sessionStorage.getItem(SEARCH_SESSION_KEY) === "1";
+  } catch {
+    // sessionStorage may be unavailable (private mode).
+    return false;
+  }
+}
+
+function persistSearchTried(): void {
+  try {
+    sessionStorage.setItem(SEARCH_SESSION_KEY, "1");
+  } catch {
+    // ignore — the in-memory notification below still marks this session.
+  }
+  for (const notify of searchTriedListeners) notify();
+}
+
 type Step = {
   id: string;
   label: string;
@@ -40,15 +79,16 @@ export function GettingStarted() {
   const setQuickCaptureOpen = useUiStore((s) => s.setQuickCaptureOpen);
   const setCommandPaletteOpen = useUiStore((s) => s.setCommandPaletteOpen);
   const dismiss = useDismissOnboarding();
+  const reducedMotion = usePrefersReducedMotion();
+  const modLabel = useModCombo("K");
+  const workspaceId = workspace?.id ?? null;
+  const { data: hasSample } = useHasSampleData(workspaceId);
+  const seedSample = useSeedSampleData(workspaceId);
+  const clearSample = useClearSampleData(workspaceId);
 
   const [hidden, setHidden] = useState(false);
-  // The search step can't be inferred from stored data — there's no record of
-  // having opened the palette — so it's tracked in session state. Persisting it
-  // would mean a new table for a one-time nudge.
-  const [triedSearch, setTriedSearch] = useState(false);
-
-  // Already toured, or deliberately dismissed for this session.
-  if (!workspace || hidden || workspace.onboarded_at) return null;
+  const triedSearch = useSyncExternalStore(subscribeSearchTried, readSearchTried, () => false);
+  const dismissedOnce = useRef(false);
 
   const noteCount = notes?.length ?? 0;
   const taskCount = tasks?.length ?? 0;
@@ -67,34 +107,42 @@ export function GettingStarted() {
       label: "Give one thing a due date",
       hint: "Dated tasks drive Home, the calendar and the daily rollover.",
       done: hasDatedTask,
-      action: { href: "/tasks", label: "Add a task" },
+      action: { href: "/tasks?new=1", label: "Add a task" },
     },
     {
       id: "search",
       label: "Search everything at once",
-      hint: "⌘K finds notes, tasks and saved links — by meaning, not just words.",
+      hint: `${modLabel} finds notes, tasks and saved links — by meaning, not just words.`,
       done: triedSearch,
-      action: { open: "palette", label: "Try ⌘K" },
+      action: { open: "palette", label: `Try ${modLabel}` },
     },
   ];
 
   const completed = steps.filter((s) => s.done).length;
+  const allDone = completed === steps.length;
 
-  /**
-   * Dispatch an inline step action.
-   *
-   * Lives as a function rather than inline in the onClick because the
-   * `href`-vs-`open` union doesn't narrow inside a JSX callback — TypeScript can
-   * only guarantee the discrimination at the point of the check, and a closure
-   * may run after `step` has moved on.
-   */
+  // Auto-dismiss once every step is complete — the checklist has done its job.
+  // setState only happens in the promise callback (never synchronously in the
+  // effect body), so a failed write on an old schema still hides the list.
+  useEffect(() => {
+    if (!workspace || workspace.onboarded_at || hidden || !allDone) return;
+    if (dismissedOnce.current) return;
+    dismissedOnce.current = true;
+    void dismiss().then(() => setHidden(true));
+  }, [allDone, dismiss, hidden, workspace]);
+
+  // Already toured, or deliberately dismissed for this session.
+  if (!workspace || hidden || workspace.onboarded_at) return null;
+
+  const markSearchTried = () => persistSearchTried();
+
   const runAction = (action: Step["action"]) => {
     if ("href" in action) return;
     if (action.open === "capture") {
       setQuickCaptureOpen(true);
     } else {
       setCommandPaletteOpen(true);
-      setTriedSearch(true);
+      markSearchTried();
     }
   };
 
@@ -106,7 +154,7 @@ export function GettingStarted() {
   return (
     <motion.section
       aria-label="Get started"
-      initial={{ opacity: 0, y: 8 }}
+      initial={reducedMotion ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className="rounded-xl border border-default bg-surface p-5"
     >
@@ -157,7 +205,6 @@ export function GettingStarted() {
             {"href" in step.action ? (
               <Link
                 href={step.action.href}
-                onClick={close}
                 className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-secondary transition-colors hover:border-accent/30 hover:text-foreground"
               >
                 {step.action.label}
@@ -176,9 +223,11 @@ export function GettingStarted() {
         ))}
       </ol>
 
-      <div className="mt-4 flex items-center justify-between gap-3">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-faint">
-          {completed} of {steps.length} done
+          <span className="figure-mono text-[11px] text-faint">
+        {completed}/{steps.length} done
+      </span>
         </p>
         <button
           type="button"
@@ -187,6 +236,35 @@ export function GettingStarted() {
         >
           I&apos;ll figure it out myself
         </button>
+      </div>
+
+      {/* One click of real data instead of twenty minutes of typing. */}
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border-subtle pt-3">
+        {hasSample ? (
+          <button
+            type="button"
+            onClick={() => clearSample.mutate()}
+            disabled={clearSample.isPending}
+            className="label-mono transition-colors hover:text-secondary disabled:opacity-50"
+          >
+            clear sample data
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => seedSample.mutate()}
+            disabled={seedSample.isPending}
+            className="label-mono inline-flex items-center gap-1.5 text-accent transition-colors hover:text-accent-hover disabled:opacity-50"
+          >
+            <Sparkles className="size-3" strokeWidth={1.75} />
+            {seedSample.isPending ? "loading sample data…" : "explore with sample data"}
+          </button>
+        )}
+        <span className="text-[11px] text-faint">
+          {hasSample
+            ? "The demo project and its notes, tasks and event."
+            : "One project, notes, tasks and a calendar event — see everything working."}
+        </span>
       </div>
     </motion.section>
   );

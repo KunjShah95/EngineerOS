@@ -54,12 +54,18 @@ export function SnippetsPage() {
   };
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full flex-col md:flex-row">
       {/* Sidebar */}
-      <aside className="flex w-64 shrink-0 flex-col border-r border-default">
+      <aside
+        className={cn(
+          "flex w-full shrink-0 flex-col border-default md:w-64 md:border-r",
+          selectedId ? "hidden md:flex" : "flex",
+          "border-b md:border-b-0"
+        )}
+      >
         <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
           <span className="text-sm font-semibold">Snippets</span>
-          <Button size="icon" variant="ghost" onClick={() => void handleNew()} disabled={createSnippet.isPending}>
+          <Button size="icon" variant="ghost" aria-label="Add snippet" onClick={() => void handleNew()} disabled={createSnippet.isPending}>
             <Plus className="size-4" strokeWidth={1.75} />
           </Button>
         </div>
@@ -102,13 +108,14 @@ export function SnippetsPage() {
       </aside>
 
       {/* Editor */}
-      <div className="flex-1 overflow-y-auto">
+      <div className={cn("flex-1 overflow-y-auto", !selectedId && "hidden md:block")}>
         {selected ? (
           <SnippetEditor
             key={selected.id}
             snippet={selected}
             workspaceId={workspaceId}
             onDelete={() => setSelectedId(null)}
+            onBack={() => setSelectedId(null)}
           />
         ) : (
           <div className="flex h-full items-center justify-center">
@@ -130,10 +137,12 @@ function SnippetEditor({
   snippet,
   workspaceId,
   onDelete,
+  onBack,
 }: {
   snippet: Snippet;
   workspaceId: string | null;
   onDelete: () => void;
+  onBack: () => void;
 }) {
   const updateSnippet = useUpdateSnippet(workspaceId);
   const deleteSnippet = useDeleteSnippet(workspaceId);
@@ -161,11 +170,15 @@ function SnippetEditor({
   };
 
   return (
-    <div className="mx-auto max-w-3xl p-6 space-y-5">
+    <div className="mx-auto max-w-3xl space-y-5 p-6">
+      <div className="flex items-center justify-between gap-2 md:hidden">
+        <Button variant="ghost" size="sm" onClick={onBack} aria-label="Back to snippets">
+          ← Snippets
+        </Button>
+      </div>
       <PageHeader
         icon={Code2}
-        title=""
-        description=""
+        title="Edit snippet"
         actions={
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => void handleCopy()}>

@@ -102,7 +102,7 @@ export function PomodoroPage() {
         description={`${sessions} session${sessions !== 1 ? "s" : ""} completed today`}
         className="mb-8"
         actions={
-          <Button variant="ghost" size="icon" onClick={() => setShowSettings(!showSettings)}>
+          <Button variant="ghost" size="icon" aria-label="Pomodoro settings" onClick={() => setShowSettings(!showSettings)}>
             <Settings className="size-4" strokeWidth={1.75} />
           </Button>
         }

@@ -16,6 +16,7 @@ import { createClient } from "@/lib/supabase/client";
 import { nextPathFromLocation } from "@/lib/next-path";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { SetupNotice } from "@/components/supabase/SetupNotice";
+import { GitHubSignInButton, OAuthDivider, OAuthErrorNotice } from "@/components/auth/GitHubSignInButton";
 
 const loginSchema = z.object({
   email: z.email("Enter a valid email address"),
@@ -91,6 +92,10 @@ export default function LoginPage() {
           onSubmit={handleSubmit(onSubmit)}
           className="space-y-4 rounded-2xl border border-default bg-surface/80 p-6 shadow-elevated backdrop-blur-sm"
         >
+          <OAuthErrorNotice />
+          <GitHubSignInButton />
+          <OAuthDivider />
+
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
             <Input

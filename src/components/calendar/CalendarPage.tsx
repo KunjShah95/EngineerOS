@@ -200,6 +200,27 @@ export function CalendarPage() {
     );
   };
 
+  // A task drag can change the day, not just the time — so it commits the date
+  // alongside the time, unlike a resize which keeps the day fixed.
+  const moveTask = (id: string, startsAt: string, endsAt: string) => {
+    const start = new Date(startsAt);
+    const duration = Math.max(
+      30,
+      Math.round((new Date(endsAt).getTime() - start.getTime()) / 60_000)
+    );
+    updateTask.mutate(
+      {
+        id,
+        patch: {
+          due_date: toISODate(start),
+          due_time: timeOfDay(startsAt),
+          duration_minutes: duration,
+        },
+      },
+      { onError: () => toast.error("Couldn't move the task") }
+    );
+  };
+
   if (isLoading || !workspace) return <PageLoader label="Loading calendar…" />;
   if (isError)
     return <EmptyState icon={CalendarRange} title="Couldn't load your calendar" description="Try again in a moment." />;
@@ -218,101 +239,167 @@ export function CalendarPage() {
       ? format(anchor, "EEEE, MMM d, yyyy")
       : formatMonthYear(monthYear, monthMonth);
 
-  return (
-    <div className="mx-auto w-full max-w-6xl px-6 py-6">
-      <PageHeader
-        icon={CalendarRange}
-        title="Calendar"
-        description={heading}
-        className="mb-4"
-        actions={
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" aria-label="New event" onClick={newEvent}>
-              <Plus className="size-4" strokeWidth={1.75} />
-              Event
-            </Button>
+  const isEmpty =
+    (tasks?.length ?? 0) === 0 && (events?.length ?? 0) === 0;
 
-            <Button
-              variant="ghost"
-              size="sm"
-              aria-label="Export calendar (iCal)"
-              title="Export due tasks as .ics"
-              onClick={() => { window.location.href = "/api/calendar/export"; }}
+  const header = (
+    <PageHeader
+      icon={CalendarRange}
+      title="Calendar"
+      description={heading}
+      className="mb-3 shrink-0"
+      actions={
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label="New event"
+            onClick={newEvent}
+            className="border-default bg-surface hover:bg-surface-hover"
+          >
+            <Plus className="size-4" strokeWidth={1.75} />
+            Event
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label="Export calendar (iCal)"
+            title="Export due tasks as .ics"
+            onClick={() => { window.location.href = "/api/calendar/export"; }}
+            className="text-secondary hover:text-foreground"
+          >
+            <Download className="size-4" strokeWidth={1.75} />
+            <span className="hidden sm:inline">iCal</span>
+          </Button>
+
+          {/* Prev / Today / Next — one grouped control, Google-style. */}
+          <div className="ml-1 flex items-center rounded-md border border-default bg-surface p-0.5">
+            <button
+              type="button"
+              onClick={goBack}
+              aria-label={`Previous ${view === "month" ? "month" : view === "day" ? "day" : "week"}`}
+              className="rounded p-1 text-secondary transition-colors hover:bg-surface-hover hover:text-foreground"
             >
-              <Download className="size-4" strokeWidth={1.75} />
-              iCal
-            </Button>
-
-            {/* View toggle */}
-            <div className="flex items-center rounded-lg border border-default bg-surface p-0.5 mr-1">
-              <button
-                type="button"
-                onClick={() => setView("day")}
-                aria-label="Day view"
-                className={cn(
-                  "rounded-md p-1.5 transition-colors",
-                  view === "day" ? "bg-accent-muted text-accent" : "text-secondary hover:text-foreground"
-                )}
-              >
-                <CalendarDays className="size-3.5" strokeWidth={1.75} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setView("week")}
-                aria-label="Week view"
-                className={cn(
-                  "rounded-md p-1.5 transition-colors",
-                  view === "week" ? "bg-accent-muted text-accent" : "text-secondary hover:text-foreground"
-                )}
-              >
-                <Rows3 className="size-3.5" strokeWidth={1.75} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setView("month")}
-                aria-label="Month view"
-                className={cn(
-                  "rounded-md p-1.5 transition-colors",
-                  view === "month" ? "bg-accent-muted text-accent" : "text-secondary hover:text-foreground"
-                )}
-              >
-                <LayoutGrid className="size-3.5" strokeWidth={1.75} />
-              </button>
-            </div>
-
-            <Button variant="ghost" size="icon" aria-label="Previous" onClick={goBack}>
               <ChevronLeft className="size-4" strokeWidth={1.75} />
-            </Button>
-            <Button variant="ghost" size="icon" aria-label="Today" title="Today" onClick={goToday}>
-              <span className="text-xs font-semibold">Today</span>
-            </Button>
-            <Button variant="ghost" size="icon" aria-label="Next" onClick={goForward}>
+            </button>
+            <button
+              type="button"
+              onClick={goToday}
+              title="Jump to today"
+              className="rounded px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover"
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              onClick={goForward}
+              aria-label={`Next ${view === "month" ? "month" : view === "day" ? "day" : "week"}`}
+              className="rounded p-1 text-secondary transition-colors hover:bg-surface-hover hover:text-foreground"
+            >
               <ChevronRight className="size-4" strokeWidth={1.75} />
-            </Button>
+            </button>
           </div>
-        }
-      />
 
-      {view === "month" ? (
-        <MonthGrid days={monthDayCells} onOpenTask={openTask} onOpenEvent={openEvent} />
-      ) : view === "day" ? (
-        <>
-          <HourGrid
-            days={hourDays}
-            onOpenEvent={openEvent}
-            onCreateEvent={openCreateAt}
-            onMoveEvent={moveEvent}
-            onOpenTask={openTask}
-            onResizeTask={resizeTask}
+          {/* View toggle */}
+          <div
+            role="tablist"
+            aria-label="Calendar view"
+            className="flex items-center rounded-md border border-default bg-surface p-0.5"
+          >
+            {(
+              [
+                { key: "day", label: "Day", Icon: CalendarDays },
+                { key: "week", label: "Week", Icon: Rows3 },
+                { key: "month", label: "Month", Icon: LayoutGrid },
+              ] as const
+            ).map(({ key, label, Icon }) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={view === key}
+                aria-label={`${label} view`}
+                onClick={() => setView(key)}
+                className={cn(
+                  "flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors",
+                  view === key
+                    ? "bg-accent-muted text-accent"
+                    : "text-secondary hover:text-foreground"
+                )}
+              >
+                <Icon className="size-3.5" strokeWidth={1.75} />
+                <span className="hidden md:inline">{label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      }
+    />
+  );
+
+  // Month is a document — it scrolls with the page. The time grid is an
+  // instrument: it fills the viewport and owns its own scroll.
+  if (view === "month") {
+    return (
+      <div className="mx-auto w-full max-w-6xl px-6 py-6">
+        {header}
+        {isEmpty ? (
+          <EmptyState
+            icon={CalendarRange}
+            title="Nothing on the calendar yet"
+            description="Add an event, or give a task a due date, and it will appear here."
+            actionLabel="New event"
+            onAction={newEvent}
           />
-          <UnscheduledStrip tasks={unscheduled} />
-        </>
-      ) : tasks?.length === 0 && (events?.length ?? 0) === 0 ? (
-        <EmptyState
-          icon={CalendarRange}
-          title="Nothing scheduled yet"
-          description="Add an event, or give a task a due date, and it will appear here."
-        />
+        ) : (
+          <MonthGrid
+            days={monthDayCells}
+            onOpenTask={openTask}
+            onOpenEvent={openEvent}
+            onOpenDay={(iso) => {
+              setAnchor(new Date(`${iso}T12:00:00`));
+              setView("day");
+            }}
+          />
+        )}
+
+        {openTaskId && (
+          <TaskDetailPanel
+            key={openTaskId}
+            workspaceId={workspace.id}
+            taskId={openTaskId}
+            onClose={closeTask}
+          />
+        )}
+
+        {(deepLinkedEvent !== null || editorOpen) && (
+          <EventEditorModal
+            workspaceId={workspace.id}
+            event={deepLinkedEvent ?? editorEvent}
+            initialStart={createStart}
+            initialEnd={createEnd}
+            onClose={closeEditor}
+          />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-[calc(100dvh-3.5rem)] flex-col px-4 pb-4 pt-5 sm:px-6">
+      {header}
+
+      {isEmpty ? (
+        <div className="flex min-h-0 flex-1 flex-col">
+          <EmptyState
+            icon={CalendarRange}
+            title={view === "day" ? "Nothing scheduled on this day" : "Nothing scheduled yet"}
+            description="Add an event, or give a task a due date, and it will appear here."
+            actionLabel="New event"
+            onAction={newEvent}
+          />
+        </div>
       ) : (
         <>
           <HourGrid
@@ -322,8 +409,13 @@ export function CalendarPage() {
             onMoveEvent={moveEvent}
             onOpenTask={openTask}
             onResizeTask={resizeTask}
+            onMoveTask={moveTask}
           />
-          <UnscheduledStrip tasks={unscheduled} />
+          <UnscheduledStrip
+            tasks={unscheduled}
+            onOpenTask={openTask}
+            onOpenBoard={() => router.push("/tasks")}
+          />
         </>
       )}
 

@@ -2,33 +2,43 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { requireWorkspace } from "@/lib/supabase/auth";
 import { assertAiQuota, entitlementsFor } from "@/lib/saas/entitlements";
-import { answerWithContext, drainIndexQueue, retrieveWorkspaceDetailed } from "@/lib/ai/rag";
-import { answerWorkspaceQuestion } from "@/lib/ai/workspace-qa";
 import { loadAiConfig } from "@/lib/ai/db-config";
 import { runWithAiConfig } from "@/lib/ai/server-config";
+import { answerTimeTravel, type AsOfDate } from "@/lib/ai/time-travel";
 import type { ChatSource } from "@/types/database";
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => null)) as {
     thread_id?: string;
     question?: string;
+    as_of?: string;
   } | null;
   if (!body) return NextResponse.json({ error: "invalid body" }, { status: 400 });
 
   const question = (body.question ?? "").trim();
   if (!question) return NextResponse.json({ error: "missing question" }, { status: 400 });
 
+  const asOf = (body.as_of ?? "").trim();
+  if (!ISO_DATE.test(asOf)) {
+    return NextResponse.json({ error: "as_of must be a yyyy-mm-dd date" }, { status: 400 });
+  }
+  // A future pin date is meaningless — everything is "current" then, and the
+  // user almost certainly meant a past date.
+  if (asOf > new Date().toISOString().slice(0, 10)) {
+    return NextResponse.json({ error: "as_of cannot be in the future" }, { status: 400 });
+  }
+
   const auth = await requireWorkspace();
   if (auth.error) return auth.error;
   const { supabase, workspace } = auth;
 
-  // Plan check before any write or provider call. Placed here — ahead of thread
-  // creation — so a blocked question doesn't leave an empty thread behind, and
-  // doesn't spend upstream tokens that were already refused.
+  // Same gate as the normal assistant route — a time-travel answer costs the
+  // same tokens and must not be a way around the plan limit.
   const quotaBlocked = await assertAiQuota(supabase, workspace, entitlementsFor(workspace));
   if (quotaBlocked) return quotaBlocked;
 
-  // Resolve or create the thread.
   let threadId = body.thread_id ?? null;
   if (threadId) {
     const { data: thread } = await supabase
@@ -41,14 +51,13 @@ export async function POST(request: NextRequest) {
   } else {
     const { data: thread, error } = await supabase
       .from("chat_threads")
-      .insert({ workspace_id: workspace.id, title: question.slice(0, 48) })
+      .insert({ workspace_id: workspace.id, title: `${asOf}: ${question.slice(0, 40)}` })
       .select("id")
       .single();
     if (error || !thread) return NextResponse.json({ error: "thread-create-failed" }, { status: 500 });
     threadId = thread.id;
   }
 
-  // Pull recent history for context.
   const { data: historyRows } = await supabase
     .from("chat_messages")
     .select("role, content")
@@ -60,12 +69,13 @@ export async function POST(request: NextRequest) {
     content: m.content,
   }));
 
-  // Persist the user's question up front so history stays consistent even if
-  // generation fails.
+  // Mark the question as pinned in the transcript so history is readable later
+  // without needing the sources to explain what the date meant.
   const { error: userInsertError } = await supabase.from("chat_messages").insert({
     thread_id: threadId,
     role: "user",
     content: question,
+    sources: [{ retrieval: "time-travel", as_of: asOf }] as ChatSource[],
   });
   if (userInsertError) {
     return NextResponse.json({ error: "persist-failed" }, { status: 500 });
@@ -74,29 +84,14 @@ export async function POST(request: NextRequest) {
   try {
     const aiConfig = await loadAiConfig(supabase, workspace.id);
     return await runWithAiConfig(aiConfig, async () => {
-      // Analytical questions ("what did I do last week?", "summarize my open
-      // tasks") can't be answered by document retrieval — no note contains those
-      // words. Route them through the structured Q&A layer (tasks by status,
-      // daily notes by date window, projects, meetings) first, and only fall
-      // back to RAG when no intent matches.
-      const qa = await answerWorkspaceQuestion(supabase, workspace.id, question);
-      let chunks = qa.chunks;
-      const localFallback = qa.summary;
-      let strategy: "semantic" | "keyword" | "structured" = "structured";
-      if (!qa.handled) {
-        // Drain any pending index changes so the answer reflects the latest edits
-        // (cheap when the queue is empty — the background hook usually keeps up).
-        // Only drain on the RAG path; structured Q&A queries live DB rows directly
-        // so stale embeddings don't affect the answer.
-        await drainIndexQueue(supabase, workspace.id, 20);
-        const retrieval = await retrieveWorkspaceDetailed(supabase, workspace.id, question);
-        chunks = retrieval.chunks;
-        strategy = retrieval.strategy;
-      }
-      const result = await answerWithContext(question, chunks, history, localFallback ?? undefined);
+      const result = await answerTimeTravel(
+        supabase,
+        workspace.id,
+        question,
+        asOf as AsOfDate,
+        history
+      );
 
-      // Persist the assistant reply; a DB hiccup here shouldn't discard the
-      // answer, so surface it with a warning flag instead of failing.
       const { error: replyInsertError } = await supabase.from("chat_messages").insert({
         thread_id: threadId,
         role: "assistant",
@@ -108,9 +103,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         thread_id: threadId,
         ...result,
-        // Which retriever actually answered — persisted into the message's
-        // sources, and returned so the client can label optimistic bubbles.
-        strategy,
         persisted: !replyInsertError,
       });
     });

@@ -19,6 +19,14 @@ const FAQS = [
     a: "EngineerOS uses semantic search powered by embeddings. Every note, task, and daily entry is automatically indexed, so you can ask questions in plain English and get grounded answers with citations back to the exact source notes.",
   },
   {
+    q: "Can I see why an answer said what it said?",
+    a: "Yes — every answer opens into a source panel showing which passages were retrieved, whether each was found by meaning or by literal keyword overlap, its relevance score, and the exact chunk that was quoted. Notes marked as edited since a pinned date show a line-level summary of what changed. The assistant never paraphrases a citation into a claim of full coverage: notes it could not reconstruct are named explicitly.",
+  },
+  {
+    q: "Can I ask what I believed on a past date?",
+    a: "Yes. Pin a question to any date and the assistant answers from your notes as they existed then, reconstructing historical bodies from stored versions. Where a note changed after that date, the citation says so. It will not answer a question about the past using today's text.",
+  },
+  {
     q: "Is EngineerOS free?",
     a: "EngineerOS is free to start. Your data lives in your own Supabase project — no vendor lock-in, no credit card required. See the pricing page for full details on Pro and Enterprise plans.",
   },
@@ -50,20 +58,20 @@ const FAQS = [
 
 export function LandingFaq() {
   return (
-    <section id="faq" className="relative overflow-hidden py-16 md:py-28">
+    <section id="faq" className="relative py-16 md:py-28">
       <div className="mx-auto w-full max-w-3xl px-4 sm:px-6">
-        <div className="text-center">
-          <p className="font-mono text-[11px] tracking-[0.18em] text-faint uppercase">
-            FAQ
-          </p>
+        <div>
+          <p className="label-mono">questions</p>
           <h2 className="mt-5 font-serif-display text-[clamp(1.9rem,4vw,2.75rem)] font-normal leading-[1.06] tracking-[-0.02em] text-foreground">
             Common questions
           </h2>
         </div>
 
-        <div className="mt-10 space-y-3">
-          {FAQS.map((faq) => (
-            <FaqItem key={faq.q} question={faq.q} answer={faq.a} />
+        {/* One ruled list, not a stack of rounded boxes. Grouping comes from
+            hairlines — the shape language the app itself uses. */}
+        <div className="mt-10 border-t border-border-subtle">
+          {FAQS.map((faq, i) => (
+            <FaqItem key={faq.q} index={i + 1} question={faq.q} answer={faq.a} />
           ))}
         </div>
       </div>
@@ -72,41 +80,56 @@ export function LandingFaq() {
 }
 
 function FaqItem({
+  index,
   question,
   answer,
 }: {
+  index: number;
   question: string;
   answer: string;
 }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="rounded-lg border border-border-subtle bg-surface">
+    <div className="border-b border-border-subtle">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between px-5 py-4 text-left"
+        className="flex w-full items-baseline gap-4 py-4 text-left"
         aria-expanded={open}
       >
-        <span className="text-sm font-medium text-foreground">
-          {question}
+        {/* An index, not an icon — this is a spec sheet, so entries are numbered
+            and addressable rather than decorated. */}
+        <span
+          className={cn(
+            "figure-mono w-6 shrink-0 text-[11px] transition-colors",
+            open ? "text-signal" : "text-faint"
+          )}
+          aria-hidden
+        >
+          {String(index).padStart(2, "0")}
         </span>
+        <span className="flex-1 text-[15px] leading-snug text-foreground">{question}</span>
         <ChevronDown
           className={cn(
-            "size-4 shrink-0 text-faint transition-transform duration-200",
+            "mt-0.5 size-4 shrink-0 text-faint transition-transform duration-200",
             open && "rotate-180"
           )}
           strokeWidth={1.75}
         />
       </button>
+      {/* grid-rows transition animates to auto height without a measured height. */}
       <div
         className={cn(
-          "overflow-hidden px-5 text-sm leading-relaxed text-secondary transition-all duration-200",
-          open ? "max-h-96 pb-4" : "max-h-0"
+          "grid transition-[grid-template-rows] duration-200 ease-out",
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
         )}
-        aria-hidden={!open}
       >
-        {answer}
+        <div className="overflow-hidden">
+          <p className="pb-5 pl-10 text-sm leading-relaxed text-secondary" aria-hidden={!open}>
+            {answer}
+          </p>
+        </div>
       </div>
     </div>
   );

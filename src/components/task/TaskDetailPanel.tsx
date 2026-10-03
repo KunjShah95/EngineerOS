@@ -443,6 +443,7 @@ export function TaskDetailPanel({ workspaceId, taskId, onClose }: TaskDetailPane
                     );
                     patch({ subtasks: updated });
                   }}
+                  aria-label={sub.done ? `Mark subtask ${sub.title} not done` : `Mark subtask ${sub.title} done`}
                   className="shrink-0 text-secondary hover:text-foreground"
                 >
                   {sub.done ? (
@@ -457,6 +458,7 @@ export function TaskDetailPanel({ workspaceId, taskId, onClose }: TaskDetailPane
                 <button
                   type="button"
                   onClick={() => patch({ subtasks: task.subtasks.filter((s) => s.id !== sub.id) })}
+                  aria-label={`Delete subtask ${sub.title}`}
                   className="shrink-0 rounded p-0.5 text-faint hover:text-danger"
                 >
                   <X className="size-3" strokeWidth={1.75} />
@@ -484,6 +486,7 @@ export function TaskDetailPanel({ workspaceId, taskId, onClose }: TaskDetailPane
               <Button
                 variant="outline"
                 size="icon"
+                aria-label="Add subtask"
                 disabled={!newSubtask.trim()}
                 onClick={() => {
                   patch({

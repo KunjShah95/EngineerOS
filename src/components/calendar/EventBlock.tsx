@@ -39,8 +39,10 @@ export function EventBlock({
     onResize,
   });
   const hex = EVENT_COLORS[event.color];
-  const width = `calc(${100 / layout.columns}% - 2px)`;
-  const left = `calc(${(layout.column / layout.columns) * 100}% + 1px)`;
+  // Overlapping blocks share the column; a 3px inset keeps the seams legible
+  // instead of letting neighbours bleed into each other.
+  const width = `calc(${100 / layout.columns}% - 3px)`;
+  const left = `calc(${(layout.column / layout.columns) * 100}% + 1.5px)`;
 
   // Live time label during a resize (falls back to the stored times when the
   // drag produced an invalid slice — the block is at min height anyway).
@@ -58,12 +60,15 @@ export function EventBlock({
       aria-label={event.title}
       title={event.title}
       onKeyDown={(e) => {
-        if (e.key === "Enter") onOpen(event.id);
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen(event.id);
+        }
       }}
       onClick={() => onOpen(event.id)}
       onPointerDown={(e) => e.stopPropagation()}
       className={cn(
-        "group absolute z-10 cursor-grab touch-none select-none overflow-hidden rounded-md px-1.5 py-0.5 text-left text-[11px] leading-tight text-foreground transition-shadow duration-150 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 active:cursor-grabbing",
+        "group absolute z-10 cursor-grab touch-none select-none overflow-hidden rounded-[5px] px-1.5 py-[3px] text-left text-[11px] leading-[1.25] text-foreground transition-shadow duration-150 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 active:cursor-grabbing",
         isDragging && "z-20 opacity-70 shadow-lg"
       )}
       style={{
@@ -71,14 +76,14 @@ export function EventBlock({
         height: heightPx,
         width,
         left,
-        backgroundColor: `${hex}26`,
+        backgroundColor: `${hex}2e`,
         borderLeft: `3px solid ${hex}`,
         transform: CSS.Transform.toString(transform),
       }}
     >
       <p className="line-clamp-1 font-medium">{event.title}</p>
-      {heightPx >= hourHeight * 0.55 && (
-        <p className="line-clamp-1 text-faint">
+      {heightPx >= hourHeight * 0.5 && (
+        <p className="figure-mono line-clamp-1 text-[10px] text-secondary">
           {eventTimeLabel(labelEvent)}
           {layout.clippedStart ? " ◄" : ""}
           {layout.clippedEnd ? " ►" : ""}
