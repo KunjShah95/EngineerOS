@@ -417,3 +417,11 @@ GitHub is already there. Calendar export is there. What I actually want: Linear 
 There's a version of this where the AI doesn't just answer questions — it starts to understand how *you* think. What kinds of problems you get stuck on. What your project patterns look like. What your daily journal reveals about what's actually draining you versus what energizes you. Not in a creepy way. In the way a really good second brain would — one that's read everything you've written and actually retained it.
 
 That's the long-term bet. The workspace as a memory layer that gets smarter the more you use it. V1 builds the foundation. Everything after is about making that foundation think.
+
+---
+
+## Case study
+
+The full write-up of EngineerOS (problem, architecture, trade-offs and results) lives at **[kunjshah.in/projects/engineeros](https://kunjshah.in/projects/engineeros)**.
+
+Built by [Kunj Shah](https://kunjshah.in), AI engineer.
