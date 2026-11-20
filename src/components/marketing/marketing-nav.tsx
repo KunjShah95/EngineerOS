@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArrowRight, Menu, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 
@@ -10,18 +11,32 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
 import { cn } from "@/lib/utils";
 
+/**
+ * Four destinations, in the order a visitor decides: what you teach, how it
+ * connects, what it costs, and how to use it from an agent. Everything else
+ * (blog, comparisons, legal) lives in the footer.
+ */
 const links = [
   { href: "/learn", label: "Learn" },
   { href: "/map", label: "Map" },
-  { href: "/connect", label: "Connect" },
-  { href: "/#features", label: "Workspace" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/blog", label: "Writing" },
+  { href: "/connect", label: "For agents" },
 ];
+
+function isActive(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(href + "/");
+}
 
 export function MarketingNav() {
   const [scrolled, setScrolled] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+  // The menu is open only for the route it was opened on, so navigating closes it.
+  const [openAt, setOpenAt] = useState<string | null>(null);
+  const mobileOpen = openAt === pathname;
+  const setMobileOpen = (next: boolean | ((v: boolean) => boolean)) => {
+    const value = typeof next === "function" ? next(mobileOpen) : next;
+    setOpenAt(value ? pathname : null);
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -38,6 +53,13 @@ export function MarketingNav() {
 
   const closeMobile = () => setMobileOpen(false);
 
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpenAt(null);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileOpen]);
+
   return (
     <>
       <header
@@ -48,7 +70,7 @@ export function MarketingNav() {
             : "border-b border-transparent bg-transparent"
         )}
       >
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
+        <div className="mx-auto flex h-16 w-full max-w-6xl items-center px-4 sm:px-6">
           <Link
             href="/"
             className="flex items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
@@ -63,21 +85,29 @@ export function MarketingNav() {
             </span>
           </Link>
 
-          {/* Desktop nav — labels in mono, because these are section names, and
-              the whole page speaks in mono eyebrows. */}
-          <nav className="hidden items-center gap-1 md:flex" aria-label="Sections">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="label-mono rounded px-3 py-2 transition-colors duration-150 hover:bg-surface-hover hover:text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-              >
-                {link.label}
-              </Link>
-            ))}
+          <nav className="ml-10 hidden flex-1 items-center gap-1 md:flex" aria-label="Sections">
+            {links.map((link) => {
+              const active = isActive(pathname, link.href);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "relative rounded-md px-3 py-2 text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+                    active ? "text-foreground" : "text-secondary hover:text-foreground"
+                  )}
+                >
+                  {link.label}
+                  {active ? (
+                    <span aria-hidden className="absolute inset-x-3 -bottom-px h-px bg-[color:var(--accent)]" />
+                  ) : null}
+                </Link>
+              );
+            })}
           </nav>
 
-          <div className="flex items-center gap-1.5">
+          <div className="ml-auto flex items-center gap-1.5">
             <ThemeToggle />
             <Link href="/login" className="hidden sm:block">
               <Button variant="ghost" size="sm">
@@ -86,7 +116,7 @@ export function MarketingNav() {
             </Link>
             <Link href="/register" className="hidden md:block">
               <Button size="sm">
-                Get started
+                Start free
                 <ArrowRight className="size-4" strokeWidth={1.75} />
               </Button>
             </Link>
@@ -119,7 +149,11 @@ export function MarketingNav() {
                   key={link.href}
                   href={link.href}
                   onClick={closeMobile}
-                  className="label-mono rounded px-3 py-2.5 transition-colors duration-150 hover:bg-surface-hover hover:text-secondary"
+                  aria-current={isActive(pathname, link.href) ? "page" : undefined}
+                  className={cn(
+                    "rounded-md px-3 py-3 text-base transition-colors duration-150 hover:bg-surface-hover",
+                    isActive(pathname, link.href) ? "text-foreground" : "text-secondary"
+                  )}
                 >
                   {link.label}
                 </Link>
@@ -133,7 +167,7 @@ export function MarketingNav() {
               </Link>
               <Link href="/register" onClick={closeMobile}>
                 <Button size="sm" className="w-full">
-                  Get started
+                  Start free
                   <ArrowRight className="size-4" strokeWidth={1.75} />
                 </Button>
               </Link>
