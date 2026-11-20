@@ -14,7 +14,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import type { GraphEdge, GraphNode } from "@/types/database";
 
 const KIND_DOT: Record<GraphNode["kind"], string> = {
-  note: "#818cf8",
+  note: "#d9b872",
   task: "#60a5fa",
   resource: "#94a3f8",
 };

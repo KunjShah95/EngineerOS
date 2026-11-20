@@ -86,8 +86,8 @@ export function VoiceAgent() {
         className={cn(
           "fixed bottom-6 right-6 z-50 flex size-14 items-center justify-center rounded-full shadow-2xl transition-colors",
           isActive
-            ? "bg-gradient-to-br from-violet-500 to-indigo-600"
-            : "bg-gradient-to-br from-indigo-500 to-violet-600 hover:from-indigo-400 hover:to-violet-500"
+            ? "bg-gradient-to-br from-[#d9b872] to-[#8a6a2c]"
+            : "bg-gradient-to-br from-[#c9a45c] to-[#7a5c24] hover:from-[#d9b872] hover:to-[#8a6a2c]"
         )}
         animate={{ scale: orbScale }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
@@ -96,12 +96,12 @@ export function VoiceAgent() {
         {status === "listening" && (
           <>
             <motion.span
-              className="absolute inset-0 rounded-full bg-violet-400/40"
+              className="absolute inset-0 rounded-full bg-[#d9b872]/40"
               animate={{ scale: [1, 1.6, 1], opacity: [0.5, 0, 0.5] }}
               transition={{ duration: 1.4, repeat: Infinity, ease: "easeOut" }}
             />
             <motion.span
-              className="absolute inset-0 rounded-full bg-indigo-400/25"
+              className="absolute inset-0 rounded-full bg-[#c9a45c]/25"
               animate={{ scale: [1, 2, 1], opacity: [0.3, 0, 0.3] }}
               transition={{ duration: 1.4, repeat: Infinity, ease: "easeOut", delay: 0.3 }}
             />

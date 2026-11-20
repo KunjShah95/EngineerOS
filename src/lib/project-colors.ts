@@ -1,6 +1,6 @@
 // Project accent colors (hex) — used for cards, kanban chips, and timeline dots.
 export const PROJECT_COLORS = [
-  "#6366f1", // indigo
+  "#c9a45c", // brass
   "#3b82f6", // blue
   "#06b6d4", // cyan
   "#22c55e", // green

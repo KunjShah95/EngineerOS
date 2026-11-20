@@ -19,17 +19,17 @@ import { useProjects } from "@/hooks/useProjects";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import type { GraphEdge, GraphNode } from "@/types/database";
 
-// Navy/indigo palette: notes = indigo, tasks = blue, resources = violet-navy.
+// Warm palette: notes = brass, tasks = blue, resources = sage.
 const KIND_COLOR: Record<GraphNode["kind"], string> = {
-  note: "#818cf8",
+  note: "#d9b872",
   task: "#60a5fa",
-  resource: "#94a3f8",
+  resource: "#a8b5a0",
 };
 
 // Edge styling per kind (the legend below explains each).
 const EDGE_STYLE: Record<GraphEdge["kind"], { stroke: string; dash?: string; width: number; opacity: number }> = {
   task_note: { stroke: "#475569", width: 1, opacity: 0.6 },
-  note_link: { stroke: "#818cf8", width: 1.25, opacity: 0.8 },
+  note_link: { stroke: "#d9b872", width: 1.25, opacity: 0.8 },
   wikilink: { stroke: "#38bdf8", dash: "4 4", width: 1, opacity: 0.7 },
 };
 

@@ -13,7 +13,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { cn } from "@/lib/utils";
 import { toISODate, addDays } from "@/lib/calendar";
 
-const COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#f97316"];
+const COLORS = ["#c9a45c", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#f97316"];
 
 function buildLast7(): string[] {
   const today = new Date();
@@ -132,7 +132,7 @@ export function HabitsPage() {
                 className="grid grid-cols-[1fr_repeat(7,2rem)_4rem_2rem] items-center gap-1 rounded-xl border border-default bg-surface px-3 py-2"
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: habit.color ?? "#6366f1" }} />
+                  <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: habit.color ?? "#c9a45c" }} />
                   <span className="truncate text-sm font-medium">{habit.name}</span>
                 </div>
                 {days.map((d) => {
@@ -149,13 +149,13 @@ export function HabitsPage() {
                           ? "border-transparent text-white"
                           : "border-border-subtle bg-transparent hover:border-accent/50"
                       )}
-                      style={done ? { backgroundColor: habit.color ?? "#6366f1" } : undefined}
+                      style={done ? { backgroundColor: habit.color ?? "#c9a45c" } : undefined}
                     >
                       {done && <CheckSquare2 className="size-3.5" strokeWidth={2} />}
                     </button>
                   );
                 })}
-                <span className="text-center text-sm font-semibold" style={{ color: s > 0 ? (habit.color ?? "#6366f1") : "var(--text-tertiary)" }}>
+                <span className="text-center text-sm font-semibold" style={{ color: s > 0 ? (habit.color ?? "#c9a45c") : "var(--text-tertiary)" }}>
                   {s > 0 ? `${s}🔥` : "—"}
                 </span>
                 <button

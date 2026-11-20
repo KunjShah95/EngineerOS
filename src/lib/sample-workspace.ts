@@ -50,7 +50,7 @@ async function seedSampleRows(workspaceId: string): Promise<void> {
       name: SAMPLE_PROJECT_NAME,
       description:
         "Demo data so Home, Calendar, Graph and Ask AI have something real to show. Soft-delete this project to clear the sample.",
-      color: "#4f46e5",
+      color: "#c9a45c",
       status: "active",
     })
     .select()

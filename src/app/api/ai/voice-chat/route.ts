@@ -132,7 +132,7 @@ const TOOLS = [
         properties: {
           name: { type: "string", description: "Project name" },
           description: { type: "string", description: "Optional project description" },
-          color: { type: "string", description: "Optional hex color, e.g. #6366f1" },
+          color: { type: "string", description: "Optional hex color, e.g. #c9a45c" },
         },
         required: ["name"],
       },

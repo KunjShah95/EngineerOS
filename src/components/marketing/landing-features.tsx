@@ -80,7 +80,7 @@ export function LandingFeatures() {
           <Reveal className="md:col-span-2" delay={0.12}>
             <FeatureCard
               icon={Zap}
-              iconClass="text-[#818cf8]"
+              iconClass="text-[#d9b872]"
               title="Projects that hold it together"
               body="Tasks, notes, timeline, and resources under one roof, with progress you can see at a glance."
               visual={<ProjectsVisual />}
@@ -138,7 +138,7 @@ export function LandingFeatures() {
           <Reveal className="md:col-span-3" delay={0.06}>
             <FeatureCard
               icon={MessageSquareText}
-              iconClass="text-[#818cf8]"
+              iconClass="text-[#d9b872]"
               title="AI assistant with citations"
               body="Ask questions about your workspace and get grounded answers with links back to the exact notes they came from."
               visual={<AssistantVisual />}
@@ -427,7 +427,7 @@ function AssistantVisual() {
         </span>
       </div>
       <div className="flex items-start gap-1.5">
-        <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded bg-gradient-to-br from-[#4f46e5] to-[#1e40af]">
+        <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded bg-gradient-to-br from-[#c9a45c] to-[#7a5c24]">
           <Sparkles className="size-2.5 text-white" strokeWidth={2} />
         </span>
         <div className="rounded-lg border border-border-subtle bg-surface px-2 py-1.5 text-[9px] leading-relaxed text-foreground">
