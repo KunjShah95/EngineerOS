@@ -29,10 +29,10 @@ export const TRACK_STYLE: Record<TrackId, { text: string; border: string; dot: s
     fill: "var(--accent-hover)",
   },
   "ai-engineering": {
-    text: "text-warning",
-    border: "border-warning/50",
-    dot: "bg-warning",
-    fill: "var(--warning)",
+    text: "text-[color:var(--track-ai)]",
+    border: "border-[color:var(--track-ai)]/50",
+    dot: "bg-[color:var(--track-ai)]",
+    fill: "var(--track-ai)",
   },
   "rag-engineering": {
     text: "text-[color:var(--track-rag)]",

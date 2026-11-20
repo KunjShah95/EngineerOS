@@ -5,9 +5,6 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   BookOpenText,
-  GraduationCap,
-  Map as MapIcon,
-  Plug,
   Bookmark,
   Calendar,
   CalendarDays,
@@ -79,13 +76,6 @@ const LIBRARY: NavItem[] = [
   { href: "/decisions", label: "Decisions", icon: Scale },
   { href: "/bookmarks", label: "Saved links", icon: Bookmark },
   { href: "/reading", label: "Reading list", icon: BookOpenText },
-];
-
-/** The public curriculum, one click from the workspace. */
-const LEARN: NavItem[] = [
-  { href: "/learn", label: "Learn", icon: GraduationCap },
-  { href: "/map", label: "Knowledge map", icon: MapIcon },
-  { href: "/connect", label: "Connect bots", icon: Plug },
 ];
 
 /**
@@ -204,7 +194,6 @@ export function AppNav({ collapsed = false }: { collapsed?: boolean }) {
         >
           <NavGroup items={ESSENTIALS} collapsed={collapsed} />
           <NavGroup label="Library" items={LIBRARY} collapsed={collapsed} />
-          <NavGroup label="Learn" items={LEARN} collapsed={collapsed} />
           {advancedToolsOpen && <NavGroup label="All tools" items={ADVANCED} collapsed={collapsed} />}
 
           {/* Progressive disclosure. Sits below the list it controls and above

@@ -18,7 +18,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { forceLayout, GRAPH_H, GRAPH_W } from "@/lib/graph-layout";
 
 function kindColor(kind: MindMapNode["kind"]): string {
-  return kind === "project" ? "#4f46e5" : kind === "task" ? "#60a5fa" : "#818cf8";
+  return kind === "project" ? "#c9a45c" : kind === "task" ? "#60a5fa" : "#d9b872";
 }
 
 export function MindMapPage() {
@@ -177,7 +177,7 @@ export function MindMapPage() {
                   y1={a.y}
                   x2={b.x}
                   y2={b.y}
-                  stroke={active ? "#4f46e5" : "#35363f"}
+                  stroke={active ? "#c9a45c" : "#35363f"}
                   strokeWidth={active ? 1.5 : 1}
                   opacity={active ? 0.9 : 0.55}
                 />

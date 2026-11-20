@@ -12,10 +12,10 @@ const C = {
   panel:       '#0d0e16',
   card:        '#111320',
   border:      '#1a1c28',
-  accent:      '#4f46e5',
-  accentDim:   'rgba(79,70,229,0.11)',
-  accentRing:  'rgba(79,70,229,0.32)',
-  accentText:  '#818cf8',
+  accent:      '#c9a45c',
+  accentDim:   'rgba(201,164,92,0.11)',
+  accentRing:  'rgba(201,164,92,0.32)',
+  accentText:  '#d9b872',
   text:        '#e2e4ee',
   muted:       '#7b7d8e',
   faint:       '#3e4054',
@@ -40,7 +40,7 @@ const CITATIONS = [
 
 const tagColor = (t: string) => {
   if (t === 'task')    return { bg: 'rgba(16,185,129,0.1)',  fg: '#10b981' }
-  if (t === 'project') return { bg: 'rgba(79,70,229,0.1)',   fg: '#818cf8' }
+  if (t === 'project') return { bg: 'rgba(201,164,92,0.1)',   fg: '#d9b872' }
   if (t === 'daily')   return { bg: 'rgba(245,158,11,0.1)',  fg: '#f59e0b' }
   return                      { bg: 'rgba(255,255,255,0.05)', fg: '#7b7d8e' }
 }
@@ -416,7 +416,7 @@ export default function Image() {
           style={{
             display: 'flex',
             height: 3,
-            background: `linear-gradient(90deg, transparent 0%, ${C.accent} 30%, #818cf8 70%, transparent 100%)`,
+            background: `linear-gradient(90deg, transparent 0%, ${C.accent} 30%, #d9b872 70%, transparent 100%)`,
           }}
         />
       </div>

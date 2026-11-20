@@ -65,7 +65,7 @@ export function LandingMap() {
             </svg>
             <p className="mt-3 flex items-center gap-4 font-mono text-[10px] text-faint">
               <span className="flex items-center gap-1.5"><span aria-hidden className="size-2 rounded-full bg-accent-hover" /> System Design</span>
-              <span className="flex items-center gap-1.5"><span aria-hidden className="size-2 rounded-full bg-warning" /> AI Engineering</span>
+              <span className="flex items-center gap-1.5"><span aria-hidden className="size-2 rounded-full bg-[color:var(--track-ai)]" /> AI Engineering</span>
               <span className="flex items-center gap-1.5"><span aria-hidden className="size-2 rounded-full bg-[color:var(--track-rag)]" /> RAG Engineering</span>
             </p>
           </Link>

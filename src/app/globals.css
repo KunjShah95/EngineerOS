@@ -21,13 +21,13 @@
   --color-popover: var(--bg-elevated);
   --color-popover-foreground: var(--text-primary);
   --color-primary: var(--accent);
-  --color-primary-foreground: #ffffff;
+  --color-primary-foreground: var(--accent-fg);
   --color-secondary: var(--text-secondary);
   --color-secondary-foreground: var(--text-primary);
   --color-muted: var(--bg-surface-hover);
   --color-muted-foreground: var(--text-secondary);
   --color-accent: var(--accent);
-  --color-accent-foreground: #ffffff;
+  --color-accent-foreground: var(--accent-fg);
   --color-signal: var(--signal);
   --color-signal-muted: var(--signal-muted);
   --color-destructive: var(--danger);
@@ -65,20 +65,22 @@
 }
 
 :root {
-  --bg-base: #0d0e12;
-  --bg-surface: #15161c;
-  --bg-surface-hover: #1d1e26;
-  --bg-elevated: #1d1e26;
-  --border-subtle: #282a34;
-  --border-default: #34363f;
+  /* Warm ink and ivory with a single brass accent. */
+  --bg-base: #0b0a09;
+  --bg-surface: #131211;
+  --bg-surface-hover: #1b1917;
+  --bg-elevated: #1b1917;
+  --border-subtle: #262320;
+  --border-default: #36322d;
 
-  --text-primary: #e9eaee;
-  --text-secondary: #9b9ca7;
-  --text-tertiary: #8a8b96;
+  --text-primary: #efe9dd;
+  --text-secondary: #a39c8e;
+  --text-tertiary: #8d867a;
 
-  --accent: #4f46e5;
-  --accent-hover: #6366f1;
-  --accent-muted: #1c2340;
+  --accent: #c9a45c;
+  --accent-hover: #d9b872;
+  --accent-muted: #2a2214;
+  --accent-fg: #14100a;
 
   /* Signal mint. Semantically reserved — never decoration. It means one of:
      resolved/verified, historical state, or a live system's status. Landing
@@ -88,8 +90,9 @@
   --signal: #6ee7b7;
   /* Mint at low emphasis — washes behind text, tints hairlines. */
   --signal-muted: #14352c;
-  /* Third learning track. Distinct from indigo (system design) and amber (AI). */
-  --track-rag: #e879f9;
+  /* Learning tracks: brass (system design, the accent), terracotta (AI), slate (RAG). */
+  --track-ai: #d98a63;
+  --track-rag: #8fb0c4;
   --hero-mint: var(--signal);
 
   --success: #22c55e;
@@ -123,25 +126,27 @@
 
 [data-theme="light"] {
   color-scheme: light;
-  --bg-base: #fafafa;
-  --bg-surface: #f4f4f6;
-  --bg-surface-hover: #ececf0;
-  --bg-elevated: #ffffff;
-  --border-subtle: #e7e7eb;
-  --border-default: #d6d6dc;
+  --bg-base: #f7f4ee;
+  --bg-surface: #efeae0;
+  --bg-surface-hover: #e7e1d4;
+  --bg-elevated: #fffdf8;
+  --border-subtle: #e2dccd;
+  --border-default: #cfc7b5;
 
-  --text-primary: #16171d;
-  --text-secondary: #5c5d66;
-  --text-tertiary: #8a8b93;
+  --text-primary: #1c1914;
+  --text-secondary: #5e574b;
+  --text-tertiary: #81796b;
 
-  --accent: #4f46e5;
-  --accent-hover: #4338ca;
-  --accent-muted: #eceeff;
+  --accent: #8a6a2c;
+  --accent-hover: #755822;
+  --accent-muted: #f1e8d3;
+  --accent-fg: #fffdf8;
 
   /* Darkened for contrast on the light background. */
   --signal: #047857;
   --signal-muted: #e3f2ec;
-  --track-rag: #a21caf;
+  --track-ai: #a8501f;
+  --track-rag: #35637d;
   --hero-mint: var(--signal);
 
   --shadow-card-token: 0 1px 2px rgb(23 23 32 / 0.06), 0 4px 12px -2px rgb(23 23 32 / 0.05);
