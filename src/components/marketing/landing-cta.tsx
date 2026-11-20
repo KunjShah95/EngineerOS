@@ -17,29 +17,36 @@ export function LandingCta() {
 
       <Reveal className="mx-auto w-full max-w-2xl px-4 text-center sm:px-6">
         <p className="label-mono">
-          No setup debt
+          Start small
         </p>
         <h2 className="mt-5 font-serif-display text-[clamp(2rem,4.5vw,3rem)] font-normal leading-[1.04] tracking-[-0.02em] text-foreground">
-          Your first note takes
+          Read one lesson.
           <br />
           <em className="not-italic font-light italic text-[color:var(--signal)]">
-            ten seconds.
+            Judge it yourself.
           </em>
         </h2>
         <p className="mx-auto mt-5 max-w-md text-[15px] leading-relaxed text-secondary">
-          The workspace, the index, and the daily rhythm follow from there. No
-          templates to pick, no schema to design.
+          Pick a topic, answer the practice questions, mark it done. If it earns a place in
+          your week, add a workspace to keep what you learn next to what you build.
         </p>
 
         <div className="mt-9 flex flex-col items-center gap-4">
-          <Link href="/register">
-            <Button size="lg">
-              Create a workspace
-              <ArrowRight className="size-4" strokeWidth={1.75} />
-            </Button>
-          </Link>
+          <div className="flex flex-col items-center gap-3 sm:flex-row">
+            <Link href="/learn">
+              <Button size="lg">
+                Start learning
+                <ArrowRight className="size-4" strokeWidth={1.75} />
+              </Button>
+            </Link>
+            <Link href="/register">
+              <Button size="lg" variant="secondary">
+                Create a workspace
+              </Button>
+            </Link>
+          </div>
           <p className="figure-mono text-[11px] tracking-wide text-faint">
-            No credit card · Your own Supabase
+            Free to learn · Workspace plans start at $0
           </p>
         </div>
       </Reveal>

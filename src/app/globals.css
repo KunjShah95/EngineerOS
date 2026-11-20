@@ -88,6 +88,8 @@
   --signal: #6ee7b7;
   /* Mint at low emphasis — washes behind text, tints hairlines. */
   --signal-muted: #14352c;
+  /* Third learning track. Distinct from indigo (system design) and amber (AI). */
+  --track-rag: #e879f9;
   --hero-mint: var(--signal);
 
   --success: #22c55e;
@@ -139,6 +141,7 @@
   /* Darkened for contrast on the light background. */
   --signal: #047857;
   --signal-muted: #e3f2ec;
+  --track-rag: #a21caf;
   --hero-mint: var(--signal);
 
   --shadow-card-token: 0 1px 2px rgb(23 23 32 / 0.06), 0 4px 12px -2px rgb(23 23 32 / 0.05);

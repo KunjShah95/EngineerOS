@@ -7,8 +7,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
-import { ArrowRight, MailCheck, Terminal } from "lucide-react";
+import { ArrowRight, MailCheck } from "lucide-react";
 
+import { BrandMark } from "@/components/brand/BrandMark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,11 +33,6 @@ function AuthShell({ children }: { children: React.ReactNode }) {
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,var(--border-subtle)_1px,transparent_1px),linear-gradient(to_bottom,var(--border-subtle)_1px,transparent_1px)] bg-[size:56px_56px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,black,transparent)]"
-      />
-      {/* Ambient glow */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-0 -z-10 h-72 w-[560px] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(79,70,229,0.16),transparent_70%)] blur-3xl"
       />
       {children}
     </main>
@@ -66,7 +62,7 @@ export default function RegisterPage() {
           <div className="mx-auto mb-5 flex size-11 items-center justify-center rounded-xl bg-accent-muted ring-1 ring-accent/20">
             <MailCheck className="size-5 text-accent" strokeWidth={1.75} />
           </div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">
+          <h1 className="font-serif-display text-[1.75rem] font-normal tracking-[-0.015em]">
             Check your email
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-secondary">
@@ -114,14 +110,10 @@ export default function RegisterPage() {
     <AuthShell>
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center text-center">
-          <Link
-            href="/"
-            aria-label="EngineerOS home"
-            className="flex size-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#6366f1] to-[#1e40af] shadow-[0_0_24px_-6px_var(--accent)]"
-          >
-            <Terminal className="size-5 text-white" strokeWidth={2} />
+          <Link href="/" aria-label="EngineerOS home" className="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40">
+            <BrandMark size="lg" />
           </Link>
-          <h1 className="mt-5 font-display text-2xl font-semibold tracking-tight">
+          <h1 className="mt-5 font-serif-display text-[1.75rem] font-normal tracking-[-0.015em]">
             Create your account
           </h1>
           <p className="mt-1 text-sm text-secondary">
@@ -131,7 +123,7 @@ export default function RegisterPage() {
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="space-y-4 rounded-2xl border border-default bg-surface/80 p-6 shadow-elevated backdrop-blur-sm"
+          className="space-y-4 rounded-lg border border-border-subtle bg-elevated p-6"
         >
           <GitHubSignInButton />
           <OAuthDivider />

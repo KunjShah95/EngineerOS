@@ -5,16 +5,18 @@ import Link from "next/link";
 import { ArrowRight, Menu, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 
+import { BrandMark } from "@/components/brand/BrandMark";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { href: "/#features", label: "Features" },
+  { href: "/learn", label: "Learn" },
+  { href: "/map", label: "Map" },
+  { href: "/connect", label: "Connect" },
+  { href: "/#features", label: "Workspace" },
   { href: "/pricing", label: "Pricing" },
   { href: "/blog", label: "Writing" },
-  { href: "/#product", label: "Product" },
-  { href: "/#cta", label: "Get started" },
 ];
 
 export function MarketingNav() {
@@ -55,9 +57,7 @@ export function MarketingNav() {
             {/* A prompt, not a logo blob. The product is a tool you type into,
                 so the mark is the one glyph that says so — and it costs nothing
                 where a gradient chip with a glow would. */}
-            <span className="figure-mono flex size-7 items-center justify-center rounded border border-border-subtle bg-surface text-[13px] leading-none text-signal">
-              <span aria-hidden>&gt;_</span>
-            </span>
+            <BrandMark />
             <span className="text-sm font-semibold tracking-tight text-foreground">
               EngineerOS
             </span>
@@ -67,13 +67,13 @@ export function MarketingNav() {
               the whole page speaks in mono eyebrows. */}
           <nav className="hidden items-center gap-1 md:flex" aria-label="Sections">
             {links.map((link) => (
-              <a
+              <Link
                 key={link.href}
                 href={link.href}
                 className="label-mono rounded px-3 py-2 transition-colors duration-150 hover:bg-surface-hover hover:text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
           </nav>
 
@@ -115,14 +115,14 @@ export function MarketingNav() {
           >
             <nav className="flex flex-col gap-1" aria-label="Mobile sections">
               {links.map((link) => (
-                <a
+                <Link
                   key={link.href}
                   href={link.href}
                   onClick={closeMobile}
                   className="label-mono rounded px-3 py-2.5 transition-colors duration-150 hover:bg-surface-hover hover:text-secondary"
                 >
                   {link.label}
-                </a>
+                </Link>
               ))}
             </nav>
             <div className="mt-4 flex flex-col gap-2 border-t border-border-subtle pt-4">

@@ -39,7 +39,7 @@ export function PricingSection({ initial = "monthly" }: { initial?: Period }) {
         <div
           role="tablist"
           aria-label="Billing period"
-          className="inline-flex items-center gap-1 rounded-lg border border-border-subtle bg-surface p-1"
+          className="inline-flex items-center gap-1 rounded-md border border-border-subtle bg-surface p-1"
         >
           {(["monthly", "annual"] as const).map((option) => (
             <button
@@ -57,7 +57,7 @@ export function PricingSection({ initial = "monthly" }: { initial?: Period }) {
             >
               {option}
               {option === "annual" && (
-                <span className="ml-1.5 text-[11px] font-semibold text-accent">save ~17%</span>
+                <span className="ml-1.5 font-mono text-[10px] font-medium text-signal">save ~17%</span>
               )}
             </button>
           ))}
@@ -75,21 +75,21 @@ export function PricingSection({ initial = "monthly" }: { initial?: Period }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25, delay: index * 0.05 }}
               className={cn(
-                "relative flex flex-col rounded-2xl border bg-surface p-6",
-                featured ? "border-accent/40 shadow-elevated" : "border-default"
+                "relative flex flex-col rounded-lg border bg-surface p-6",
+                featured ? "border-foreground/40 bg-elevated" : "border-border-subtle"
               )}
             >
               {featured && (
-                <span className="absolute -top-2.5 left-6 rounded-full bg-accent px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent-foreground">
+                <span className="absolute -top-2.5 left-6 rounded bg-foreground px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[color:var(--bg-base)]">
                   Most popular
                 </span>
               )}
 
-              <p className="text-sm font-semibold tracking-tight text-foreground">{plan.name}</p>
+              <p className="font-serif-display text-2xl font-normal tracking-[-0.01em] text-foreground">{plan.name}</p>
               <p className="mt-1 text-xs text-secondary">{plan.tagline}</p>
 
               <p className="mt-5 flex items-baseline gap-1">
-                <span className="font-display text-4xl font-semibold tracking-tight text-foreground tabular-nums">
+                <span className="font-serif-display text-5xl font-normal tracking-[-0.02em] text-foreground tabular-nums">
                   {priceFor(plan, period)}
                 </span>
                 <span className="text-sm text-faint">
@@ -112,13 +112,13 @@ export function PricingSection({ initial = "monthly" }: { initial?: Period }) {
                 <Link href="/register">{plan.price.monthly === 0 ? "Start free" : `Get ${plan.name}`}</Link>
               </Button>
 
-              <p className="mt-6 text-[10px] font-semibold uppercase tracking-[0.14em] text-faint">
+              <p className="label-mono mt-6">
                 {plan.bestFor}
               </p>
               <ul className="mt-3 space-y-2.5">
                 {plan.highlights.map((highlight) => (
                   <li key={highlight} className="flex gap-2.5 text-sm text-secondary">
-                    <Check className="mt-0.5 size-4 shrink-0 text-accent" strokeWidth={2} />
+                    <Check className="mt-0.5 size-4 shrink-0 text-signal" strokeWidth={2} />
                     <span className="min-w-0">{highlight}</span>
                   </li>
                 ))}

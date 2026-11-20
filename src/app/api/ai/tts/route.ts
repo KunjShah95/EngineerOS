@@ -5,7 +5,7 @@ import { loadAiConfig, loadVoiceTtsConfig, loadVoiceTtsConfigs } from "@/lib/ai/
 import { runWithAiConfig, getAiApiKey, getAiBaseUrl, getAiProviderName } from "@/lib/ai/server-config";
 
 // OpenAI voices — nova is the warmest/most natural
-export const OPENAI_TTS_VOICES = ["nova", "alloy", "echo", "fable", "onyx", "shimmer"] as const;
+const OPENAI_TTS_VOICES = ["nova", "alloy", "echo", "fable", "onyx", "shimmer"] as const;
 export type OpenAiTtsVoice = (typeof OPENAI_TTS_VOICES)[number];
 const DEFAULT_VOICE: OpenAiTtsVoice = "nova";
 

@@ -1,9 +1,18 @@
 import { MarketingNav } from "@/components/marketing/marketing-nav";
 import { LandingHero } from "@/components/marketing/landing-hero";
 import { LandingMetrics } from "@/components/marketing/landing-metrics";
+import { LandingTracks } from "@/components/marketing/landing-tracks";
+import { LandingMap } from "@/components/marketing/landing-map";
+import { LandingAgents } from "@/components/marketing/landing-agents";
+import { LandingCourse } from "@/components/marketing/landing-course";
+import { LandingOffer } from "@/components/marketing/landing-offer";
+import type { BootLine } from "@/components/marketing/landing-hero";
+import { ALL_TOPICS, SITE_URL, TRACKS } from "@/content/learn";
+import { buildGraph, pathTo, readyToLearn, totalMinutes } from "@/lib/learn/graph";
+import { listToolSummaries } from "@/lib/mcp/server";
+import { searchTopics } from "@/lib/learn/search";
 import { LandingFeatures } from "@/components/marketing/landing-features";
 import { LandingProof } from "@/components/marketing/landing-proof";
-import { LandingShowcase } from "@/components/marketing/landing-showcase";
 import { LandingComparison } from "@/components/marketing/landing-comparison";
 import { LandingFaq } from "@/components/marketing/landing-faq";
 import { LandingCta } from "@/components/marketing/landing-cta";
@@ -11,17 +20,17 @@ import { MarketingFooter } from "@/components/marketing/marketing-footer";
 
 export const metadata = {
   title: {
-    absolute: "EngineerOS — AI workspace for notes, tasks & projects",
+    absolute: "EngineerOS — learn system design & AI engineering",
   },
   description:
-    "AI-native workspace for notes, tasks & projects — semantic search, knowledge graph & cited AI answers in one connected system.",
+    "Short lessons on system design and AI engineering, an interactive knowledge map, and an MCP server your Grok, Claude and Cursor agents can use. Plus an AI-native workspace for notes, tasks and projects.",
   alternates: {
     canonical: "https://engineeros-delta.vercel.app",
   },
   openGraph: {
-    title: "EngineerOS — AI workspace for notes, tasks & projects",
+    title: "EngineerOS — learn system design & AI engineering",
     description:
-      "One workspace for notes, tasks & projects. Semantic search, knowledge graph & cited AI answers.",
+      "Lessons on system design and AI engineering, a live knowledge map, and an MCP server for your agents.",
     type: "website",
     siteName: "EngineerOS",
     locale: "en_US",
@@ -31,22 +40,59 @@ export const metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "EngineerOS — AI Workspace for Notes, Tasks & Projects",
+        alt: "EngineerOS — learn system design and AI engineering",
         type: "image/png",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "EngineerOS — AI workspace for notes, tasks & projects",
+    title: "EngineerOS — learn system design & AI engineering",
     description:
-      "One workspace for notes, tasks & projects. Semantic search, knowledge graph & cited AI answers.",
+      "Lessons on system design and AI engineering, a live knowledge map, and an MCP server for your agents.",
     images: ["/og-image.png"],
   },
 };
 
+function buildBootLines(): BootLine[] {
+  const target = "harness-engineering";
+  const path = pathTo(target);
+  const hits = searchTopics("prompt injection", { limit: 1 });
+  const ready = readyToLearn(["llm-fundamentals"]).map((t) => t.id);
+  return [
+    {
+      cmd: `connect ${SITE_URL.replace("https://", "")}/api/mcp`,
+      out: `${listToolSummaries().length} tools · read-only · no auth`,
+      tone: "ok",
+    },
+    {
+      cmd: `learning_path target=${target}`,
+      out: `${path.length} topics · ~${totalMinutes(path.map((t) => t.id))} min · starts at ${path[0]?.id}`,
+      tone: "signal",
+    },
+    {
+      cmd: `search_topics "prompt injection"`,
+      out: hits[0] ? `1. ${hits[0].id} · score ${hits[0].score}` : "no results",
+      tone: "ok",
+    },
+    {
+      cmd: "next_topics completed=[llm-fundamentals]",
+      out: `ready: ${ready.slice(0, 3).join(", ")}`,
+      tone: "signal",
+    },
+  ];
+}
+
 export default function LandingPage() {
   const BASE = "https://engineeros-delta.vercel.app";
+  const graph = buildGraph();
+  const hours = Math.round((ALL_TOPICS.reduce((s, t) => s + t.minutes, 0) / 60) * 10) / 10;
+  const stats = [
+    { value: String(ALL_TOPICS.length), label: `Lessons in ${TRACKS.length} tracks` },
+    { value: String(graph.edges.length), label: "Prerequisite links" },
+    { value: `~${hours} h`, label: "Of focused material" },
+    { value: String(listToolSummaries().length), label: "MCP tools for your bots" },
+  ];
   return (
     <>
       <script
@@ -63,6 +109,9 @@ export default function LandingPage() {
             operatingSystem: "Web",
             dateModified: "2026-08-06",
             featureList: [
+              "System design and AI engineering lessons",
+              "Interactive prerequisite knowledge map",
+              "Public read-only MCP server and REST API",
               "Semantic search powered by embeddings",
               "AI assistant with source citations",
               "Knowledge graph with wikilinks",
@@ -262,11 +311,15 @@ export default function LandingPage() {
       <div className="min-h-screen bg-base text-foreground">
         <MarketingNav />
         <main>
-          <LandingHero />
-          <LandingMetrics />
-          <LandingFeatures />
+          <LandingHero lines={buildBootLines()} />
+          <LandingMetrics stats={stats} />
+          <LandingTracks />
+          <LandingCourse />
+          <LandingMap />
+          <LandingAgents />
           <LandingProof />
-          <LandingShowcase />
+          <LandingFeatures />
+          <LandingOffer />
           <LandingComparison />
           <LandingFaq />
           <LandingCta />

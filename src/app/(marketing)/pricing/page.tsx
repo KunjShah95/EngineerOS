@@ -53,9 +53,10 @@ export default function PricingPage() {
       <MarketingNav />
       <main className="relative mx-auto w-full max-w-6xl px-4 pb-24 pt-28 sm:px-6">
         <header className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">Pricing</p>
-          <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-            Your notes are free. Always.
+          <p className="label-mono">Pricing</p>
+          <h1 className="mt-5 font-serif-display text-[clamp(2.4rem,5.5vw,3.8rem)] font-normal leading-[1.02] tracking-[-0.02em] text-foreground">
+            Your notes are free.{" "}
+            <em className="font-light italic text-[color:var(--signal)]">Always.</em>
           </h1>
           <p className="mt-4 text-base leading-relaxed text-secondary">
             Every plan includes unlimited notes, tasks, projects, daily entries,
@@ -70,8 +71,8 @@ export default function PricingPage() {
 
         {/* The BYOK waiver is the most surprising and most likeable rule here, so
             it gets its own paragraph instead of hiding in a limits table. */}
-        <section className="mx-auto mt-16 max-w-2xl rounded-2xl border border-default bg-surface p-6">
-          <h2 className="text-sm font-semibold tracking-tight text-foreground">
+        <section className="mx-auto mt-16 max-w-2xl rounded-lg border border-border-subtle bg-surface p-6">
+          <h2 className="font-serif-display text-xl font-normal tracking-[-0.01em] text-foreground">
             One AI key, no assistant limit
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-secondary">
@@ -88,8 +89,8 @@ export default function PricingPage() {
           </p>
         </section>
 
-        <section className="mx-auto mt-10 max-w-2xl rounded-2xl border border-default bg-surface p-6">
-          <h2 className="text-sm font-semibold tracking-tight text-foreground">
+        <section className="mx-auto mt-10 max-w-2xl rounded-lg border border-border-subtle bg-surface p-6">
+          <h2 className="font-serif-display text-xl font-normal tracking-[-0.01em] text-foreground">
             Self-hosting
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-secondary">
@@ -103,7 +104,7 @@ export default function PricingPage() {
         <div className="mt-14 text-center">
           <Link
             href="/register"
-            className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90"
+            className="inline-flex h-10 items-center gap-2 rounded-md bg-accent px-6 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
           >
             Create your workspace
             <ArrowRight className="size-4" strokeWidth={1.75} />

@@ -21,10 +21,11 @@ export default function ErrorBoundary({
   return (
     <main className="flex min-h-[60vh] flex-col items-center justify-center bg-base px-6 py-16 text-foreground">
       <div className="w-full max-w-sm text-center">
-        <div className="mx-auto mb-4 inline-flex rounded-md bg-danger/10 p-3">
+        <div className="mx-auto mb-4 inline-flex rounded-md border border-danger/30 bg-danger/10 p-3">
           <TriangleAlert className="size-6 text-danger" strokeWidth={1.75} />
         </div>
-        <h1 className="text-lg font-semibold">Something went wrong</h1>
+        <p className="label-mono">Unexpected error</p>
+        <h1 className="mt-3 font-serif-display text-3xl font-normal tracking-[-0.015em]">Something went wrong</h1>
         <p className="mt-1.5 text-sm text-secondary">
           This page hit an unexpected error. It&apos;s been logged — try again, or
           head back to your dashboard.

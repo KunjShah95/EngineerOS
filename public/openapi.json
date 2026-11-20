@@ -1,0 +1,50 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "EngineerOS public learning API",
+    "version": "1.0.0",
+    "description": "Read-only, unauthenticated access to the EngineerOS curriculum and prerequisite graph. The same data is available over MCP at /api/mcp. Rate limited per client; 429 responses include Retry-After."
+  },
+  "servers": [{ "url": "https://engineeros-delta.vercel.app" }],
+  "paths": {
+    "/api/v1/topics": {
+      "get": {
+        "operationId": "listOrSearchTopics",
+        "summary": "List topics, or search when q is given",
+        "parameters": [
+          { "name": "track", "in": "query", "schema": { "type": "string", "enum": ["system-design", "ai-engineering", "rag-engineering"] } },
+          { "name": "level", "in": "query", "schema": { "type": "string", "enum": ["foundation", "intermediate", "advanced"] } },
+          { "name": "q", "in": "query", "schema": { "type": "string", "maxLength": 200 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 25 } }
+        ],
+        "responses": { "200": { "description": "Topics or search results" }, "400": { "description": "Invalid track or level" }, "429": { "description": "Rate limited" } }
+      }
+    },
+    "/api/v1/topics/{id}": {
+      "get": {
+        "operationId": "getTopic",
+        "summary": "One topic with body, key points, trade-offs, practice questions and prerequisite context",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Topic detail" }, "404": { "description": "Unknown topic" }, "429": { "description": "Rate limited" } }
+      }
+    },
+    "/api/v1/path": {
+      "get": {
+        "operationId": "learningPath",
+        "summary": "Ordered prerequisites to reach a target topic",
+        "parameters": [
+          { "name": "to", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "completed", "in": "query", "description": "Comma-separated topic ids already learned", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Ordered steps and total minutes" }, "400": { "description": "Missing or unknown target" }, "429": { "description": "Rate limited" } }
+      }
+    },
+    "/api/v1/map": {
+      "get": {
+        "operationId": "knowledgeMap",
+        "summary": "The full prerequisite graph: nodes, edges and layout",
+        "responses": { "200": { "description": "Graph" }, "429": { "description": "Rate limited" } }
+      }
+    }
+  }
+}
