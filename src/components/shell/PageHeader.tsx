@@ -5,6 +5,8 @@ import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PageHeaderProps {
+  /** Small mono label above the title, e.g. the section name. */
+  eyebrow?: React.ReactNode;
   title: React.ReactNode;
   description?: React.ReactNode;
   icon?: LucideIcon;
@@ -14,6 +16,7 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({
+  eyebrow,
   title,
   description,
   icon: Icon,
@@ -24,7 +27,7 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        "mb-6 flex flex-wrap items-start justify-between gap-4",
+        "mb-6 flex flex-wrap items-start justify-between gap-4 border-b border-border-subtle pb-5",
         className
       )}
     >
@@ -43,11 +46,12 @@ export function PageHeader({
           </span>
         ) : null}
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          {eyebrow ? <p className="label-mono mb-1">{eyebrow}</p> : null}
+          <h1 className="font-serif-display text-[1.65rem] leading-tight font-normal tracking-[-0.015em] text-foreground">
             {title}
           </h1>
           {description ? (
-            <p className="mt-0.5 text-sm text-secondary">{description}</p>
+            <p className="mt-1 text-sm text-secondary">{description}</p>
           ) : null}
         </div>
       </div>

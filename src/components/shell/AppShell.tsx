@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LogIn, PanelLeftClose, PanelLeftOpen, Terminal, X } from "lucide-react";
+import { LogIn, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
+
+import { BrandMark } from "@/components/brand/BrandMark";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { AppNav } from "@/components/shell/AppNav";
@@ -43,9 +45,7 @@ function SidebarHeader({
         className
       )}
     >
-      <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-accent shadow-[0_0_16px_-6px_var(--accent)]">
-        <Terminal className="size-4 text-white" strokeWidth={2} />
-      </span>
+      <BrandMark />
       {!collapsed && (
         <span className="text-sm font-semibold tracking-tight text-foreground">EngineerOS</span>
       )}
@@ -312,9 +312,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex h-full w-64 flex-col bg-surface">
       <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-default pr-2 md:hidden">
         <div className="flex flex-1 items-center gap-2 border-b-0 pl-4">
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-accent shadow-[0_0_16px_-6px_var(--accent)]">
-            <Terminal className="size-4 text-white" strokeWidth={2} />
-          </span>
+          <BrandMark />
           <span className="text-sm font-semibold tracking-tight text-foreground">EngineerOS</span>
         </div>
         <Button

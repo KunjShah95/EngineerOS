@@ -425,3 +425,16 @@ That's the long-term bet. The workspace as a memory layer that gets smarter the 
 The full write-up of EngineerOS (problem, architecture, trade-offs and results) lives at **[kunjshah.in/projects/engineeros](https://kunjshah.in/projects/engineeros)**.
 
 Built by [Kunj Shah](https://kunjshah.in), AI engineer.
+
+---
+
+## Learn, map and agents
+
+EngineerOS also ships a public learning hub and an agent layer. All of it is generated from `src/content/learn`.
+
+- `/learn`: System Design, AI Engineering and a six-module RAG Engineering course with a capstone.
+- `/map`: the prerequisite graph. Progress stays in the browser.
+- `/api/mcp`: a stateless, read-only MCP server (Streamable HTTP, no auth). Tools: `list_tracks`, `list_topics`, `get_topic`, `search_topics`, `learning_path`, `next_topics`, `get_map`.
+- `/api/v1/*`: the same data as REST. Spec at `/openapi.json`. Plain text at `/llms.txt` and `/llms-full.txt`.
+
+The rate limiter is in memory per server instance. Put a shared store behind it before relying on it at scale.

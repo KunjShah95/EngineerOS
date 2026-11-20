@@ -30,10 +30,15 @@ const fraunces = Fraunces({
 export const metadata: Metadata = {
   title: { default: "EngineerOS", template: "%s · EngineerOS" },
   description:
-    "AI-native workspace for notes, tasks and projects — capture and organize everything with semantic search, knowledge graph and cited AI answers.",
+    "Learn system design and AI engineering, explore the knowledge map, and connect your Grok, Claude and Cursor agents over MCP. Plus an AI-native workspace for notes, tasks and projects.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://engineeros-delta.vercel.app"),
   applicationName: "EngineerOS",
   keywords: [
+    "system design",
+    "AI engineering",
+    "MCP server",
+    "RAG",
+    "AI agents",
     "notes",
     "tasks",
     "projects",
@@ -49,9 +54,9 @@ export const metadata: Metadata = {
     "automation",
   ],
   openGraph: {
-    title: "EngineerOS — AI workspace for notes, tasks & projects",
+    title: "EngineerOS — learn system design & AI engineering",
     description:
-      "One workspace for notes, tasks & projects. Semantic search, knowledge graph & cited AI answers.",
+      "Lessons on system design and AI engineering, a live knowledge map, and an MCP server for your agents.",
     type: "website",
     siteName: "EngineerOS",
     locale: "en_US",
@@ -67,9 +72,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "EngineerOS — AI workspace for notes, tasks & projects",
+    title: "EngineerOS — learn system design & AI engineering",
     description:
-      "One workspace for notes, tasks & projects. Semantic search, knowledge graph & cited AI answers.",
+      "Lessons on system design and AI engineering, a live knowledge map, and an MCP server for your agents.",
     images: ["/og-image.png"],
   },
   robots: {

@@ -2,9 +2,9 @@ Sitemap: https://engineeros-delta.vercel.app/sitemap.xml
 
 User-agent: *
 Allow: /
+Allow: /api/mcp
+Allow: /api/v1/
 Disallow: /api/
-Disallow: /(app)/
-Disallow: /(auth)/
 Disallow: /_next/
 Disallow: /api/ai/
 Disallow: /api/auth/
@@ -38,3 +38,5 @@ Allow: /
 
 User-agent: CCBot
 Allow: /
+
+# Public, read-only agent layer: /api/mcp (MCP) and /api/v1 (REST). See /connect and /openapi.json

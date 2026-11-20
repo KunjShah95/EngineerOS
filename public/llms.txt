@@ -18,6 +18,14 @@ EngineerOS combines notes, tasks, projects, and daily entries into one connected
 
 Engineers, researchers, and builders who want a single second-brain workspace — without locking data in a proprietary cloud.
 
+## Learn and connect (public, read-only)
+
+- https://engineeros-delta.vercel.app/learn — System Design, AI Engineering and a full RAG Engineering course
+- https://engineeros-delta.vercel.app/map — Interactive prerequisite map of every topic
+- https://engineeros-delta.vercel.app/connect — How to connect Grok, Claude, Cursor and other agents
+- https://engineeros-delta.vercel.app/api/mcp — MCP server (Streamable HTTP, stateless, no auth). Tools: list_tracks, list_topics, get_topic, search_topics, learning_path, next_topics, get_map
+- https://engineeros-delta.vercel.app/api/v1/topics — REST: list or search (?q=), /api/v1/topics/{id}, /api/v1/path?to={id}, /api/v1/map
+
 ## Key pages
 
 - https://engineeros-delta.vercel.app/ — Landing page with product overview

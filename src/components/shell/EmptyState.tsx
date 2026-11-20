@@ -24,17 +24,9 @@ export function EmptyState({ icon: Icon, title, description, actionLabel, onActi
         aria-hidden
         className="bg-blueprint pointer-events-none absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_70%_70%_at_50%_50%,black,transparent)]"
       />
-      <motion.div
-        animate={reducedMotion ? undefined : { y: [0, -5, 0] }}
-        transition={
-          reducedMotion
-            ? undefined
-            : { duration: 2, repeat: Infinity, ease: "easeInOut" }
-        }
-        className="flex size-11 items-center justify-center rounded-md border border-border-subtle bg-surface"
-      >
+      <div className="flex size-11 items-center justify-center rounded-md border border-border-subtle bg-surface">
         <Icon className="size-5 text-accent" strokeWidth={1.75} />
-      </motion.div>
+      </div>
 
       <motion.div
         initial={reducedMotion ? false : { opacity: 0, y: 5 }}
@@ -45,7 +37,7 @@ export function EmptyState({ icon: Icon, title, description, actionLabel, onActi
         {/* Every empty state says what it is *for* before what to do — the
             label is the state, the description is the reason it matters. */}
         <p className="label-mono">empty</p>
-        <h3 className="text-sm font-medium text-foreground">{title}</h3>
+        <h3 className="font-serif-display text-lg font-normal tracking-[-0.01em] text-foreground">{title}</h3>
         {description ? (
           <p className="max-w-sm text-sm leading-relaxed text-faint">{description}</p>
         ) : null}

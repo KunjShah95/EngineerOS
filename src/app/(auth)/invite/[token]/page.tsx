@@ -106,7 +106,7 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
           )}
         </div>
 
-        <h1 className="font-display text-2xl font-semibold tracking-tight">
+        <h1 className="font-serif-display text-[1.75rem] font-normal tracking-[-0.015em]">
           {status.state === "joined"
             ? "You're in"
             : status.state === "error"

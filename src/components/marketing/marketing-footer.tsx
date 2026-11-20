@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Terminal } from "lucide-react";
+import { BrandMark } from "@/components/brand/BrandMark";
 import { useReducedMotion } from "motion/react";
 
 const productLinks = [
@@ -15,17 +15,21 @@ const productLinks = [
 ];
 
 const learnLinks = [
-  { href: "/pricing", label: "Pricing" },
-  { href: "/blog", label: "Blog" },
+  { href: "/learn/system-design", label: "System Design" },
+  { href: "/learn/ai-engineering", label: "AI Engineering" },
+  { href: "/learn/rag-engineering", label: "RAG Engineering" },
+  { href: "/map", label: "Knowledge map" },
+  { href: "/connect", label: "Connect your bots" },
   { href: "/guides/building-a-second-brain", label: "Second Brain Guide" },
-  { href: "/compare/notion-vs-engineeros", label: "Notion vs EngineerOS" },
-  { href: "/compare/obsidian-vs-engineeros", label: "Obsidian vs EngineerOS" },
 ];
 
 const sections = [
-  { href: "#features", label: "Features" },
-  { href: "#product", label: "Product" },
-  { href: "#cta", label: "Get started" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/terms", label: "Terms" },
+  { href: "/privacy", label: "Privacy" },
+  { href: "/blog", label: "Blog" },
+  { href: "/compare/notion-vs-engineeros", label: "Notion vs EngineerOS" },
+  { href: "/compare/obsidian-vs-engineeros", label: "Obsidian vs EngineerOS" },
 ];
 
 /** Glyphs the scramble cycles through — box-drawing and shell punctuation. */
@@ -129,16 +133,14 @@ export function MarketingFooter() {
         <div className="grid grid-cols-1 gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
             <Link href="/" className="flex items-center gap-2.5" aria-label="EngineerOS home">
-              <span className="flex size-7 items-center justify-center rounded-md bg-gradient-to-br from-[#4f46e5] to-[#1e40af] text-white">
-                <Terminal className="size-4" strokeWidth={2} />
-              </span>
+              <BrandMark />
               <span className="text-sm font-semibold tracking-tight text-foreground">
                 EngineerOS
               </span>
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-secondary">
-              An AI-native workspace for engineers, researchers, and builders.
-              Notes, tasks, projects, and daily notes in one connected system.
+              Lessons, a knowledge map and an MCP server for engineers who build,
+              plus an AI-native workspace for notes, tasks and projects.
             </p>
           </div>
 
@@ -175,7 +177,7 @@ export function MarketingFooter() {
             <ul className="space-y-2">
               {sections.map((link) => (
                 <li key={link.href}>
-                  <FooterLink href={link.href} label={link.label} external />
+                  <FooterLink href={link.href} label={link.label} />
                 </li>
               ))}
               <li className="pt-1">
