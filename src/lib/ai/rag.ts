@@ -3,6 +3,8 @@ import { isAiConfigured } from "../ai";
 import { chunkMarkdown } from "./chunking";
 import { embedQuery, embedText, isEmbeddingConfigured } from "./embeddings";
 import { extractiveAnswer, scoreCorpus, searchedTerms } from "./keyword";
+import { reciprocalRankFusion } from "./fusion";
+import { rerankByOverlap } from "./rerank";
 import { resourceHref } from "@/lib/resource-kind";
 import type { ChatSource, EmbeddingEntity, ResourceKind } from "@/types/database";
 
@@ -21,7 +23,7 @@ export interface RagAnswer {
 }
 
 /** Which retriever produced a set of chunks. */
-export type RetrievalStrategy = "semantic" | "keyword";
+export type RetrievalStrategy = "semantic" | "keyword" | "hybrid";
 
 interface CorpusRow {
   entity_type: EmbeddingEntity;
@@ -482,6 +484,11 @@ export async function retrieveWorkspaceDetailed(
   // Fetch the corpus once; reused by both the semantic and keyword paths.
   const corpus = await fetchWorkspaceCorpus(supabase, workspaceId);
 
+  // Hybrid retrieval: fuse semantic (vector) + keyword lists when embeddings
+  // are configured; otherwise keyword-only. Rerank the fused candidates by
+  // lexical overlap as a cheap second stage.
+  const keywordChunks = retrieveByKeyword(corpus, question, topK * 2);
+
   if (isEmbeddingConfigured()) {
     try {
       const embedding = await embedQuery(question);
@@ -492,7 +499,7 @@ export async function retrieveWorkspaceDetailed(
       });
       if (!error && Array.isArray(data) && data.length > 0) {
         const byKey = new Map(corpus.map((r) => [`${r.entity_type}:${r.entity_id}`, r]));
-        const chunks: RagChunk[] = [];
+        const semanticChunks: RagChunk[] = [];
         for (const row of data as {
           entity_type: EmbeddingEntity;
           entity_id: string;
@@ -502,7 +509,7 @@ export async function retrieveWorkspaceDetailed(
         }[]) {
           const match = byKey.get(`${row.entity_type}:${row.entity_id}`);
           if (!match) continue;
-          chunks.push({
+          semanticChunks.push({
             content: row.content,
             source: {
               ...sourceFor(match, Number(row.score) || 0),
@@ -512,14 +519,42 @@ export async function retrieveWorkspaceDetailed(
             },
           });
         }
-        if (chunks.length > 0) return { chunks: chunks.slice(0, topK), strategy: "semantic" };
+        if (semanticChunks.length > 0) {
+          // Fuse by entity key using RRF.
+          const fused = reciprocalRankFusion<RagChunk & { key: string }>({
+            semantic: {
+              results: semanticChunks.map((c, i) => ({
+                key: `${c.source.entity_type}:${c.source.entity_id}:${c.source.chunk_index ?? i}`,
+                ...c,
+              })),
+            },
+            keyword: {
+              results: keywordChunks.map((c, i) => ({
+                key: `${c.source.entity_type}:${c.source.entity_id}:${c.source.chunk_index ?? i}`,
+                ...c,
+              })),
+            },
+          });
+          let ranked = fused.map((f) => f.item as RagChunk);
+          // Rerank second stage (cheap lexical overlap).
+          const reranked = rerankByOverlap(
+            question,
+            ranked.map((c, i) => ({ id: String(i), text: c.content, score: 0 })),
+            ranked.length
+          );
+          const order = reranked.map((r) => Number(r.item.id));
+          ranked = order.map((i) => ranked[i]).filter(Boolean);
+          if (ranked.length > 0) {
+            return { chunks: ranked.slice(0, topK), strategy: "hybrid" as RetrievalStrategy };
+          }
+        }
       }
     } catch {
       // RPC absent or failed — fall through to keyword.
     }
   }
 
-  return { chunks: retrieveByKeyword(corpus, question, topK), strategy: "keyword" };
+  return { chunks: keywordChunks.slice(0, topK), strategy: "keyword" };
 }
 
 export async function retrieveWorkspace(
@@ -533,7 +568,7 @@ export async function retrieveWorkspace(
 
 function noContextMessage(question: string): string {
   return (
-    `I couldn't find anything in your workspace matching that. I searched for: ${searchedTerms(question)}. ` +
+    `I couldn't find enough evidence in your workspace to answer that. I searched for: ${searchedTerms(question)}. ` +
     "Try using fewer or different words, or create a note with those details first."
   );
 }

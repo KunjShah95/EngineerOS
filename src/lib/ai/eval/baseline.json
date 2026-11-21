@@ -1,0 +1,5 @@
+{
+  "keyword": { "recallAt5": 0.95, "mrr": 0.85, "citationSupport": 0.9 },
+  "hybrid-weighted": { "recallAt5": 0.95, "mrr": 0.85, "citationSupport": 0.9 },
+  "graph": { "recallAt5": 0.98, "mrr": 0.85, "citationSupport": 0.95 }
+}

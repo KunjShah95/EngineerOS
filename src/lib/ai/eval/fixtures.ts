@@ -12,6 +12,8 @@ export interface EvalDoc {
   id: string;
   title: string;
   text: string;
+  /** Outgoing wikilink edges to other doc ids (knowledge-graph adjacency). */
+  links?: string[];
 }
 
 export interface EvalQuery {
@@ -39,6 +41,7 @@ session on every request so server components always see a valid user.
 NextAuth would mean a second source of truth for identity. Supabase already
 owns the user table and row-level security keys off auth.uid(), so adding
 NextAuth meant syncing two systems for no benefit.`,
+    links: ["jwt-refresh", "rls-policies"],
   },
   {
     id: "jwt-refresh",
@@ -56,6 +59,7 @@ If the replay also fails we clear the session and send the user to /login.
 Two concurrent requests both got a 401 and both tried to refresh. The second
 refresh invalidated the first token. We now serialize refreshes through a
 single in-flight promise.`,
+    links: ["auth-supabase", "embedding-errors"],
   },
   {
     id: "pgvector-choice",
@@ -73,6 +77,7 @@ with a dedicated engine, and operational cost would roughly double.
 ## When to revisit
 If chunk count passes a few million, or if we need filtered vector search that
 Postgres cannot plan well.`,
+    links: ["embedding-errors", "rls-policies"],
   },
   {
     id: "rls-policies",
@@ -86,6 +91,7 @@ so RLS actually applies.
 ## Testing
 The policy tests create two workspaces and assert that a member of one cannot
 read, update, or delete rows in the other.`,
+    links: ["auth-supabase", "pgvector-choice"],
   },
   {
     id: "kanban-dnd",
@@ -112,6 +118,7 @@ not comparable.
 ## Rate limits
 Providers return 429 under bursts. We retry three times with exponential
 backoff starting at 400ms, and cap concurrency at six embeds per batch.`,
+    links: ["pgvector-choice", "embedding-cost"],
   },
   {
     id: "daily-rollover",
@@ -136,6 +143,7 @@ animating continuously, because a permanently drifting graph is unusable.
 ## Orphans
 Notes with no links cluster in a corner. We surface an orphan count so the
 user can see what is disconnected from everything else.`,
+    links: ["wikilinks", "graph-filtering"],
   },
 
   /* ---- Distractors ----
@@ -326,4 +334,94 @@ export const EVAL_QUERIES: EvalQuery[] = [
   { question: "force directed simulation ticks", relevant: ["graph-layout"], kind: "mixed" },
   { question: "when should we move off postgres for vectors", relevant: ["pgvector-choice"], kind: "mixed" },
   { question: "concurrent refresh invalidated the token", relevant: ["jwt-refresh"], kind: "mixed" },
+
+  // Graph / multi-hop: answer lives in a note reached via a wikilink, not by
+  // direct keyword overlap with the question.
+  { question: "which note about auth connects to row level security", relevant: ["auth-supabase", "rls-policies"], kind: "paraphrase" },
+  { question: "what does the auth note connect to for data isolation", relevant: ["auth-supabase", "rls-policies"], kind: "paraphrase" },
+  { question: "which storage decision references embedding failures", relevant: ["pgvector-choice", "embedding-errors"], kind: "paraphrase" },
+  { question: "what graph notes are connected to wikilink parsing", relevant: ["graph-layout", "wikilinks", "graph-filtering"], kind: "paraphrase" },
+  { question: "orphan notes and how to filter the graph", relevant: ["graph-layout", "graph-filtering"], kind: "mixed" },
+  { question: "embedding cost and how failures are retried", relevant: ["embedding-cost", "embedding-errors"], kind: "mixed" },
+
+  // Expanded set — paraphrase variants
+  { question: "how does a user stay logged in across requests", relevant: ["auth-supabase"], kind: "paraphrase" },
+  { question: "refresh token rotation race condition", relevant: ["jwt-refresh"], kind: "exact" },
+  { question: "tenant data isolation", relevant: ["rls-policies"], kind: "paraphrase" },
+  { question: "why postgres instead of pinecone", relevant: ["pgvector-choice"], kind: "paraphrase" },
+  { question: "fractional indexing for kanban", relevant: ["kanban-dnd"], kind: "mixed" },
+  { question: "unfinished tasks next day", relevant: ["daily-rollover"], kind: "paraphrase" },
+  { question: "force directed graph freeze", relevant: ["graph-layout"], kind: "mixed" },
+  { question: "ERR_EMBED_DIM_MISMATCH padding", relevant: ["embedding-errors"], kind: "exact" },
+  { question: "auth.uid() membership check", relevant: ["rls-policies", "auth-supabase"], kind: "exact" },
+  { question: "HNSW ef_search recall", relevant: ["pgvector-choice", "vector-index-tuning"], kind: "mixed" },
+  { question: "429 retry backoff", relevant: ["embedding-errors"], kind: "exact" },
+  { question: "httpOnly refresh cookie", relevant: ["jwt-refresh"], kind: "exact" },
+  { question: "why not NextAuth", relevant: ["auth-supabase"], kind: "mixed" },
+  { question: "cards reordered by averaging positions", relevant: ["kanban-dnd"], kind: "paraphrase" },
+  { question: "rebalance float precision", relevant: ["kanban-dnd"], kind: "mixed" },
+  { question: "timezone date storage", relevant: ["daily-rollover"], kind: "paraphrase" },
+  { question: "orphan notes count", relevant: ["graph-layout"], kind: "paraphrase" },
+  { question: "embedding provider dimensions", relevant: ["embedding-errors"], kind: "mixed" },
+  { question: "concurrency embed cap", relevant: ["embedding-errors"], kind: "mixed" },
+  { question: "workspace member policy test", relevant: ["rls-policies"], kind: "mixed" },
+  { question: "no service role in handlers", relevant: ["rls-policies"], kind: "paraphrase" },
+  { question: "pgvector HNSW index", relevant: ["pgvector-choice", "vector-index-tuning"], kind: "mixed" },
+  { question: "when to revisit vector db choice", relevant: ["pgvector-choice"], kind: "paraphrase" },
+  { question: "supabase SSR cookie session", relevant: ["auth-supabase"], kind: "mixed" },
+  { question: "overnight dead session redirect", relevant: ["jwt-refresh"], kind: "paraphrase" },
+  { question: "replay request after 401", relevant: ["jwt-refresh"], kind: "mixed" },
+  { question: "serialize refresh promise", relevant: ["jwt-refresh"], kind: "mixed" },
+  { question: "second datastore operational cost", relevant: ["pgvector-choice"], kind: "paraphrase" },
+  { question: "chunk count millions", relevant: ["pgvector-choice"], kind: "paraphrase" },
+  { question: "filtered vector search postgres", relevant: ["pgvector-choice"], kind: "paraphrase" },
+  { question: "gemini 768 mistral 1024 padding", relevant: ["embedding-errors"], kind: "mixed" },
+  { question: "cosine ordering within provider", relevant: ["embedding-errors", "pgvector-choice"], kind: "mixed" },
+  { question: "unfinished tasks carry forward", relevant: ["daily-rollover"], kind: "paraphrase" },
+  { question: "consolidated carry forward skipped days", relevant: ["daily-rollover"], kind: "paraphrase" },
+  { question: "plain dates not timestamps", relevant: ["daily-rollover"], kind: "mixed" },
+  { question: "UTC offset note date", relevant: ["daily-rollover"], kind: "paraphrase" },
+  { question: "force simulation ticks freeze", relevant: ["graph-layout"], kind: "mixed" },
+  { question: "nodes notes tasks edges", relevant: ["graph-layout", "wikilinks"], kind: "mixed" },
+  { question: "backlinks computed from parse", relevant: ["wikilinks"], kind: "mixed" },
+  { question: "unresolved links create note", relevant: ["wikilinks"], kind: "paraphrase" },
+  { question: "double bracket syntax", relevant: ["wikilinks"], kind: "mixed" },
+  { question: "command palette shortcut", relevant: ["search-palette"], kind: "mixed" },
+  { question: "recently opened boost", relevant: ["search-palette"], kind: "paraphrase" },
+  { question: "pdf text extraction pipeline", relevant: ["pdf-extraction"], kind: "mixed" },
+  { question: "scanned document empty", relevant: ["pdf-extraction"], kind: "paraphrase" },
+  { question: "truncate extracted text cap", relevant: ["pdf-extraction"], kind: "mixed" },
+  { question: "github issue sync direction", relevant: ["github-sync"], kind: "mixed" },
+  { question: "bidirectional sync duplicates", relevant: ["github-sync"], kind: "paraphrase" },
+  { question: "api rate limit backoff", relevant: ["github-sync", "embedding-errors"], kind: "mixed" },
+  { question: "backup restore drill", relevant: ["postgres-backups"], kind: "mixed" },
+  { question: "pg_dump cron object storage", relevant: ["postgres-backups"], kind: "mixed" },
+  { question: "note version snapshot idle", relevant: ["note-versions"], kind: "mixed" },
+  { question: "line level diff markdown", relevant: ["note-versions"], kind: "mixed" },
+  { question: "filter graph by project", relevant: ["graph-filtering"], kind: "mixed" },
+  { question: "dim not remove nodes", relevant: ["graph-filtering"], kind: "paraphrase" },
+  { question: "labels above two thousand nodes", relevant: ["graph-filtering"], kind: "mixed" },
+  { question: "recurring task cadence", relevant: ["task-recurrence"], kind: "mixed" },
+  { question: "next instance on completion", relevant: ["task-recurrence"], kind: "paraphrase" },
+  { question: "editing rule future instances", relevant: ["task-recurrence"], kind: "mixed" },
+  { question: "timed task calendar block", relevant: ["calendar-timed-tasks"], kind: "mixed" },
+  { question: "fifteen minute resize", relevant: ["calendar-timed-tasks"], kind: "mixed" },
+  { question: "local time offset preserved", relevant: ["calendar-timed-tasks"], kind: "paraphrase" },
+  { question: "OAuth provider redirect urls", relevant: ["auth-oauth-providers"], kind: "mixed" },
+  { question: "request email profile only", relevant: ["auth-oauth-providers"], kind: "paraphrase" },
+  { question: "password reset one time token", relevant: ["auth-password-reset"], kind: "mixed" },
+  { question: "SPF DKIM deliverability", relevant: ["auth-password-reset"], kind: "mixed" },
+  { question: "session storage localStorage", relevant: ["session-storage"], kind: "mixed" },
+  { question: "sign out clears cookie", relevant: ["session-storage"], kind: "mixed" },
+  { question: "HNSW m ef_construction", relevant: ["vector-index-tuning"], kind: "mixed" },
+  { question: "raise ef_search query time", relevant: ["vector-index-tuning"], kind: "mixed" },
+  { question: "embedding cost per workspace", relevant: ["embedding-cost"], kind: "mixed" },
+  { question: "re-embed on content change", relevant: ["embedding-cost"], kind: "mixed" },
+  { question: "how much does reindex cost", relevant: ["embedding-cost"], kind: "paraphrase" },
+  { question: "client session storage sensitive", relevant: ["session-storage"], kind: "paraphrase" },
+  { question: "supabase daily backups", relevant: ["postgres-backups"], kind: "mixed" },
+  { question: "self hosted pg_dump", relevant: ["postgres-backups"], kind: "mixed" },
+  { question: "version written after idle", relevant: ["note-versions"], kind: "mixed" },
+  { question: "formatting only change diff", relevant: ["note-versions"], kind: "paraphrase" },
 ];
+

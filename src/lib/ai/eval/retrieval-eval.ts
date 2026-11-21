@@ -13,7 +13,12 @@ import { scoreCorpus } from "@/lib/ai/keyword";
 import { reciprocalRankFusion } from "@/lib/ai/fusion";
 import { EVAL_DOCS, EVAL_QUERIES, type EvalDoc, type EvalQuery } from "./fixtures";
 
-export type Strategy = "keyword" | "semantic" | "hybrid" | "hybrid-weighted";
+export type Strategy =
+  | "keyword"
+  | "semantic"
+  | "hybrid"
+  | "hybrid-weighted"
+  | "graph";
 
 /**
  * Weight on the semantic leg when fusing. Tuned against this eval: the local
@@ -74,10 +79,35 @@ function hybridRank(query: string, docs: EvalDoc[], semanticWeight = 1): Ranked[
   }).map((r) => r.item);
 }
 
+/** Graph-aware retrieval: top-K keyword seeds expanded by one hop of wikilinks. */
+function graphRank(query: string, docs: EvalDoc[], k = 5): Ranked[] {
+  const byId = new Map(docs.map((d) => [d.id, d]));
+  const seeds = keywordRank(query, docs);
+  const seen = new Set<string>();
+  const out: Ranked[] = [];
+  // interleave: each seed followed by its (unseen) one-hop neighbors
+  for (const s of seeds) {
+    if (!seen.has(s.key)) {
+      seen.add(s.key);
+      out.push(s);
+    }
+    const doc = byId.get(s.key);
+    for (const link of doc?.links ?? []) {
+      if (seen.has(link)) continue;
+      const linked = byId.get(link);
+      if (!linked) continue;
+      seen.add(link);
+      out.push({ key: linked.id, doc: linked });
+    }
+  }
+  return out;
+}
+
 export function retrieve(strategy: Strategy, query: string, docs: EvalDoc[] = EVAL_DOCS): Ranked[] {
   if (strategy === "keyword") return keywordRank(query, docs);
   if (strategy === "semantic") return semanticRank(query, docs);
   if (strategy === "hybrid-weighted") return hybridRank(query, docs, SEMANTIC_WEIGHT);
+  if (strategy === "graph") return graphRank(query, docs);
   return hybridRank(query, docs);
 }
 
@@ -90,6 +120,10 @@ export interface EvalReport {
   recallAt3: number;
   recallAt5: number;
   mrr: number;
+  /** Fraction of top-5 slots occupied by a relevant doc (citation precision). */
+  citationPrecisionAt5: number;
+  /** Fraction of queries with >=1 relevant doc in top-5 (citation coverage). */
+  citationSupport: number;
   /** Questions where no relevant doc appeared in the top 5. */
   misses: string[];
   byKind: Record<EvalQuery["kind"], { n: number; recallAt3: number }>;
@@ -120,6 +154,8 @@ export function evaluate(
   let r3 = 0;
   let r5 = 0;
   let mrr = 0;
+  let citPrec = 0;
+  let citSupport = 0;
   const misses: string[] = [];
 
   for (const query of queries) {
@@ -135,6 +171,10 @@ export function evaluate(
     byKind[query.kind].recallAt3 += at3;
 
     if (recallAt(ranked, query.relevant, 5) === 0) misses.push(query.question);
+    const top5 = ranked.slice(0, 5).map((r) => r.key);
+    const relInTop5 = query.relevant.filter((id) => top5.includes(id)).length;
+    citPrec += relInTop5 / 5;
+    citSupport += relInTop5 > 0 ? 1 : 0;
   }
 
   const n = queries.length;
@@ -149,6 +189,8 @@ export function evaluate(
     recallAt3: r3 / n,
     recallAt5: r5 / n,
     mrr: mrr / n,
+    citationPrecisionAt5: citPrec / n,
+    citationSupport: citSupport / n,
     misses,
     byKind,
   };
@@ -156,7 +198,7 @@ export function evaluate(
 
 /** Human-readable comparison across all three strategies. */
 export function compareStrategies(): string {
-  const reports = (["keyword", "semantic", "hybrid", "hybrid-weighted"] as Strategy[]).map((s) =>
+  const reports = (["keyword", "semantic", "hybrid", "hybrid-weighted", "graph"] as Strategy[]).map((s) =>
     evaluate(s)
   );
   const pct = (v: number) => `${(v * 100).toFixed(1)}%`.padStart(7);

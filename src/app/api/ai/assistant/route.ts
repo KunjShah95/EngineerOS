@@ -3,6 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { requireWorkspace } from "@/lib/supabase/auth";
 import { assertAiQuota, entitlementsFor } from "@/lib/saas/entitlements";
 import { answerWithContext, drainIndexQueue, retrieveWorkspaceDetailed } from "@/lib/ai/rag";
+import { createTrace, finishTrace, recordModel, recordRetrieval } from "@/lib/ai/trace";
+import { saveTrace } from "@/lib/observability/trace-store";
 import { answerWorkspaceQuestion } from "@/lib/ai/workspace-qa";
 import { loadAiConfig } from "@/lib/ai/db-config";
 import { runWithAiConfig } from "@/lib/ai/server-config";
@@ -17,6 +19,8 @@ export async function POST(request: NextRequest) {
 
   const question = (body.question ?? "").trim();
   if (!question) return NextResponse.json({ error: "missing question" }, { status: 400 });
+
+  const trace = createTrace(question);
 
   const auth = await requireWorkspace();
   if (auth.error) return auth.error;
@@ -82,7 +86,8 @@ export async function POST(request: NextRequest) {
       const qa = await answerWorkspaceQuestion(supabase, workspace.id, question);
       let chunks = qa.chunks;
       const localFallback = qa.summary;
-      let strategy: "semantic" | "keyword" | "structured" = "structured";
+      let strategy: "semantic" | "keyword" | "hybrid" | "structured" =
+        "structured";
       if (!qa.handled) {
         // Drain any pending index changes so the answer reflects the latest edits
         // (cheap when the queue is empty — the background hook usually keeps up).
@@ -93,7 +98,9 @@ export async function POST(request: NextRequest) {
         chunks = retrieval.chunks;
         strategy = retrieval.strategy;
       }
-      const result = await answerWithContext(question, chunks, history, localFallback ?? undefined);
+      recordRetrieval(trace, { strategy, k: chunks.length, docIds: chunks.map((c) => c.source.entity_id) });
+       const result = await answerWithContext(question, chunks, history, localFallback ?? undefined);
+       recordModel(trace, { provider: result.local ? "local" : "remote", model: result.model });
 
       // Persist the assistant reply; a DB hiccup here shouldn't discard the
       // answer, so surface it with a warning flag instead of failing.
@@ -105,12 +112,15 @@ export async function POST(request: NextRequest) {
         model: result.model,
       });
 
+      saveTrace(trace);
+      finishTrace(trace);
       return NextResponse.json({
         thread_id: threadId,
         ...result,
         // Which retriever actually answered — persisted into the message's
         // sources, and returned so the client can label optimistic bubbles.
         strategy,
+        trace_id: trace.id,
         persisted: !replyInsertError,
       });
     });
