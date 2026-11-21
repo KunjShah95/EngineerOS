@@ -1,16 +1,6 @@
 import { MarketingNav } from "@/components/marketing/marketing-nav";
 import { LandingHero } from "@/components/marketing/landing-hero";
-import { LandingMetrics } from "@/components/marketing/landing-metrics";
-import { LandingTracks } from "@/components/marketing/landing-tracks";
-import { LandingMap } from "@/components/marketing/landing-map";
-import { LandingAgents } from "@/components/marketing/landing-agents";
-import { LandingCourse } from "@/components/marketing/landing-course";
 import { LandingOffer } from "@/components/marketing/landing-offer";
-import type { BootLine } from "@/components/marketing/landing-hero";
-import { ALL_TOPICS, SITE_URL, TRACKS } from "@/content/learn";
-import { buildGraph, pathTo, readyToLearn, totalMinutes } from "@/lib/learn/graph";
-import { listToolSummaries } from "@/lib/mcp/server";
-import { searchTopics } from "@/lib/learn/search";
 import { LandingFeatures } from "@/components/marketing/landing-features";
 import { LandingProof } from "@/components/marketing/landing-proof";
 import { LandingComparison } from "@/components/marketing/landing-comparison";
@@ -20,10 +10,10 @@ import { MarketingFooter } from "@/components/marketing/marketing-footer";
 
 export const metadata = {
   title: {
-    absolute: "EngineerOS — learn system design & AI engineering",
+    absolute: "EngineerOS — todos, daily notes and focus for engineers",
   },
   description:
-    "Short lessons on system design and AI engineering, an interactive knowledge map, and an MCP server your Grok, Claude and Cursor agents can use. Plus an AI-native workspace for notes, tasks and projects.",
+    "A todo and productivity workspace for engineers: a task board, a daily note that rolls unfinished work forward, a focus timer, and projects linked to the notes and decisions behind them.",
   alternates: {
     canonical: "https://engineeros-delta.vercel.app",
   },
@@ -47,52 +37,15 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "EngineerOS — learn system design & AI engineering",
+    title: "EngineerOS — todos, daily notes and focus",
     description:
-      "Lessons on system design and AI engineering, a live knowledge map, and an MCP server for your agents.",
+      "Tasks, daily notes, focus and projects for engineers, linked to the context behind them.",
     images: ["/og-image.png"],
   },
 };
 
-function buildBootLines(): BootLine[] {
-  const target = "harness-engineering";
-  const path = pathTo(target);
-  const hits = searchTopics("prompt injection", { limit: 1 });
-  const ready = readyToLearn(["llm-fundamentals"]).map((t) => t.id);
-  return [
-    {
-      cmd: `connect ${SITE_URL.replace("https://", "")}/api/mcp`,
-      out: `${listToolSummaries().length} tools · read-only · no auth`,
-      tone: "ok",
-    },
-    {
-      cmd: `learning_path target=${target}`,
-      out: `${path.length} topics · ~${totalMinutes(path.map((t) => t.id))} min · starts at ${path[0]?.id}`,
-      tone: "signal",
-    },
-    {
-      cmd: `search_topics "prompt injection"`,
-      out: hits[0] ? `1. ${hits[0].id} · score ${hits[0].score}` : "no results",
-      tone: "ok",
-    },
-    {
-      cmd: "next_topics completed=[llm-fundamentals]",
-      out: `ready: ${ready.slice(0, 3).join(", ")}`,
-      tone: "signal",
-    },
-  ];
-}
-
 export default function LandingPage() {
   const BASE = "https://engineeros-delta.vercel.app";
-  const graph = buildGraph();
-  const hours = Math.round((ALL_TOPICS.reduce((s, t) => s + t.minutes, 0) / 60) * 10) / 10;
-  const stats = [
-    { value: String(ALL_TOPICS.length), label: `Lessons in ${TRACKS.length} tracks` },
-    { value: String(graph.edges.length), label: "Prerequisite links" },
-    { value: `~${hours} h`, label: "Of focused material" },
-    { value: String(listToolSummaries().length), label: "MCP tools for your bots" },
-  ];
   return (
     <>
       <script
@@ -109,19 +62,16 @@ export default function LandingPage() {
             operatingSystem: "Web",
             dateModified: "2026-08-06",
             featureList: [
-              "System design and AI engineering lessons",
-              "Interactive prerequisite knowledge map",
-              "Public read-only MCP server and REST API",
-              "Semantic search powered by embeddings",
-              "AI assistant with source citations",
-              "Knowledge graph with wikilinks",
-              "Kanban task boards",
-              "Daily notes with auto-rollover",
-              "Automation rules for recurring tasks",
+              "Kanban task board with drag and drop",
+              "Daily note with automatic rollover of unfinished tasks",
+              "Focus timer (Pomodoro)",
+              "Projects with linked notes and tasks",
+              "Goals and habits",
+              "Recurring tasks and automation rules",
+              "Calendar export (.ics)",
+              "Notes and decisions linked to the tasks they belong to",
+              "Semantic search and an AI assistant with citations",
               "Self-hosted data via Supabase",
-              "GitHub integration",
-              "PDF chat",
-              "Voice notes",
             ],
             offers: {
               "@type": "Offer",
@@ -311,15 +261,10 @@ export default function LandingPage() {
       <div className="min-h-screen bg-base text-foreground">
         <MarketingNav />
         <main>
-          <LandingHero lines={buildBootLines()} />
-          <LandingMetrics stats={stats} />
-          <LandingTracks />
-          <LandingCourse />
-          <LandingMap />
-          <LandingAgents />
-          <LandingProof />
+          <LandingHero />
           <LandingFeatures />
           <LandingOffer />
+          <LandingProof />
           <LandingComparison />
           <LandingFaq />
           <LandingCta />

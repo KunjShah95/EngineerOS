@@ -1,144 +1,180 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { motion, useReducedMotion } from "motion/react";
+import { ArrowRight, Check, CornerDownRight, FileText, Search, Sparkles } from "lucide-react";
+import { motion } from "motion/react";
 
 import { Button } from "@/components/ui/button";
 
 const EASE: [number, number, number, number] = [0.21, 0.47, 0.32, 0.98];
 
-export interface BootLine {
-  cmd: string;
-  out: string;
-  tone?: "ok" | "signal";
-}
-
 /**
- * The terminal lines are computed on the server from the real curriculum, so
- * the numbers on the landing page are the numbers a bot would get back.
+ * Illustrative workspace. Every name, note and answer here is sample content and
+ * is labelled as such on the canvas. Nothing is pulled from a real account.
  */
-export function LandingHero({ lines }: { lines: BootLine[] }) {
+const NAV = [
+  { label: "Today", active: true },
+  { label: "Tasks", count: 4 },
+  { label: "Notes", count: 12 },
+  { label: "Decisions", count: 3 },
+  { label: "Projects", count: 2 },
+];
+
+export function LandingHero() {
   return (
-    <section className="relative overflow-hidden pt-20 pb-16 md:pt-28 md:pb-24">
+    <section className="relative overflow-hidden pt-16 pb-16 md:pt-24 md:pb-24">
       <div
         aria-hidden
-        className="bg-blueprint pointer-events-none absolute inset-0 -z-20 opacity-70 [mask-image:radial-gradient(ellipse_80%_70%_at_50%_0%,black,transparent)] [background-size:72px_72px]"
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[620px] bg-[radial-gradient(60%_50%_at_50%_0%,color-mix(in_oklab,var(--accent)_14%,transparent),transparent)]"
       />
 
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-12 px-4 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
+      <div className="mx-auto flex w-full max-w-6xl flex-col items-center px-4 text-center sm:px-6">
+        <motion.h1
+          initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, ease: EASE }}
+          className="font-serif-display text-[clamp(2.6rem,6vw,4.75rem)] leading-[1.02] font-normal tracking-[-0.025em] text-foreground text-balance"
         >
-          <p className="label-mono">System design · AI engineering · RAG</p>
+          Your work is already connected.
+          <br />
+          <span className="text-secondary">Now you can see how.</span>
+        </motion.h1>
 
-          <h1 className="mt-6 font-serif-display text-[clamp(2.8rem,6.4vw,4.6rem)] font-normal leading-[0.98] tracking-[-0.02em] text-foreground">
-            Design systems
-            <br />
-            that hold up
-            <br />
-            <em className="font-light italic text-[color:var(--signal)]">under load.</em>
-          </h1>
-
-          <p className="mt-7 max-w-lg text-[15px] leading-relaxed text-secondary">
-            Trade-off-first lessons on system design, AI engineering and a complete RAG course, wired into a map of what
-            to learn before what. Then a workspace to keep your notes, decisions and projects, and an open MCP server so
-            your agents can use all of it.
-          </p>
-
-          <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Link href="/learn">
-              <Button size="lg" className="w-full sm:w-auto">
-                Start free
-                <ArrowRight className="size-4" strokeWidth={1.75} />
-              </Button>
-            </Link>
-            <Link href="/#plans">
-              <Button size="lg" variant="secondary" className="w-full sm:w-auto">
-                See plans
-              </Button>
-            </Link>
-            <Link
-              href="/connect"
-              className="rounded-md px-1 py-2 text-sm font-medium text-secondary underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 sm:px-3"
-            >
-              Connect your bots
-            </Link>
-          </div>
-
-          <p className="figure-mono mt-6 border-l border-border-subtle pl-3 text-[11px] leading-relaxed tracking-wide text-faint">
-            Every lesson free. No sign-up to learn. Workspace plans from $0.
-          </p>
-        </motion.div>
+        <motion.p
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, delay: 0.08, ease: EASE }}
+          className="mt-6 max-w-xl text-[15px] leading-relaxed text-secondary text-pretty"
+        >
+          EngineerOS is a todo and productivity workspace for engineers. Tasks, a daily note that rolls unfinished work
+          forward, and a focus timer, with every task linked to the notes and decisions behind it.
+        </motion.p>
 
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.15, ease: EASE }}
+          transition={{ duration: 0.55, delay: 0.16, ease: EASE }}
+          className="mt-9 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center"
         >
-          <AgentTerminal lines={lines} />
+          <Link href="/register">
+            <Button size="lg" className="w-full sm:w-auto">
+              Start free
+              <ArrowRight className="size-4" strokeWidth={1.75} />
+            </Button>
+          </Link>
+          <Link href="/tour">
+            <Button size="lg" variant="secondary" className="w-full sm:w-auto">
+              Try the tour, no account
+            </Button>
+          </Link>
+        </motion.div>
+
+        <p className="mt-5 text-xs text-faint">Free to start. No credit card. Your data stays in your own Supabase project.</p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 28 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.24, ease: EASE }}
+          className="mt-16 w-full"
+        >
+          <WorkspaceCanvas />
         </motion.div>
       </div>
     </section>
   );
 }
 
-function AgentTerminal({ lines }: { lines: BootLine[] }) {
-  const prefersReducedMotion = useReducedMotion();
-  const [step, setStep] = useState(prefersReducedMotion ? lines.length : 0);
-
-  useEffect(() => {
-    if (prefersReducedMotion || step >= lines.length) return;
-    const t = setTimeout(() => setStep((s) => s + 1), step === 0 ? 700 : 950);
-    return () => clearTimeout(t);
-  }, [step, prefersReducedMotion, lines.length]);
-
-  const done = step >= lines.length;
-
+function WorkspaceCanvas() {
   return (
-    <div className="rounded-lg border border-border-subtle bg-elevated shadow-[0_28px_70px_-40px_rgba(0,0,0,0.9)]">
+    <div className="relative overflow-hidden rounded-xl border border-border-subtle bg-elevated text-left shadow-[0_40px_90px_-50px_rgba(0,0,0,0.85)]">
       <div className="flex items-center justify-between border-b border-border-subtle px-4 py-2.5">
-        <span className="font-mono text-[10px] tracking-[0.16em] text-faint uppercase">agent — mcp session</span>
-        <span className="flex items-center gap-1.5 font-mono text-[10px] text-faint">
-          <span
-            className={"size-1.5 rounded-full transition-colors duration-500 " + (done ? "bg-success" : "bg-warning")}
-          />
-          {done ? "connected" : "connecting"}
+        <div className="flex items-center gap-1.5" aria-hidden>
+          <span className="size-2.5 rounded-full bg-border-subtle" />
+          <span className="size-2.5 rounded-full bg-border-subtle" />
+          <span className="size-2.5 rounded-full bg-border-subtle" />
+        </div>
+        <span className="truncate font-mono text-[10px] tracking-[0.14em] text-faint uppercase">
+          Sample workspace · illustrative
         </span>
+        <span className="w-12" aria-hidden />
       </div>
 
-      <div className="min-h-[17rem] space-y-3 p-4 font-mono text-[12px] leading-relaxed sm:p-5" aria-label="Example agent session">
-        {lines.slice(0, Math.max(step, 1)).map((line, i) => (
-          <motion.div
-            key={line.cmd}
-            initial={prefersReducedMotion ? false : { opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: EASE }}
-          >
-            <p className="flex items-baseline gap-2 text-foreground">
-              <span className="text-signal">$</span>
-              <span className="break-all">{line.cmd}</span>
-            </p>
-            {i < step ? (
-              <motion.p
-                initial={prefersReducedMotion ? false : { opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3, delay: 0.25 }}
-                className={"mt-1 pl-4 text-[11px] break-words " + (line.tone === "signal" ? "text-signal" : "text-secondary")}
+      <div className="grid md:grid-cols-[180px_1fr_340px]">
+        {/* Left: navigation */}
+        <nav aria-label="Sample navigation" className="hidden border-r border-border-subtle p-3 md:block">
+          <ul className="space-y-0.5">
+            {NAV.map((item) => (
+              <li
+                key={item.label}
+                className={
+                  "flex items-center justify-between rounded-md px-2.5 py-1.5 text-[13px] " +
+                  (item.active ? "bg-muted text-foreground" : "text-secondary")
+                }
               >
-                {line.out}
-              </motion.p>
-            ) : null}
-          </motion.div>
-        ))}
-        <p className="flex items-center gap-2 text-foreground" aria-hidden>
-          <span className="text-signal">$</span>
-          <span className="inline-block h-3.5 w-[7px] bg-signal motion-safe:animate-pulse" />
-        </p>
+                {item.label}
+                {item.count ? <span className="font-mono text-[10px] text-faint">{item.count}</span> : null}
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        {/* Centre: an open decision note with its linked task */}
+        <div className="min-w-0 border-r border-border-subtle p-5 sm:p-6">
+          <p className="flex items-center gap-2 font-mono text-[10px] tracking-[0.14em] text-faint uppercase">
+            <FileText className="size-3.5" strokeWidth={1.75} /> Decision · 2026-10-14
+          </p>
+          <h2 className="mt-3 font-serif-display text-2xl leading-tight text-foreground">Queue: Postgres, not Redis</h2>
+          <div className="mt-4 space-y-3 text-[13px] leading-relaxed text-secondary">
+            <p>
+              Volume stays well under what one Postgres instance handles. Adding Redis means a second system to back up,
+              monitor and secure. <span className="text-foreground">SKIP LOCKED</span> covers the worker pattern we need.
+            </p>
+            <p>Revisit if sustained throughput or fan-out outgrows the current instance.</p>
+          </div>
+          <div className="mt-5 flex items-center gap-3 rounded-md border border-border-subtle bg-base px-3 py-2.5">
+            <CornerDownRight className="size-3.5 text-faint" strokeWidth={1.75} aria-hidden />
+            <span className="text-[13px] text-foreground">Write ADR for queue choice</span>
+            <span className="ml-auto font-mono text-[10px] text-faint">Linked · due Fri</span>
+          </div>
+        </div>
+
+        {/* Right: assistant rail with citations */}
+        <aside aria-label="Sample assistant" className="flex flex-col gap-4 bg-base/60 p-5 sm:p-6">
+          <p className="flex items-center gap-2 text-[13px] font-medium text-foreground">
+            <Sparkles className="size-3.5 text-accent" strokeWidth={1.75} aria-hidden /> Ask your workspace
+          </p>
+
+          <div className="rounded-md border border-border-subtle bg-elevated px-3 py-2.5 text-[13px] text-foreground">
+            <Search className="mb-1.5 inline size-3 text-faint" strokeWidth={1.75} aria-hidden /> Why did we drop Redis?
+          </div>
+
+          <div className="space-y-3">
+            <p className="text-[13px] leading-relaxed text-secondary">
+              We kept the queue on Postgres. The volume fits one instance, and Redis would add a second system to run.
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              <SourceChip label="Decision · Queue" />
+              <SourceChip label="Standup · 14 Oct" />
+            </div>
+            <p className="flex items-center gap-1.5 font-mono text-[10px] text-success">
+              <Check className="size-3" strokeWidth={2.5} aria-hidden /> Answer grounded in 2 notes
+            </p>
+          </div>
+
+          <div className="mt-auto rounded-md border border-dashed border-border-subtle px-3 py-2.5">
+            <p className="font-mono text-[10px] tracking-[0.14em] text-faint uppercase">Next</p>
+            <p className="mt-1 text-[13px] text-foreground">Create task: update the ADR status to accepted</p>
+          </div>
+        </aside>
       </div>
     </div>
+  );
+}
+
+function SourceChip({ label }: { label: string }) {
+  return (
+    <span className="rounded-[4px] border border-border-subtle bg-muted px-2 py-0.5 font-mono text-[11px] text-secondary">
+      {label}
+    </span>
   );
 }

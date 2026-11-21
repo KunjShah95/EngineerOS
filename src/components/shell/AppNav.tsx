@@ -73,6 +73,14 @@ const ESSENTIALS: NavItem[] = [
   { href: "/daily", label: "Journal", icon: CalendarDays },
 ];
 
+/** Planning the work: what's active, what's next, and the time to do it. */
+const PLAN: NavItem[] = [
+  { href: "/projects", label: "Projects", icon: FolderKanban },
+  { href: "/pomodoro", label: "Focus timer", icon: Timer },
+  { href: "/habits", label: "Habits", icon: TrendingUp },
+  { href: "/goals", label: "Goals", icon: Target },
+];
+
 /** Collecting and asking — the two things that pull people back in. */
 const LIBRARY: NavItem[] = [
   { href: "/assistant", label: "Ask AI", icon: Sparkles },
@@ -93,9 +101,6 @@ const LEARN: NavItem[] = [
  * there's real data in the workspace. Hidden by default, never restricted.
  */
 const ADVANCED: NavItem[] = [
-  { href: "/projects", label: "Projects", icon: FolderKanban },
-  { href: "/goals", label: "Goals", icon: Target },
-  { href: "/habits", label: "Habits", icon: TrendingUp },
   { href: "/automation", label: "Automations", icon: Workflow },
   { href: "/graph", label: "Knowledge graph", icon: GitFork },
   { href: "/mindmap", label: "Mind map", icon: Network },
@@ -106,7 +111,6 @@ const ADVANCED: NavItem[] = [
   { href: "/voice", label: "Voice notes", icon: Mic },
   { href: "/meetings", label: "Meetings", icon: Users },
   { href: "/contacts", label: "People", icon: Users },
-  { href: "/pomodoro", label: "Focus timer", icon: Timer },
 ];
 
 const ACCOUNT: NavItem[] = [{ href: "/settings", label: "Settings", icon: Settings }];
@@ -203,6 +207,7 @@ export function AppNav({ collapsed = false }: { collapsed?: boolean }) {
           animate="visible"
         >
           <NavGroup items={ESSENTIALS} collapsed={collapsed} />
+          <NavGroup label="Plan" items={PLAN} collapsed={collapsed} />
           <NavGroup label="Library" items={LIBRARY} collapsed={collapsed} />
           <NavGroup label="Learn" items={LEARN} collapsed={collapsed} />
           {advancedToolsOpen && <NavGroup label="All tools" items={ADVANCED} collapsed={collapsed} />}

@@ -24,6 +24,7 @@ const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-fraunces",
   display: "swap",
+  style: ["normal", "italic"],
   axes: ["SOFT", "WONK", "opsz"],
 });
 
@@ -112,7 +113,7 @@ export default function RootLayout({
       data-theme="dark"
       className={`${inter.variable} ${jetBrainsMono.variable} ${spaceGrotesk.variable} ${fraunces.variable} antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col overflow-x-hidden">
         <Script
           id="theme-init"
           strategy="beforeInteractive"

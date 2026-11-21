@@ -1,142 +1,167 @@
-"use client";
+import {
+  SectionIntro,
+  SectionShell,
+} from "@/components/marketing/landing-primitives";
 
-import { Reveal } from "@/components/marketing/reveal";
-
-const FEATURES = [
+const CAPABILITIES = [
   {
-    label: "Semantic search",
-    engineeros: true,
-    notion: true,
-    obsidian: false,
-    evernote: false,
+    label: "Notes, tasks, and projects in one schema",
+    engineeros: "Yes",
+    notion: "Partial",
+    obsidian: "No",
+    linear: "No",
   },
   {
-    label: "AI assistant with citations",
-    engineeros: true,
-    notion: false,
-    obsidian: false,
-    evernote: false,
+    label: "Semantic search over your own writing",
+    engineeros: "Yes",
+    notion: "Partial",
+    obsidian: "Partial",
+    linear: "No",
   },
   {
-    label: "Knowledge graph",
-    engineeros: true,
-    notion: false,
-    obsidian: true,
-    evernote: false,
+    label: "AI answers with source citations",
+    engineeros: "Yes",
+    notion: "Partial",
+    obsidian: "Partial",
+    linear: "No",
+  },
+  {
+    label: "Questions pinned to a past date",
+    engineeros: "Yes",
+    notion: "No",
+    obsidian: "No",
+    linear: "No",
+  },
+  {
+    label: "Knowledge graph from your links",
+    engineeros: "Yes",
+    notion: "No",
+    obsidian: "Yes",
+    linear: "No",
   },
   {
     label: "Self-hosted data",
-    engineeros: true,
-    notion: false,
-    obsidian: true,
-    evernote: false,
-  },
-  {
-    label: "No vendor lock-in",
-    engineeros: true,
-    notion: false,
-    obsidian: true,
-    evernote: false,
-  },
-  {
-    label: "Kanban boards",
-    engineeros: true,
-    notion: true,
-    obsidian: false,
-    evernote: false,
-  },
-  {
-    label: "Daily notes",
-    engineeros: true,
-    notion: false,
-    obsidian: false,
-    evernote: false,
-  },
-  {
-    label: "Automation rules",
-    engineeros: true,
-    notion: true,
-    obsidian: false,
-    evernote: false,
+    engineeros: "Yes",
+    notion: "No",
+    obsidian: "Yes",
+    linear: "No",
   },
   {
     label: "Free to start",
-    engineeros: true,
-    notion: true,
-    obsidian: true,
-    evernote: true,
-  },
-  {
-    label: "Open-source core",
-    engineeros: true,
-    notion: false,
-    obsidian: false,
-    evernote: false,
+    engineeros: "Yes",
+    notion: "Yes",
+    obsidian: "Yes",
+    linear: "Yes",
   },
 ];
 
-function Mark({ present }: { present: boolean }) {
-  /* Marked in words, not green ticks. A checkmark grid is the most recognizable
-     SaaS-template artifact there is, and it flattens "absent" into a scold. */
-  return present ? (
-    <span className="label-mono text-signal">yes</span>
-  ) : (
-    <span className="label-mono text-[10px]">—</span>
+function Value({ value, ours = false }: { value: string; ours?: boolean }) {
+  return (
+    <span
+      className={
+        value === "Yes"
+          ? ours
+            ? "text-[13px] font-medium text-foreground"
+            : "text-[13px] text-foreground"
+          : value === "Partial"
+            ? "text-[13px] text-secondary"
+            : "text-[13px] text-faint"
+      }
+    >
+      {value}
+    </span>
   );
 }
 
 export function LandingComparison() {
   return (
-    <section id="compare" className="relative py-16 md:py-28">
-      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-        <Reveal className="max-w-2xl">
-          <p className="label-mono">comparison</p>
-          <h2 className="mt-5 font-serif-display text-[clamp(1.9rem,4vw,2.75rem)] font-normal leading-[1.06] tracking-[-0.02em] text-foreground">
-            How EngineerOS stacks up
-          </h2>
-          <p className="mt-5 max-w-lg text-[15px] leading-relaxed text-secondary">
-            EngineerOS combines the best of note-taking, project management,
-            and AI — without locking your data in a proprietary cloud.
-          </p>
-        </Reveal>
+    <SectionShell id="compare">
+      <SectionIntro
+        title="Where it fits."
+        body="Not a replacement for a tool you love. A replacement for the tab-switching between four of them."
+      />
 
-        <Reveal delay={0.12} className="mt-10 overflow-x-auto md:mt-14">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b border-border-default">
-                <th className="label-mono py-3 pr-4 text-left font-normal">capability</th>
-                {/* Our column is the one that gets emphasis — a rail, not a
-                    filled cell, so the table stays a table. */}
-                <th className="label-mono border-x border-border-subtle bg-surface/40 px-4 py-3 text-center font-normal text-signal">
-                  EngineerOS
+      <div className="mt-10 overflow-x-auto">
+        <table className="w-full min-w-[720px] border-collapse">
+          <caption className="sr-only">
+            Capability comparison between EngineerOS, Notion, Obsidian, and
+            Linear, as of October 2026.
+          </caption>
+          <thead>
+            <tr className="border-b border-border-default">
+              <th
+                scope="col"
+                className="pb-3 pr-4 text-left font-mono text-[9px] font-normal uppercase tracking-[0.14em] text-faint"
+              >
+                capability
+              </th>
+              <th
+                scope="col"
+                className="w-[18%] border-x border-border-subtle bg-accent-muted/30 px-4 pb-3 text-left font-mono text-[9px] font-normal uppercase tracking-[0.14em] text-accent"
+              >
+                EngineerOS
+              </th>
+              <th
+                scope="col"
+                className="w-[14%] px-4 pb-3 text-left font-mono text-[9px] font-normal uppercase tracking-[0.14em] text-faint"
+              >
+                Notion
+              </th>
+              <th
+                scope="col"
+                className="w-[14%] px-4 pb-3 text-left font-mono text-[9px] font-normal uppercase tracking-[0.14em] text-faint"
+              >
+                Obsidian
+              </th>
+              <th
+                scope="col"
+                className="w-[14%] pl-4 pb-3 text-left font-mono text-[9px] font-normal uppercase tracking-[0.14em] text-faint"
+              >
+                Linear
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {CAPABILITIES.map((capability) => (
+              <tr
+                key={capability.label}
+                className="border-b border-border-subtle/70"
+              >
+                <th
+                  scope="row"
+                  className="py-3.5 pr-4 text-left text-[13px] font-normal text-secondary"
+                >
+                  {capability.label}
                 </th>
-                <th className="label-mono px-4 py-3 text-center font-normal">Notion</th>
-                <th className="label-mono px-4 py-3 text-center font-normal">Obsidian</th>
-                <th className="label-mono pl-4 py-3 text-center font-normal">Evernote</th>
+                <td className="border-x border-border-subtle bg-accent-muted/30 px-4 py-3.5">
+                  <Value value={capability.engineeros} ours />
+                </td>
+                <td className="px-4 py-3.5">
+                  <Value value={capability.notion} />
+                </td>
+                <td className="px-4 py-3.5">
+                  <Value value={capability.obsidian} />
+                </td>
+                <td className="py-3.5 pl-4">
+                  <Value value={capability.linear} />
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {FEATURES.map((f) => (
-                <tr key={f.label} className="border-b border-border-subtle/60">
-                  <td className="py-3 pr-4 text-sm text-secondary">{f.label}</td>
-                  <td className="rail-signal bg-surface/40 px-4 py-3 text-center">
-                    <Mark present={f.engineeros} />
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <Mark present={f.notion} />
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <Mark present={f.obsidian} />
-                  </td>
-                  <td className="pl-4 py-3 text-center">
-                    <Mark present={f.evernote} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Reveal>
+            ))}
+          </tbody>
+        </table>
       </div>
-    </section>
+
+      <div className="mt-5 flex flex-col justify-between gap-4 border-t border-border-subtle pt-5 md:flex-row md:items-start md:gap-12">
+        <p className="max-w-[62ch] text-[12px] leading-relaxed text-tertiary">
+          Partial means a plugin, an add-on, or a different product in the same
+          suite. Capabilities as of October 2026; they change.
+        </p>
+        <p className="max-w-[42ch] text-[12px] leading-relaxed text-tertiary md:text-right">
+          If Obsidian already holds your graph and you do not need tasks, keep
+          it. EngineerOS is for when the graph, the board, and the answer need to
+          be the same system.
+        </p>
+      </div>
+    </SectionShell>
   );
 }

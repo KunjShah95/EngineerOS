@@ -17,10 +17,10 @@ import { cn } from "@/lib/utils";
  * (blog, comparisons, legal) lives in the footer.
  */
 const links = [
+  { href: "/tour", label: "Tour" },
+  { href: "/#features", label: "Features" },
+  { href: "/#plans", label: "Pricing" },
   { href: "/learn", label: "Learn" },
-  { href: "/map", label: "Map" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/connect", label: "For agents" },
 ];
 
 function isActive(pathname: string, href: string) {

@@ -55,6 +55,23 @@
   --color-priority-low: var(--priority-low);
   --color-priority-none: var(--priority-none);
 
+  /* Product canvas. The interface is always shown in its dark workspace, in
+     both page themes, so these values are fixed rather than themed. Using the
+     page's --signal inside the canvas would turn mint into dark green the
+     moment the visitor switches to light mode. */
+  --color-canvas: #08090d;
+  --color-canvas-chrome: #0b0c11;
+  --color-canvas-panel: #101118;
+  --color-canvas-line: rgb(255 255 255 / 0.08);
+  --color-canvas-line-strong: rgb(255 255 255 / 0.14);
+  --color-on-canvas: rgb(255 255 255 / 0.92);
+  --color-on-canvas-secondary: rgb(255 255 255 / 0.6);
+  --color-on-canvas-tertiary: rgb(255 255 255 / 0.45);
+  --color-on-canvas-faint: rgb(255 255 255 / 0.32);
+  --color-canvas-signal: #6ee7b7;
+  --color-canvas-accent: #a5b4fc;
+  --color-canvas-accent-strong: #818cf8;
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.75);
   --radius-lg: var(--radius);
@@ -308,6 +325,17 @@
   .rail-accent {
     box-shadow: inset 2px 0 0 0 var(--accent);
   }
+}
+
+/* Landing hero light wash. A single directional light from above the fold —
+   no colored halo, no gradient blob. Tinted from the current foreground so it
+   reads correctly in both themes. */
+@utility bg-hero-wash {
+  background-image: radial-gradient(
+    120% 60% at 50% -10%,
+    color-mix(in oklab, var(--text-primary) 5%, transparent),
+    transparent 62%
+  );
 }
 
 /* Blueprint paper — the app's texture for empty space. Engineering grid, not a

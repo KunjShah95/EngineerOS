@@ -1,81 +1,52 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
-
 import { useState } from "react";
-import { cn } from "@/lib/utils";
 
-const FAQS = [
-  {
-    q: "What is EngineerOS?",
-    a: "EngineerOS is an AI-native workspace that combines notes, tasks, projects, and daily entries into one connected system. It features semantic search, a knowledge graph, an AI assistant with citations, and automation rules — all running on your own Supabase data.",
-  },
-  {
-    q: "What is an AI-native workspace?",
-    a: "An AI-native workspace is a productivity tool built from the ground up with AI as a core feature — not bolted on as an add-on. In EngineerOS, every note, task, and daily entry is automatically indexed for semantic search, and the AI assistant can answer questions about your workspace with citations back to source notes.",
-  },
-  {
-    q: "How does EngineerOS search work?",
-    a: "EngineerOS uses semantic search powered by embeddings. Every note, task, and daily entry is automatically indexed, so you can ask questions in plain English and get grounded answers with citations back to the exact source notes.",
-  },
-  {
-    q: "Can I see why an answer said what it said?",
-    a: "Yes — every answer opens into a source panel showing which passages were retrieved, whether each was found by meaning or by literal keyword overlap, its relevance score, and the exact chunk that was quoted. Notes marked as edited since a pinned date show a line-level summary of what changed. The assistant never paraphrases a citation into a claim of full coverage: notes it could not reconstruct are named explicitly.",
-  },
-  {
-    q: "Can I ask what I believed on a past date?",
-    a: "Yes. Pin a question to any date and the assistant answers from your notes as they existed then, reconstructing historical bodies from stored versions. Where a note changed after that date, the citation says so. It will not answer a question about the past using today's text.",
-  },
-  {
-    q: "Is EngineerOS free?",
-    a: "EngineerOS is free to start. Your data lives in your own Supabase project — no vendor lock-in, no credit card required. See the pricing page for full details on Pro and Enterprise plans.",
-  },
-  {
-    q: "How does the knowledge graph work?",
-    a: "EngineerOS automatically builds a knowledge graph from wikilinks in your notes and links between tasks and notes. You can visualize connections, filter by project, and discover hidden relationships across your workspace.",
-  },
-  {
-    q: "Can I automate repetitive tasks?",
-    a: "Yes. EngineerOS includes automation rules for recurring tasks, quick captures that auto-triage by keyword, and daily rollover of unfinished work — so your daily rhythm builds itself.",
-  },
-  {
-    q: "Where does my data live?",
-    a: "Your data lives in your own Supabase project. EngineerOS connects to it via the Supabase client — no data is stored on EngineerOS servers. You own your data and can export it at any time.",
-  },
-  {
-    q: "What makes EngineerOS different from Notion or Obsidian?",
-    a: "EngineerOS combines semantic search, AI-powered citations, and a visual knowledge graph in a single self-hosted workspace. Unlike Notion, your data is not locked in a proprietary cloud. Unlike Obsidian, it includes built-in AI search and automation without requiring plugins.",
-  },
-  {
-    q: "Who is EngineerOS built for?",
-    a: "EngineerOS is built for engineers, researchers, and builders who want a single connected system for their notes, tasks, and projects — without vendor lock-in or AI that's disconnected from their actual work.",
-  },
-  {
-    q: "Does EngineerOS work as a second brain?",
-    a: "Yes. EngineerOS is designed as a second brain for technical builders — a place where every note, task, and decision is captured, indexed, and connected. Semantic search lets you retrieve knowledge in plain English, and the knowledge graph shows how ideas link across projects.",
-  },
-];
+import { LANDING_FAQS } from "@/components/marketing/faq-data";
+import {
+  ArrowLink,
+  SectionShell,
+} from "@/components/marketing/landing-primitives";
+import { cn } from "@/lib/utils";
 
 export function LandingFaq() {
   return (
-    <section id="faq" className="relative py-16 md:py-28">
-      <div className="mx-auto w-full max-w-3xl px-4 sm:px-6">
+    <SectionShell id="faq">
+      <div className="grid gap-10 md:grid-cols-[300px_minmax(0,1fr)] md:gap-16">
         <div>
-          <p className="label-mono">questions</p>
-          <h2 className="mt-5 font-serif-display text-[clamp(1.9rem,4vw,2.75rem)] font-normal leading-[1.06] tracking-[-0.02em] text-foreground">
-            Common questions
+          <h2 className="text-balance text-[clamp(1.9rem,3.6vw,2.75rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-foreground">
+            Questions, answered.
           </h2>
+          <p className="mt-4 max-w-[34ch] text-[14px] leading-relaxed text-secondary">
+            If the answer is not here, the guide and the comparison pages go
+            deeper.
+          </p>
+          <div className="mt-6 flex flex-col items-start gap-2.5">
+            <ArrowLink href="/guides/building-a-second-brain">
+              Second brain guide
+            </ArrowLink>
+            <ArrowLink href="/compare/notion-vs-engineeros">
+              Notion comparison
+            </ArrowLink>
+            <ArrowLink href="/compare/obsidian-vs-engineeros">
+              Obsidian comparison
+            </ArrowLink>
+          </div>
         </div>
 
-        {/* One ruled list, not a stack of rounded boxes. Grouping comes from
-            hairlines — the shape language the app itself uses. */}
-        <div className="mt-10 border-t border-border-subtle">
-          {FAQS.map((faq, i) => (
-            <FaqItem key={faq.q} index={i + 1} question={faq.q} answer={faq.a} />
+        <div className="border-t border-border-subtle">
+          {LANDING_FAQS.map((faq, index) => (
+            <FaqItem
+              key={faq.q}
+              index={index}
+              question={faq.q}
+              answer={faq.a}
+              defaultOpen={index === 0}
+            />
           ))}
         </div>
       </div>
-    </section>
+    </SectionShell>
   );
 }
 
@@ -83,50 +54,58 @@ function FaqItem({
   index,
   question,
   answer,
+  defaultOpen,
 }: {
   index: number;
   question: string;
   answer: string;
+  defaultOpen: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
+  const questionId = `faq-question-${index}`;
+  const answerId = `faq-answer-${index}`;
 
   return (
     <div className="border-b border-border-subtle">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="flex w-full items-baseline gap-4 py-4 text-left"
-        aria-expanded={open}
-      >
-        {/* An index, not an icon — this is a spec sheet, so entries are numbered
-            and addressable rather than decorated. */}
-        <span
-          className={cn(
-            "figure-mono w-6 shrink-0 text-[11px] transition-colors",
-            open ? "text-signal" : "text-faint"
-          )}
-          aria-hidden
+      <h3>
+        <button
+          type="button"
+          id={questionId}
+          aria-expanded={open}
+          aria-controls={answerId}
+          onClick={() => setOpen((value) => !value)}
+          className="group flex w-full items-start justify-between gap-6 py-[18px] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
         >
-          {String(index).padStart(2, "0")}
-        </span>
-        <span className="flex-1 text-[15px] leading-snug text-foreground">{question}</span>
-        <ChevronDown
-          className={cn(
-            "mt-0.5 size-4 shrink-0 text-faint transition-transform duration-200",
-            open && "rotate-180"
-          )}
-          strokeWidth={1.75}
-        />
-      </button>
-      {/* grid-rows transition animates to auto height without a measured height. */}
+          <span className="text-[15px] font-medium leading-snug text-foreground transition-colors group-hover:text-accent">
+            {question}
+          </span>
+          <span
+            aria-hidden
+            className="relative mt-1 flex size-4 shrink-0 items-center justify-center text-tertiary"
+          >
+            <span className="absolute h-px w-3 bg-current" />
+            <span
+              className={cn(
+                "absolute h-3 w-px bg-current transition-transform duration-200 ease-out",
+                open ? "rotate-90" : "rotate-0"
+              )}
+            />
+          </span>
+        </button>
+      </h3>
+
       <div
+        id={answerId}
+        role="region"
+        aria-labelledby={questionId}
+        aria-hidden={!open}
         className={cn(
           "grid transition-[grid-template-rows] duration-200 ease-out",
           open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
         )}
       >
         <div className="overflow-hidden">
-          <p className="pb-5 pl-10 text-sm leading-relaxed text-secondary" aria-hidden={!open}>
+          <p className="max-w-[68ch] pb-5 pr-8 text-[14px] leading-relaxed text-secondary">
             {answer}
           </p>
         </div>

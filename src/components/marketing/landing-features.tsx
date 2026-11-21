@@ -26,9 +26,8 @@ export function LandingFeatures() {
           <p className="label-mono">
             The model
           </p>
-          <h2 className="mt-5 font-serif-display text-[clamp(1.9rem,4vw,2.75rem)] font-normal leading-[1.06] tracking-[-0.02em] text-foreground">
-            Six objects. Everything else
-            is derived from them.
+          <h2 className="mt-5 font-serif-display text-[clamp(1.5rem,3.6vw,2.75rem)] font-normal leading-[1.06] tracking-[-0.02em] text-foreground md:whitespace-nowrap">
+            Six objects. Everything else is derived from them.
           </h2>
           <p className="mx-auto mt-5 max-w-lg text-[15px] leading-relaxed text-secondary">
             User, Workspace, Project, Task, Note, Daily Note. Nothing you write
@@ -113,9 +112,8 @@ export function LandingFeatures() {
           <p className="label-mono">
             The AI layer
           </p>
-          <h2 className="mx-auto mt-5 max-w-2xl font-serif-display text-[clamp(1.9rem,4vw,2.75rem)] font-normal leading-[1.06] tracking-[-0.02em] text-foreground">
-            Indexed as you write, so the
-            answer knows where it came from.
+          <h2 className="mx-auto mt-5 max-w-2xl font-serif-display text-[clamp(1.5rem,3.6vw,2.75rem)] font-normal leading-[1.06] tracking-[-0.02em] text-foreground md:whitespace-nowrap">
+            Indexed as you write, so the answer knows where it came from.
           </h2>
           <p className="mx-auto mt-5 max-w-lg text-[15px] leading-relaxed text-secondary">
             Every note and task is embedded automatically. Ask in plain English,
